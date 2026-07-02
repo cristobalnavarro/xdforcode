@@ -1,0 +1,10 @@
+[
+  {
+    "user":     "xdforcode",
+    "pass":     "47169e57a644dd9a2b31cd9adc77cc4b5adf0c90f8eab4f09b9c9493c26bfd1e",
+    "mode":     "opencode_run",
+    "provider": "ollama",
+    "model":    "qwen3:32b",
+    "exe":      "opencode"
+  }
+]

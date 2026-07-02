@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XDForCode — Manual de usuario</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d1117;
+    --bg2:      #161b22;
+    --bg3:      #1c2128;
+    --border:   #30363d;
+    --accent:   #2f81f7;
+    --accent2:  #79c0ff;
+    --green:    #3fb950;
+    --yellow:   #d29922;
+    --text:     #e6edf3;
+    --text2:    #cdd9e5;
+    --text3:    #8b949e;
+    --mono:     "Consolas", "Courier New", monospace;
+    --radius:   10px;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV LATERAL ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0;
+    width: 240px; height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 0 40px;
+    z-index: 100;
+  }
+  nav .nav-logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  nav .nav-logo h2 {
+    font-size: 1rem; font-weight: 700;
+    color: var(--accent2); letter-spacing: -0.3px;
+  }
+  nav .nav-logo p { font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+  nav a {
+    display: block;
+    padding: 6px 20px;
+    font-size: 0.82rem; color: var(--text3);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  nav a:hover {
+    color: var(--text2);
+    background: rgba(255,255,255,.04);
+    border-left-color: var(--border);
+  }
+  nav a.active {
+    color: var(--accent2);
+    border-left-color: var(--accent);
+    background: rgba(47,129,247,.08);
+  }
+  nav .nav-section {
+    padding: 14px 20px 4px;
+    font-size: 0.70rem; font-weight: 700;
+    color: var(--text3); letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── CONTENIDO ── */
+  .content {
+    margin-left: 240px;
+    max-width: 860px;
+    padding: 52px 48px 80px;
+  }
+
+  /* ── CABECERA ── */
+  .hero {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 40px;
+    margin-bottom: 52px;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(47,129,247,.14);
+    border: 1px solid rgba(47,129,247,.35);
+    color: var(--accent2);
+    font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    border-radius: 100px; padding: 4px 14px;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-size: clamp(1.9rem, 4vw, 2.8rem);
+    font-weight: 800; letter-spacing: -1px;
+    background: linear-gradient(110deg, #e6edf3 20%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1; margin-bottom: 14px;
+  }
+  .hero p {
+    color: var(--text2); font-size: 1.05rem;
+    max-width: 600px;
+  }
+
+  /* ── SECCIONES ── */
+  section { margin-bottom: 64px; }
+
+  section h2 {
+    font-size: 1.35rem; font-weight: 700;
+    color: var(--text); margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  section h2 .sec-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 6px;
+    background: rgba(47,129,247,.15);
+    color: var(--accent2); font-size: 0.80rem;
+    font-weight: 800; flex-shrink: 0;
+  }
+
+  section h3 {
+    font-size: 1rem; font-weight: 700;
+    color: var(--accent2); margin: 28px 0 10px;
+  }
+
+  p { color: var(--text2); margin-bottom: 12px; }
+
+  /* ── FEATURES GRID ── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px; margin-top: 20px;
+  }
+  .feature-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .feature-card .fc-icon { font-size: 1.4rem; margin-bottom: 8px; }
+  .feature-card strong { display: block; font-size: 0.90rem; color: var(--text); margin-bottom: 4px; }
+  .feature-card span { font-size: 0.82rem; color: var(--text3); }
+
+  /* ── LAYOUT ASCII ── */
+  .layout-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    font-family: var(--mono);
+    font-size: 0.80rem;
+    color: var(--text3);
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+
+  /* ── TABLAS ── */
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.88rem; margin: 16px 0;
+  }
+  th {
+    background: var(--bg3);
+    color: var(--text2); font-weight: 700;
+    padding: 9px 14px; text-align: left;
+    border: 1px solid var(--border);
+    font-size: 0.80rem; letter-spacing: 0.5px;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    color: var(--text2); vertical-align: top;
+  }
+  tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+  td code, th code { font-family: var(--mono); font-size: 0.85em; color: var(--accent2); }
+
+  /* ── CÓDIGO ── */
+  pre {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--accent2);
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    color: var(--accent2);
+    background: rgba(47,129,247,.10);
+    padding: 1px 6px; border-radius: 4px;
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(47,129,247,.07);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 0.88rem; color: var(--text2);
+  }
+  .callout.green {
+    border-color: var(--green);
+    background: rgba(63,185,80,.07);
+  }
+  .callout.yellow {
+    border-color: var(--yellow);
+    background: rgba(210,153,34,.07);
+  }
+  .callout strong { color: var(--text); }
+
+  /* ── AGENTES GRID ── */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px; margin-top: 16px;
+  }
+  .agent-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    transition: border-color .2s;
+  }
+  .agent-card:hover { border-color: var(--accent); }
+  .agent-card .ac-name {
+    font-size: 0.95rem; font-weight: 700;
+    color: var(--text); margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ac-badge {
+    font-size: 0.68rem; font-weight: 700;
+    border-radius: 100px; padding: 2px 8px;
+    letter-spacing: 0.5px;
+  }
+  .ac-badge.free { background: rgba(63,185,80,.15); color: var(--green); }
+  .ac-badge.cloud { background: rgba(47,129,247,.15); color: var(--accent2); }
+  .agent-card p { font-size: 0.83rem; color: var(--text3); margin-bottom: 10px; }
+  .agent-card pre { margin: 0; padding: 10px 14px; font-size: 0.78rem; }
+
+  /* ── PASOS ── */
+  .steps { counter-reset: step; list-style: none; margin: 14px 0; }
+  .steps li {
+    counter-increment: step;
+    display: flex; gap: 14px;
+    margin-bottom: 12px; align-items: flex-start;
+  }
+  .steps li::before {
+    content: counter(step);
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(47,129,247,.20);
+    color: var(--accent2); font-size: 0.80rem; font-weight: 800;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .steps li span { color: var(--text2); font-size: 0.92rem; }
+
+  /* ── FAQ ── */
+  details {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  details[open] { border-color: var(--accent); }
+  summary {
+    padding: 14px 18px;
+    font-size: 0.92rem; font-weight: 600;
+    color: var(--text2); cursor: pointer;
+    list-style: none; display: flex;
+    align-items: center; gap: 10px;
+    user-select: none;
+  }
+  summary::before {
+    content: "▶";
+    font-size: 0.65rem; color: var(--text3);
+    transition: transform .2s;
+  }
+  details[open] summary::before { transform: rotate(90deg); }
+  summary::-webkit-details-marker { display: none; }
+  .faq-body { padding: 0 18px 16px; color: var(--text3); font-size: 0.88rem; line-height: 1.6; }
+  .faq-body p { color: var(--text3); margin-bottom: 0; }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-left: 240px;
+    border-top: 1px solid var(--border);
+    padding: 24px 48px;
+    color: var(--text3); font-size: 0.82rem;
+    display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  footer strong { color: var(--text2); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { display: none; }
+    .content, footer { margin-left: 0; padding: 32px 20px 60px; }
+    .hero h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV LATERAL -->
+<nav>
+  <div class="nav-logo">
+    <h2>XDForCode</h2>
+    <p>Manual de usuario</p>
+  </div>
+
+  <div class="nav-section">Introducción</div>
+  <a href="#intro">¿Qué es XDForCode?</a>
+  <a href="#interfaz">La interfaz</a>
+  <a href="#inicio">Primeros pasos</a>
+  <a href="#editores">Editores (Scintilla / Monaco)</a>
+
+  <div class="nav-section">Agentes IA</div>
+  <a href="#agentes">Instalación recomendada</a>
+  <a href="#activar">Activar un agente</a>
+  <a href="#modelo">Proveedor y modelo</a>
+  <a href="#chat">Panel de chat</a>
+
+  <div class="nav-section">Funcionalidades</div>
+  <a href="#skills">Skills</a>
+  <a href="#kanban">Kanban</a>
+  <a href="#remoto">Acceso remoto</a>
+  <a href="#menu">Menú y configuración</a>
+  <a href="#explorador">Explorador</a>
+  <a href="#terminales">Terminales</a>
+
+  <div class="nav-section">Ayuda</div>
+  <a href="#faq">Preguntas frecuentes</a>
+</nav>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="content">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge">Manual de usuario</div>
+    <h1>XDForCode</h1>
+    <p>IDE estilo VS Code con integración nativa de agentes de IA para Windows. Desarrollado para Harbour / FiveWin.</p>
+  </div>
+
+  <!-- 1 – QUÉ ES -->
+  <section id="intro">
+    <h2><span class="sec-num">1</span> ¿Qué es XDForCode?</h2>
+    <p>XDForCode es un entorno de desarrollo integrado (IDE) para Windows con apariencia y funcionamiento similar a VS Code. Está diseñado especialmente para desarrolladores <strong>Harbour / FiveWin</strong>, aunque puede editar cualquier tipo de fichero.</p>
+    <p>Su característica principal es la <strong>integración nativa con agentes de IA</strong>: puedes conversar directamente con Claude, Gemini, OpenCode, Ollama y otros desde dentro del propio IDE, con acceso automático al código que estás editando.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="fc-icon">✏️</div>
+        <strong>Editor Monaco</strong>
+        <span>El mismo motor que usa VS Code, con soporte Harbour/FiveWin</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🤖</div>
+        <strong>Panel de IA</strong>
+        <span>Chat con el agente en el sidebar derecho, con contexto del código</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">📋</div>
+        <strong>Kanban multi-agente</strong>
+        <span>Lanza varios agentes IA en paralelo y coordina sus tareas</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🌐</div>
+        <strong>Acceso remoto</strong>
+        <span>Servidor web para usar el chat desde cualquier navegador</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">⚡</div>
+        <strong>Skills</strong>
+        <span>Fragmentos de contexto reutilizables para tus prompts</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🖥️</div>
+        <strong>Terminales integradas</strong>
+        <span>Git, SSH, consola de sistema y terminal del agente IA</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 – INTERFAZ -->
+  <section id="interfaz">
+    <h2><span class="sec-num">2</span> La interfaz de un vistazo</h2>
+    <div class="layout-box">
+┌──────────┬──────────────┬────────────────────────────┬────────────────────────┐
+│  Barra   │  Explorador  │                            │   Panel de agente IA   │
+│  lateral │  de archivos │      Editor de código      │                        │
+│  de      │              │      (Monaco Editor)       │  ┌──────────────────┐  │
+│  iconos  │              │                            │  │  Respuesta del   │  │
+│          │              ├────────────────────────────┤  │    agente        │  │
+│          │              │  Consolas / Terminales     │  ├──────────────────┤  │
+│          │              │  (Git, SSH, IA, Build...)  │  │  Tu mensaje      │  │
+└──────────┴──────────────┴────────────────────────────┴──┴──────────────────┘──┘</div>
+
+    <table>
+      <tr><th>Zona</th><th>Función</th></tr>
+      <tr><td><strong>Barra lateral de iconos</strong></td><td>Acceso a explorador, servidor web, Kanban y configuración</td></tr>
+      <tr><td><strong>Explorador de archivos</strong></td><td>Árbol de directorios; clic en un fichero lo abre en el editor</td></tr>
+      <tr><td><strong>Editor Monaco</strong></td><td>Edición de código con resaltado de sintaxis</td></tr>
+      <tr><td><strong>Consolas inferiores</strong></td><td>Pestañas Results, GIT, SSH, Sistema, Terminal IA</td></tr>
+      <tr><td><strong>Panel derecho</strong></td><td>Chat con el agente IA activo</td></tr>
+    </table>
+  </section>
+
+  <!-- 3 – PRIMEROS PASOS -->
+  <section id="inicio">
+    <h2><span class="sec-num">3</span> Primeros pasos</h2>
+    <p>Al iniciar XDForCode verás el editor vacío. Los pasos básicos para empezar:</p>
+    <ol class="steps">
+      <li><span><strong>Abre una carpeta de trabajo</strong> desde el menú o haciendo clic en el icono de explorador en la barra lateral. La carpeta seleccionada aparece en el árbol de archivos.</span></li>
+      <li><span><strong>Abre un fichero</strong>: haz clic sobre él en el árbol. Se abre en el editor Monaco.</span></li>
+      <li><span><strong>Selecciona un agente de IA</strong>: en el panel derecho elige el agente que quieres usar (Claude, Gemini, Ollama…) y escribe tu consulta.</span></li>
+      <li><span><strong>Activa el servidor web</strong> (opcional): si quieres acceder desde el navegador, pulsa el icono del servidor en la barra lateral.</span></li>
+    </ol>
+  </section>
+
+  <!-- 4 – EDITORES -->
+  <section id="editores">
+    <h2><span class="sec-num">4</span> Editores — Scintilla y Monaco</h2>
+    <p>XDForCode dispone de dos motores de edición que se usan según el tipo de fichero:</p>
+
+    <h3>Monaco Editor</h3>
+    <p>El mismo motor que utiliza VS Code internamente. Se emplea para la mayoría de ficheros de código y texto. Ofrece resaltado de sintaxis moderno, autocompletado y vista previa de ficheros web.</p>
+    <p>Tipos de fichero habituales: <code>.prg</code>, <code>.ch</code>, <code>.prw</code>, <code>.js</code>, <code>.html</code>, <code>.css</code>, <code>.json</code>, <code>.md</code>, <code>.ini</code>, <code>.txt</code>…</p>
+
+    <h3>Scintilla</h3>
+    <p>Editor nativo de Windows, más ligero. Se usa para ficheros que se abren en sus propias pestañas del IDE, con resaltado optimizado para Harbour y FiveWin.</p>
+
+    <h3>Comportamiento al abrir un fichero</h3>
+    <table>
+      <tr><th>Tipo de fichero</th><th>Comportamiento</th></tr>
+      <tr><td>Texto y código (<code>.prg</code>, <code>.js</code>, <code>.txt</code>…)</td><td>Se abre en el editor (Monaco o Scintilla según tipo)</td></tr>
+      <tr><td>Ficheros HTML</td><td>Puedes elegir: editor de código o panel de vista previa</td></tr>
+      <tr><td>Ficheros binarios (<code>.exe</code>, <code>.dll</code>, imágenes…)</td><td>Se abre con la aplicación asociada de Windows</td></tr>
+    </table>
+    <div class="callout">
+      Cada fichero abierto ocupa su propia <strong>pestaña</strong> en la zona de edición. Puedes tener varios ficheros abiertos a la vez y navegar entre ellos.
+    </div>
+  </section>
+
+  <!-- 5 – AGENTES -->
+  <section id="agentes">
+    <h2><span class="sec-num">4</span> Agentes de IA — instalación recomendada</h2>
+    <p>XDForCode funciona con agentes externos que se instalan en tu sistema. La aplicación los detecta y los invoca automáticamente. A continuación los recomendados:</p>
+
+    <div class="agent-grid">
+
+      <div class="agent-card">
+        <div class="ac-name">Claude Code <span class="ac-badge cloud">Nube</span></div>
+        <p>El agente de Anthropic. Muy potente para razonamiento y edición de código.</p>
+        <pre>npm install -g @anthropic-ai/claude-code
+claude</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="ac-name">OpenClaude <span class="ac-badge cloud">Nube</span></div>
+        <p>Fork de Claude Code con funcionalidades ampliadas. Idéntico en uso.</p>
+        <pre>npm install -g openclaude</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="ac-name">OpenCode <span class="ac-badge cloud">Nube</span></div>
+        <p>Agente de código abierto compatible con múltiples proveedores (Anthropic, OpenAI, Google…).</p>
+        <pre>npm install -g opencode
+opencode auth</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="ac-name">MIMO <span class="ac-badge cloud">Nube</span></div>
+        <p>Fork de OpenCode. Se instala y usa exactamente igual.</p>
+        <pre>npm install -g mimo</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="ac-name">Gemini CLI <span class="ac-badge cloud">Nube</span></div>
+        <p>El agente de Google. Contexto de hasta 1 millón de tokens.</p>
+        <pre>npm install -g @google/gemini-cli
+gemini auth</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="ac-name">Ollama <span class="ac-badge free">Gratuito · Local</span></div>
+        <p>Ejecuta modelos de IA <strong>en tu propio ordenador</strong>, sin internet y sin coste.</p>
+        <pre>ollama pull llama3.2
+ollama pull qwen2.5-coder</pre>
+      </div>
+
+    </div>
+
+    <div class="callout green" style="margin-top:20px">
+      <strong>¿Sin cuenta, sin internet?</strong> Instala <strong>Ollama</strong>. Es la única opción completamente gratuita, sin API key y que funciona sin conexión.
+    </div>
+
+    <h3>Comparativa rápida</h3>
+    <table>
+      <tr><th>Agente</th><th>Requiere internet</th><th>Coste</th><th>Ideal para</th></tr>
+      <tr><td>Claude Code</td><td>Sí</td><td>Según plan Anthropic</td><td>Razonamiento, código complejo</td></tr>
+      <tr><td>OpenClaude</td><td>Sí</td><td>Según plan Anthropic</td><td>Igual que Claude Code</td></tr>
+      <tr><td>OpenCode</td><td>Sí</td><td>Según proveedor</td><td>Flexibilidad de proveedor</td></tr>
+      <tr><td>MIMO</td><td>Sí</td><td>Según proveedor</td><td>Igual que OpenCode</td></tr>
+      <tr><td>Gemini CLI</td><td>Sí</td><td>Según plan Google</td><td>Contexto grande</td></tr>
+      <tr><td><strong>Ollama</strong></td><td><strong>No</strong></td><td><strong>Gratuito</strong></td><td>Privacidad, sin internet</td></tr>
+    </table>
+  </section>
+
+  <!-- 5 – ACTIVAR -->
+  <section id="activar">
+    <h2><span class="sec-num">5</span> Activar un agente en la aplicación</h2>
+    <p>Una vez instalados los agentes, actívalos dentro de XDForCode:</p>
+    <ol class="steps">
+      <li><span>Haz clic en el <strong>selector de agente</strong> en la parte superior del panel de chat (sidebar derecho).</span></li>
+      <li><span>Elige el agente de la lista: OpenCode, MIMO, Claude CLI, OpenClaude, Gemini CLI, Ollama…</span></li>
+      <li><span>El panel de chat queda listo para recibir mensajes con el agente seleccionado.</span></li>
+    </ol>
+    <div class="callout">
+      Puedes tener <strong>varios agentes activos simultáneamente</strong> usando el sistema Kanban (ver sección 9).
+    </div>
+  </section>
+
+  <!-- 6 – MODELO -->
+  <section id="modelo">
+    <h2><span class="sec-num">6</span> Configurar proveedor y modelo</h2>
+    <p>Cada agente permite seleccionar el proveedor y el modelo concreto a usar. El cambio se aplica en la siguiente consulta.</p>
+
+    <h3>OpenCode / MIMO</h3>
+    <p>En el selector de XDForCode elige proveedor (Anthropic, OpenAI, Google, Mistral…) y modelo (<code>claude-sonnet-4-5</code>, <code>gpt-4o</code>, <code>gemini-2.0-flash</code>…).</p>
+
+    <h3>Claude Code / OpenClaude</h3>
+    <p>Modelos disponibles (ejemplos):</p>
+    <table>
+      <tr><th>Modelo</th><th>Perfil</th></tr>
+      <tr><td><code>claude-opus-4-5</code></td><td>Máxima capacidad</td></tr>
+      <tr><td><code>claude-sonnet-4-5</code></td><td>Equilibrado — recomendado</td></tr>
+      <tr><td><code>claude-haiku-4-5</code></td><td>Rápido y económico</td></tr>
+    </table>
+
+    <h3>Gemini CLI</h3>
+    <table>
+      <tr><th>Modelo</th><th>Perfil</th></tr>
+      <tr><td><code>gemini-2.0-flash</code></td><td>Rápido — recomendado</td></tr>
+      <tr><td><code>gemini-2.5-pro</code></td><td>Mayor capacidad</td></tr>
+    </table>
+
+    <h3>Ollama</h3>
+    <p>Solo aparecen los modelos que ya tienes descargados. Para ver los instalados:</p>
+    <pre>ollama list</pre>
+    <p>Para descargar un modelo nuevo:</p>
+    <pre>ollama pull qwen2.5-coder
+ollama pull deepseek-r1</pre>
+  </section>
+
+  <!-- 7 – CHAT -->
+  <section id="chat">
+    <h2><span class="sec-num">7</span> Usar el panel de chat</h2>
+    <p>El panel de chat (sidebar derecho) es el corazón de la integración con IA.</p>
+
+    <h3>Enviar un mensaje</h3>
+    <p>Escribe tu pregunta o instrucción en el cuadro inferior y pulsa <strong>Enviar</strong> o <kbd>Ctrl+Enter</kbd>.</p>
+
+    <h3>Contexto automático</h3>
+    <p>El agente recibe automáticamente el <strong>contenido del fichero que estás editando</strong>. No necesitas copiar y pegar el código.</p>
+
+    <h3>Comandos de barra <code>/</code></h3>
+    <p>Escribe <code>/</code> en el cuadro de chat y aparecerá automáticamente la lista de todos los comandos disponibles.</p>
+    <div class="callout green">
+      <strong>Empieza por <code>/help</code></strong> — es el primer comando que debes probar. Te mostrará una explicación completa de todos los comandos y opciones del chat.
+    </div>
+    <table>
+      <tr><th>Comando</th><th>Acción</th></tr>
+      <tr><td><code>/help</code></td><td>Muestra la ayuda completa del chat y todos los comandos disponibles</td></tr>
+      <tr><td><code>/mode</code></td><td>Cambiar el agente o modo activo</td></tr>
+      <tr><td><code>/ollama</code></td><td>Listar y cambiar modelos de Ollama</td></tr>
+      <tr><td><code>/clear</code></td><td>Limpiar el historial del chat</td></tr>
+      <tr><td><code>/skill</code></td><td>Insertar una skill en el mensaje</td></tr>
+    </table>
+
+    <h3>Cancelar</h3>
+    <p>Mientras el agente responde aparece el botón <strong>Cancelar</strong>. Púlsalo para interrumpir la respuesta en cualquier momento.</p>
+
+    <h3>Preguntar sobre el código abierto en el editor</h3>
+    <p>El agente tiene acceso al contenido del <strong>fichero activo</strong> (el que está en primer plano). Puedes preguntarle sin copiar nada:</p>
+    <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
+      "Explícame qué hace esta función"<br>
+      "¿Hay algún posible error en este código?"<br>
+      "Resume qué hace este fichero"
+    </div>
+    <p>Si tienes varias pestañas abiertas y quieres preguntar sobre una concreta, menciona el nombre del fichero para evitar ambigüedades:</p>
+    <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
+      "Explícame qué hace el código del fichero <em>fev_server.prg</em> abierto en el editor"<br>
+      "¿Qué función gestiona el login en <em>chat_login.prg</em>?"
+    </div>
+    <p>Para preguntar sobre un fichero que <strong>no está abierto</strong> en el editor, indícalo también de forma explícita:</p>
+    <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
+      "Analiza el fichero <em>fevscode.prg</em> y dime cómo está estructurado"<br>
+      "¿Qué hace la función AdjustLayout en <em>fev_layout.prg</em>?"
+    </div>
+
+    <h3>Pedir modificaciones de código</h3>
+    <p>El agente puede modificar el fichero activo directamente. Algunos ejemplos habituales:</p>
+    <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
+      "Añade validación de que el campo usuario no esté vacío antes de hacer el login"<br>
+      "Refactoriza la función XDServerStart separando la lógica de login en una función propia"<br>
+      "Añade al final del fichero una nueva función GetUserCount que devuelva el número de usuarios en xdusers.json"<br>
+      "Corrige el bug en remotePoll para que reintente si la respuesta está vacía"
+    </div>
+  </section>
+
+  <!-- 8 – SKILLS -->
+  <section id="skills">
+    <h2><span class="sec-num">8</span> Skills — fragmentos y plantillas de contexto</h2>
+    <p>Las <strong>Skills</strong> son fragmentos de texto predefinidos (instrucciones, plantillas, fragmentos de código frecuentes) que puedes insertar en tus mensajes con un solo clic.</p>
+
+    <h3>Para qué sirven</h3>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; margin-bottom:12px; line-height:2;">
+      <li>Instrucciones de sistema permanentes ("responde siempre en español", "actúa como experto en FiveWin…")</li>
+      <li>Plantillas de código que usas con frecuencia</li>
+      <li>Contexto del proyecto que quieres enviar al agente sin reescribirlo</li>
+    </ul>
+
+    <h3>Cómo usarlas</h3>
+    <ol class="steps">
+      <li><span>Escribe <code>/skill</code> en el cuadro de mensaje o usa el botón de Skills del panel.</span></li>
+      <li><span>Aparece la lista de skills disponibles.</span></li>
+      <li><span>Selecciona una y su contenido se inserta en el mensaje.</span></li>
+    </ol>
+
+    <div class="callout yellow">
+      Las Skills se guardan en el fichero <code>xdskills.json</code> junto al ejecutable. Puedes editarlo directamente con XDForCode para añadir o modificar skills.
+    </div>
+  </section>
+
+  <!-- 9 – KANBAN -->
+  <section id="kanban">
+    <h2><span class="sec-num">9</span> Kanban — múltiples agentes en paralelo</h2>
+    <p>El <strong>Kanban</strong> permite lanzar y coordinar múltiples agentes de IA simultáneamente, cada uno con su propia tarea.</p>
+
+    <h3>Abrir el Kanban</h3>
+    <p>Pulsa el icono de <strong>Kanban</strong> en la barra lateral. Se abre el tablero en el panel central.</p>
+
+    <h3>Cómo funciona</h3>
+    <ol class="steps">
+      <li><span>Crea una <strong>tarea</strong> en el tablero: asígnale nombre, descripción y agente.</span></li>
+      <li><span>El agente arranca en su propia pestaña de terminal.</span></li>
+      <li><span>El tablero muestra el estado: pendiente, en curso, completada.</span></li>
+      <li><span>Puedes ver la conversación de cada agente en su pestaña individual.</span></li>
+    </ol>
+
+    <h3>Casos de uso</h3>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Lanzar un agente que refactoriza mientras otro escribe los tests.</li>
+      <li>Pedir a Claude, Gemini y Ollama la misma pregunta y comparar resultados.</li>
+      <li>Dejar tareas largas en segundo plano mientras trabajas en otra cosa.</li>
+    </ul>
+  </section>
+
+  <!-- 10 – REMOTO -->
+  <section id="remoto">
+    <h2><span class="sec-num">10</span> Acceso remoto desde el navegador</h2>
+    <p>XDForCode incluye un <strong>servidor web</strong> que permite acceder al chat con el agente desde cualquier navegador de tu red local.</p>
+
+    <h3>Arrancar el servidor web</h3>
+    <p>Pulsa el icono del servidor en la barra lateral. Cuando está activo la barra de estado inferior muestra <code>Server :8003</code>.</p>
+
+    <h3>Acceder desde el navegador</h3>
+    <pre>http://localhost:8003</pre>
+    <p>Verás la interfaz de chat idéntica al panel de XDForCode. Las respuestas llegan en tiempo real.</p>
+
+    <h3>Acceso multiusuario con contraseña</h3>
+    <p>Crea el fichero <code>xdusers.json</code> junto al ejecutable:</p>
+    <pre>[
+  { "user": "cristobal", "pass": "&lt;SHA-256 de la contraseña&gt;" }
+]</pre>
+    <p>Con este fichero presente, al acceder desde el navegador aparecerá una pantalla de inicio de sesión.</p>
+    <div class="callout green">
+      Sin <code>xdusers.json</code>, el acceso es libre (modo local, sin contraseña).
+    </div>
+  </section>
+
+  <!-- 11 – MENÚ -->
+  <section id="menu">
+    <h2><span class="sec-num">11</span> Menú de la aplicación — opciones de configuración</h2>
+    <p>El menú principal de XDForCode cubre la <strong>gran mayoría de opciones de configuración</strong> de la aplicación. Se recomienda revisarlo detenidamente antes de empezar a trabajar, ya que contiene ajustes que no siempre son evidentes desde la interfaz visual.</p>
+
+    <table>
+      <tr><th>Sección del menú</th><th>Qué puedes configurar</th></tr>
+      <tr><td><strong>Agente IA</strong></td><td>Selección del agente activo, modo de ejecución, proveedor y modelo</td></tr>
+      <tr><td><strong>Servidor web</strong></td><td>Puerto, carpeta de documentos y opciones de acceso remoto</td></tr>
+      <tr><td><strong>Build / Compilación</strong></td><td>Ruta de Harbour, FiveWin y compilador C</td></tr>
+      <tr><td><strong>Apariencia</strong></td><td>Visibilidad de paneles laterales, consola y barra de estado</td></tr>
+      <tr><td><strong>Editor</strong></td><td>Fuente, tamaño, tema de color y comportamiento del autoguardado</td></tr>
+      <tr><td><strong>MCP Tools</strong></td><td>Gestión de las herramientas MCP disponibles para los agentes</td></tr>
+      <tr><td><strong>Terminales</strong></td><td>Configuración de las pestañas de terminal adicionales</td></tr>
+    </table>
+
+    <div class="callout yellow">
+      <strong>Consejo:</strong> dedica unos minutos a explorar cada sección del menú antes de empezar. Muchas funcionalidades de XDForCode solo son accesibles desde ahí.
+    </div>
+  </section>
+
+  <!-- 12 – EXPLORADOR -->
+  <section id="explorador">
+    <h2><span class="sec-num">11</span> Explorador de archivos</h2>
+    <p>El explorador ocupa el panel izquierdo y muestra el árbol de directorios de la carpeta de trabajo actual.</p>
+    <table>
+      <tr><th>Acción</th><th>Resultado</th></tr>
+      <tr><td>Clic en un fichero de texto</td><td>Se abre en el editor Monaco</td></tr>
+      <tr><td>Clic en un fichero binario</td><td>Se abre con la aplicación por defecto de Windows</td></tr>
+      <tr><td>Clic en un fichero HTML</td><td>Se abre en el editor o en el panel de vista previa</td></tr>
+    </table>
+    <div class="callout">
+      El explorador se <strong>actualiza automáticamente</strong> cuando los agentes IA crean o modifican ficheros.
+    </div>
+  </section>
+
+  <!-- 12 – TERMINALES -->
+  <section id="terminales">
+    <h2><span class="sec-num">12</span> Terminales integradas</h2>
+    <p>En la parte inferior encontrarás varias pestañas de terminal, todas interactivas y con soporte de color:</p>
+    <table>
+      <tr><th>Pestaña</th><th>Para qué sirve</th></tr>
+      <tr><td><strong>Results</strong></td><td>Salida de compilación y build</td></tr>
+      <tr><td><strong>GIT</strong></td><td>Terminal Git en la carpeta de trabajo actual</td></tr>
+      <tr><td><strong>SSH</strong></td><td>Conexión SSH a servidores remotos</td></tr>
+      <tr><td><strong>System Console</strong></td><td>Consola de Windows estándar</td></tr>
+      <tr><td><strong>Console CLI</strong></td><td>Terminal donde corre el agente IA</td></tr>
+    </table>
+    <div class="callout yellow">
+      <strong>Configurable desde el menú:</strong> tanto las pestañas de terminal como los agentes disponibles en el panel inferior pueden añadirse, quitarse o modificarse según tus necesidades. Consulta el menú de la aplicación para personalizar este panel.
+    </div>
+  </section>
+
+  <!-- 13 – FAQ -->
+  <section id="faq">
+    <h2><span class="sec-num">13</span> Preguntas frecuentes</h2>
+
+    <details>
+      <summary>¿Necesito instalar todos los agentes?</summary>
+      <div class="faq-body"><p>No. Con instalar uno ya puedes trabajar. Si no tienes claro cuál elegir, empieza con <strong>Ollama</strong> (gratuito, sin internet) o <strong>Claude Code</strong>.</p></div>
+    </details>
+
+    <details>
+      <summary>¿El agente tiene acceso a mis ficheros?</summary>
+      <div class="faq-body"><p>El agente recibe como contexto el contenido del fichero que tienes abierto en el editor. No explora tus directorios automáticamente salvo que le des permiso explícito o uses herramientas MCP.</p></div>
+    </details>
+
+    <details>
+      <summary>¿Puedo usar varios agentes a la vez?</summary>
+      <div class="faq-body"><p>Sí. Mediante el Kanban puedes tener varios agentes activos en paralelo, cada uno en su propia pestaña con su propia tarea.</p></div>
+    </details>
+
+    <details>
+      <summary>¿El historial del chat queda guardado?</summary>
+      <div class="faq-body"><p>El historial de la sesión actual se mantiene mientras la aplicación está abierta. Al cerrar, el historial no se persiste por defecto.</p></div>
+    </details>
+
+    <details>
+      <summary>¿Puedo usar XDForCode sin conexión a internet?</summary>
+      <div class="faq-body"><p>Sí, siempre que uses <strong>Ollama</strong> como agente. El resto requieren conexión para acceder a sus APIs en la nube.</p></div>
+    </details>
+
+    <details>
+      <summary>¿Qué hago si el agente tarda demasiado?</summary>
+      <div class="faq-body"><p>Puedes cancelar la respuesta en cualquier momento con el botón <strong>Cancelar</strong> del panel de chat. El agente se detiene y puedes escribir de nuevo.</p></div>
+    </details>
+
+    <details>
+      <summary>¿Cómo añado usuarios para el acceso remoto?</summary>
+      <div class="faq-body"><p>Crea el fichero <code>xdusers.json</code> junto al ejecutable con el formato indicado en la sección 10. Cada usuario necesita su nombre y el hash SHA-256 de su contraseña.</p></div>
+    </details>
+  </section>
+
+</div><!-- /content -->
+
+<footer>
+  <strong>XDEVFORYOU SOLUTIONS</strong>
+  <span>XDForCode &mdash; Manual de usuario &mdash; 2025–2026</span>
+</footer>
+
+<script>
+  // Marcar enlace activo en el nav según la sección visible
+  (function () {
+    var links = document.querySelectorAll('nav a');
+    var sections = document.querySelectorAll('section[id], .hero');
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          links.forEach(function (l) { l.classList.remove('active'); });
+          var id = e.target.id || 'intro';
+          var a = document.querySelector('nav a[href="#' + id + '"]');
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { threshold: 0.3 });
+    sections.forEach(function (s) { io.observe(s); });
+  })();
+</script>
+
+</body>
+</html>
