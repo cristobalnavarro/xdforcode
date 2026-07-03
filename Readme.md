@@ -461,6 +461,9 @@ Sí, siempre que uses **Ollama** como agente. El resto de agentes requieren cone
 **¿Qué ocurre si el agente tarda mucho?**  
 Puedes cancelar la respuesta en cualquier momento con el botón **Cancelar** del panel de chat. El agente se detiene y puedes volver a escribir.
 
+**¿Qué ocurre si el mode /inference no funciona?**  
+Debes editar el ficheron **xdinference.json** y completar las apikeys de cada provider.
+
 ---
 
 *XDForCode — XDEVFORYOU SOLUTIONS · 2025–2026*
