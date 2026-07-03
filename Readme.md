@@ -466,4 +466,7 @@ Debes editar el ficheron **xdinference.json** y completar las apikeys de cada pr
 
 ---
 
+## 15. Descarga el repositorio y ejecuta xdforcode.exe, no es un instalador, es la propia aplicacion
+**Al abrir el .exe, haz clic en 'Más información' → Ejecutar de todas formas**
+
 *XDForCode — XDEVFORYOU SOLUTIONS · 2025–2026*
