@@ -1,0 +1,78 @@
+{
+  "providers": {
+    "NVIDIA": {
+      "endpoint": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "apikey": "nvapi-",
+      "models": [
+        { "name": "nvidia/llama-3.1-nemotron-ultra-253b-v1",     "tools": true  },
+        { "name": "nvidia/llama-3.3-nemotron-super-49b-v1.5",    "tools": true  },
+        { "name": "meta/llama-3.3-70b-instruct",                  "tools": true  },
+        { "name": "meta/llama-4-maverick-17b-128e-instruct",      "tools": true  },
+        { "name": "deepseek-ai/deepseek-v4-flash",                "tools": true  },
+        { "name": "deepseek-ai/deepseek-v4-pro",                  "tools": true  },
+        { "name": "qwen/qwen3.5-397b-a17b",                      "tools": true  },
+        { "name": "qwen/qwen3-next-80b-a3b-instruct",             "tools": true  },
+        { "name": "minimaxai/minimax-m3",                         "tools": true  },
+        { "name": "minimaxai/minimax-m2.7",                       "tools": true  },
+        { "name": "google/gemma-4-31b-it",                        "tools": true  },
+        { "name": "mistralai/mistral-large-3-675b-instruct-2512", "tools": true  },
+        { "name": "openai/gpt-oss-120b",                          "tools": true  },
+        { "name": "z-ai/glm-5.2",                                 "tools": true  }
+      ],
+      "default": "qwen/qwen3.5-397b-a17b"
+    },
+    "GROQ": {
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "apikey": "gsk_",
+      "models": [
+        { "name": "llama-3.3-70b-versatile",        "tools": true  },
+        { "name": "deepseek-r1-distill-llama-70b",  "tools": false },
+        { "name": "gemma2-9b-it",                   "tools": true  },
+        { "name": "mixtral-8x7b-32768",             "tools": true  }
+      ],
+      "default": "llama-3.3-70b-versatile"
+    },
+    "OPENROUTER": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "apikey": "",
+      "models": [
+        { "name": "anthropic/claude-sonnet-4",       "tools": true  },
+        { "name": "openai/gpt-4o",                   "tools": true  },
+        { "name": "google/gemini-2.5-flash",         "tools": true  },
+        { "name": "deepseek/deepseek-r1",            "tools": false },
+        { "name": "qwen/qwq-32b",                    "tools": false }
+      ],
+      "default": "google/gemini-2.5-flash"
+    },
+    "TOGETHER": {
+      "endpoint": "https://api.together.xyz/v1/chat/completions",
+      "apikey": "",
+      "models": [
+        { "name": "meta-llama/Llama-3.3-70B-Instruct-Turbo", "tools": true  },
+        { "name": "deepseek-ai/DeepSeek-R1",                  "tools": false },
+        { "name": "Qwen/QwQ-32B-Preview",                     "tools": false },
+        { "name": "mistralai/Mistral-7B-Instruct-v0.3",       "tools": true  }
+      ],
+      "default": "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    },
+    "HUGGINGFACE": {
+      "endpoint": "https://router.huggingface.co/v1/chat/completions",
+      "apikey": "hf_",
+      "models": [
+        { "name": "meta-llama/Llama-3.3-70B-Instruct",        "tools": true  },
+        { "name": "meta-llama/Llama-3.1-8B-Instruct",         "tools": true  },
+        { "name": "Qwen/Qwen3.6-35B-A3B",                     "tools": true  },
+        { "name": "Qwen/Qwen3.6-27B",                         "tools": true  },
+        { "name": "Qwen/Qwen3.5-9B",                          "tools": true  },
+        { "name": "deepseek-ai/DeepSeek-V4-Flash",            "tools": true  },
+        { "name": "deepseek-ai/DeepSeek-V4-Pro",              "tools": true  },
+        { "name": "MiniMaxAI/MiniMax-M3",                     "tools": true  },
+        { "name": "moonshotai/Kimi-K2.7-Code",                "tools": true  },
+        { "name": "zai-org/GLM-5.2",                          "tools": true  },
+        { "name": "google/gemma-4-31B-it",                    "tools": false },
+        { "name": "google/gemma-4-26B-A4B-it",                "tools": false }
+      ],
+      "default": "Qwen/Qwen3.5-9B"
+    }
+  }
+}
