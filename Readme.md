@@ -14,7 +14,7 @@
 5. [Agentes de IA — instalación recomendada](#5-agentes-de-ia--instalación-recomendada)
 6. [Modos de ejecución: Run, ACP e Inference](#6-modos-de-ejecución-run-acp-e-inference)
 7. [Activar y configurar un agente](#7-activar-y-configurar-un-agente)
-8. [Usar el panel de chat (sidebar derecho)]#8-usar-el-panel-de-chat-sidebar-derecho)
+8. [Usar el panel de chat (sidebar derecho)](#8-usar-el-panel-de-chat-sidebar-derecho)
 9. [Skills — tipos y uso avanzado](#9-skills--tipos-y-uso-avanzado)
 10. [Preview HTML en vivo](#10-preview-html-en-vivo)
 11. [Sistema Kanban — múltiples agentes en paralelo](#11-sistema-kanban--múltiples-agentes-en-paralelo)
