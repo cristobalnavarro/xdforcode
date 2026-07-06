@@ -37,7 +37,7 @@
   nav {
     position: fixed;
     top: 0; left: 0;
-    width: 240px; height: 100vh;
+    width: 260px; height: 100vh;
     background: var(--bg2);
     border-right: 1px solid var(--border);
     overflow-y: auto;
@@ -57,13 +57,13 @@
   nav a {
     display: block;
     padding: 6px 20px;
-    font-size: 0.82rem; color: var(--text3);
+    font-size: 0.88rem; color: var(--text2);
     text-decoration: none;
     border-left: 2px solid transparent;
     transition: color .15s, border-color .15s, background .15s;
   }
   nav a:hover {
-    color: var(--text2);
+    color: var(--text);
     background: rgba(255,255,255,.04);
     border-left-color: var(--border);
   }
@@ -81,8 +81,8 @@
 
   /* ── CONTENIDO ── */
   .content {
-    margin-left: 240px;
-    max-width: 860px;
+    margin-left: 260px;
+    max-width: 880px;
     padding: 52px 48px 80px;
   }
 
@@ -293,7 +293,7 @@
     user-select: none;
   }
   summary::before {
-    content: "▶";
+    content: "\25B6";
     font-size: 0.65rem; color: var(--text3);
     transition: transform .2s;
   }
@@ -304,7 +304,7 @@
 
   /* ── FOOTER ── */
   footer {
-    margin-left: 240px;
+    margin-left: 260px;
     border-top: 1px solid var(--border);
     padding: 24px 48px;
     color: var(--text3); font-size: 0.82rem;
@@ -330,25 +330,30 @@
     <p>Manual de usuario</p>
   </div>
 
-  <div class="nav-section">Introducción</div>
-  <a href="#intro">¿Qué es XDForCode?</a>
+  <div class="nav-section">Introduccion</div>
+  <a href="#intro">Que es XDForCode?</a>
   <a href="#interfaz">La interfaz</a>
   <a href="#inicio">Primeros pasos</a>
   <a href="#editores">Editores (Scintilla / Monaco)</a>
 
   <div class="nav-section">Agentes IA</div>
-  <a href="#agentes">Instalación recomendada</a>
-  <a href="#activar">Activar un agente</a>
-  <a href="#modelo">Proveedor y modelo</a>
+  <a href="#agentes">Instalacion recomendada</a>
+  <a href="#modos">Modos de ejecucion</a>
+  <a href="#activar">Activar y configurar agente</a>
   <a href="#chat">Panel de chat</a>
 
   <div class="nav-section">Funcionalidades</div>
-  <a href="#skills">Skills</a>
+  <a href="#skills">Skills avanzadas</a>
+  <a href="#preview">Preview HTML</a>
   <a href="#kanban">Kanban</a>
+  <a href="#build">Sistema de Build</a>
+  <a href="#proyectos">Proyectos .xdprj</a>
   <a href="#remoto">Acceso remoto</a>
-  <a href="#menu">Menú y configuración</a>
+  <a href="#usuarios">Gestion de usuarios</a>
   <a href="#explorador">Explorador</a>
   <a href="#terminales">Terminales</a>
+  <a href="#whatsapp">WhatsApp</a>
+  <a href="#menu">Menu y configuracion</a>
 
   <div class="nav-section">Ayuda</div>
   <a href="#faq">Preguntas frecuentes</a>
@@ -361,437 +366,716 @@
   <div class="hero">
     <div class="hero-badge">Manual de usuario</div>
     <h1>XDForCode</h1>
-    <p>IDE estilo VS Code con integración nativa de agentes de IA para Windows. Desarrollado para Harbour / FiveWin.</p>
+    <p>IDE estilo VS Code con integracion nativa de agentes de IA para Windows. Desarrollado para Harbour / FiveWin.</p>
   </div>
 
-  <!-- 1 – QUÉ ES -->
+  <!-- 1 - QUE ES -->
   <section id="intro">
-    <h2><span class="sec-num">1</span> ¿Qué es XDForCode?</h2>
-    <p>XDForCode es un entorno de desarrollo integrado (IDE) para Windows con apariencia y funcionamiento similar a VS Code. Está diseñado especialmente para desarrolladores <strong>Harbour / FiveWin</strong>, aunque puede editar cualquier tipo de fichero.</p>
-    <p>Su característica principal es la <strong>integración nativa con agentes de IA</strong>: puedes conversar directamente con Claude, Gemini, OpenCode, Ollama y otros desde dentro del propio IDE, con acceso automático al código que estás editando.</p>
+    <h2><span class="sec-num">1</span> Que es XDForCode?</h2>
+    <p>XDForCode es un entorno de desarrollo integrado (IDE) para Windows con apariencia y funcionamiento similar a VS Code. Esta disenado especialmente para desarrolladores <strong>Harbour / FiveWin</strong>, aunque puede editar cualquier tipo de fichero.</p>
+    <p>Su caracteristica principal es la <strong>integracion nativa con agentes de IA</strong>: puedes conversar directamente con Claude, Gemini, OpenCode, Ollama y otros desde dentro del propio IDE, sin salir de la aplicacion, con acceso al codigo que estas editando.</p>
 
     <div class="feature-grid">
       <div class="feature-card">
-        <div class="fc-icon">✏️</div>
+        <div class="fc-icon">&#9998;</div>
         <strong>Editor Monaco</strong>
         <span>El mismo motor que usa VS Code, con soporte Harbour/FiveWin</span>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">🤖</div>
+        <div class="fc-icon">&#129302;</div>
         <strong>Panel de IA</strong>
-        <span>Chat con el agente en el sidebar derecho, con contexto del código</span>
+        <span>Chat con el agente en el sidebar derecho, con contexto del codigo</span>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">📋</div>
+        <div class="fc-icon">&#128203;</div>
         <strong>Kanban multi-agente</strong>
         <span>Lanza varios agentes IA en paralelo y coordina sus tareas</span>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">🌐</div>
+        <div class="fc-icon">&#127760;</div>
         <strong>Acceso remoto</strong>
         <span>Servidor web para usar el chat desde cualquier navegador</span>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">⚡</div>
+        <div class="fc-icon">&#9889;</div>
         <strong>Skills</strong>
         <span>Fragmentos de contexto reutilizables para tus prompts</span>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">🖥️</div>
+        <div class="fc-icon">&#128187;</div>
         <strong>Terminales integradas</strong>
         <span>Git, SSH, consola de sistema y terminal del agente IA</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#128736;</div>
+        <strong>Sistema de Build</strong>
+        <span>Toolchains y proyectos para compilar Harbour/FiveWin</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#128247;</div>
+        <strong>Preview HTML</strong>
+        <span>Vista previa en vivo de ficheros HTML en el sidebar</span>
       </div>
     </div>
   </section>
 
-  <!-- 2 – INTERFAZ -->
+  <!-- 2 - INTERFAZ -->
   <section id="interfaz">
     <h2><span class="sec-num">2</span> La interfaz de un vistazo</h2>
     <div class="layout-box">
-┌──────────┬──────────────┬────────────────────────────┬────────────────────────┐
-│  Barra   │  Explorador  │                            │   Panel de agente IA   │
-│  lateral │  de archivos │      Editor de código      │                        │
-│  de      │              │      (Monaco Editor)       │  ┌──────────────────┐  │
-│  iconos  │              │                            │  │  Respuesta del   │  │
-│          │              ├────────────────────────────┤  │    agente        │  │
-│          │              │  Consolas / Terminales     │  ├──────────────────┤  │
-│          │              │  (Git, SSH, IA, Build...)  │  │  Tu mensaje      │  │
-└──────────┴──────────────┴────────────────────────────┴──┴──────────────────┘──┘</div>
++----------+--------------+----------------------------+------------------------+
+|  Barra   |  Explorador  |                            |   Panel de agente IA   |
+|  lateral |  de archivos |      Editor de codigo      |                        |
+|  de      |              |      (Monaco / Scintilla)  |  +------------------+  |
+|  iconos  |              |                            |  |  Respuesta del   |  |
+|          |              +----------------------------+  |    agente        |  |
+|          |              |  Consolas / Terminales     |  +------------------+  |
+|          |              |  (Git, SSH, IA, Build...)  |  |  Tu mensaje      |  |
++----------+--------------+----------------------------+--+------------------+--+</div>
 
     <table>
-      <tr><th>Zona</th><th>Función</th></tr>
-      <tr><td><strong>Barra lateral de iconos</strong></td><td>Acceso a explorador, servidor web, Kanban y configuración</td></tr>
-      <tr><td><strong>Explorador de archivos</strong></td><td>Árbol de directorios; clic en un fichero lo abre en el editor</td></tr>
-      <tr><td><strong>Editor Monaco</strong></td><td>Edición de código con resaltado de sintaxis</td></tr>
-      <tr><td><strong>Consolas inferiores</strong></td><td>Pestañas Results, GIT, SSH, Sistema, Terminal IA</td></tr>
+      <tr><th>Zona</th><th>Funcion</th></tr>
+      <tr><td><strong>Barra lateral de iconos</strong></td><td>Acceso a explorador, servidor web, Kanban, preview HTML y configuracion</td></tr>
+      <tr><td><strong>Explorador de archivos</strong></td><td>Arbol de directorios; clic en un fichero lo abre en el editor</td></tr>
+      <tr><td><strong>Editor de codigo</strong></td><td>Edicion con Monaco o Scintilla segun el tipo de fichero</td></tr>
+      <tr><td><strong>Consolas inferiores</strong></td><td>Pestanas Results, GIT, SSH, Sistema, Terminal IA, WhatsApp</td></tr>
       <tr><td><strong>Panel derecho</strong></td><td>Chat con el agente IA activo</td></tr>
     </table>
   </section>
 
-  <!-- 3 – PRIMEROS PASOS -->
+  <!-- 3 - PRIMEROS PASOS -->
   <section id="inicio">
     <h2><span class="sec-num">3</span> Primeros pasos</h2>
-    <p>Al iniciar XDForCode verás el editor vacío. Los pasos básicos para empezar:</p>
+    <p>Al iniciar XDForCode veras el editor vacio. Los pasos basicos para empezar:</p>
     <ol class="steps">
-      <li><span><strong>Abre una carpeta de trabajo</strong> desde el menú o haciendo clic en el icono de explorador en la barra lateral. La carpeta seleccionada aparece en el árbol de archivos.</span></li>
-      <li><span><strong>Abre un fichero</strong>: haz clic sobre él en el árbol. Se abre en el editor Monaco.</span></li>
-      <li><span><strong>Selecciona un agente de IA</strong>: en el panel derecho elige el agente que quieres usar (Claude, Gemini, Ollama…) y escribe tu consulta.</span></li>
+      <li><span><strong>Abre una carpeta de trabajo</strong> desde el menu o haciendo clic en el icono de explorador en la barra lateral. La carpeta seleccionada aparece en el arbol de archivos.</span></li>
+      <li><span><strong>Abre un fichero</strong>: haz clic sobre el en el arbol. Se abre en el editor Monaco o Scintilla.</span></li>
+      <li><span><strong>Selecciona un agente de IA</strong>: en el panel derecho elige el agente que quieres usar (Claude, Gemini, Ollama...) y escribe tu consulta.</span></li>
       <li><span><strong>Activa el servidor web</strong> (opcional): si quieres acceder desde el navegador, pulsa el icono del servidor en la barra lateral.</span></li>
     </ol>
   </section>
 
-  <!-- 4 – EDITORES -->
+  <!-- 4 - EDITORES -->
   <section id="editores">
     <h2><span class="sec-num">4</span> Editores — Scintilla y Monaco</h2>
-    <p>XDForCode dispone de dos motores de edición que se usan según el tipo de fichero:</p>
+    <p>XDForCode dispone de dos motores de edicion que se usan segun el tipo de fichero:</p>
 
     <h3>Monaco Editor</h3>
-    <p>El mismo motor que utiliza VS Code internamente. Se emplea para la mayoría de ficheros de código y texto. Ofrece resaltado de sintaxis moderno, autocompletado y vista previa de ficheros web.</p>
-    <p>Tipos de fichero habituales: <code>.prg</code>, <code>.ch</code>, <code>.prw</code>, <code>.js</code>, <code>.html</code>, <code>.css</code>, <code>.json</code>, <code>.md</code>, <code>.ini</code>, <code>.txt</code>…</p>
+    <p>El mismo motor que utiliza VS Code internamente. Se emplea para la mayoria de ficheros de codigo y texto. Ofrece resaltado de sintaxis moderno, autocompletado y vista previa de ficheros web.</p>
+    <p>Tipos de fichero habituales: <code>.prg</code>, <code>.ch</code>, <code>.prw</code>, <code>.js</code>, <code>.html</code>, <code>.css</code>, <code>.json</code>, <code>.md</code>, <code>.ini</code>, <code>.txt</code>...</p>
 
     <h3>Scintilla</h3>
-    <p>Editor nativo de Windows, más ligero. Se usa para ficheros que se abren en sus propias pestañas del IDE, con resaltado optimizado para Harbour y FiveWin.</p>
+    <p>Editor nativo de Windows, mas ligero. Se usa para ficheros que se abren en sus propias pestanas del IDE, con resaltado optimizado para Harbour y FiveWin.</p>
 
     <h3>Comportamiento al abrir un fichero</h3>
     <table>
       <tr><th>Tipo de fichero</th><th>Comportamiento</th></tr>
-      <tr><td>Texto y código (<code>.prg</code>, <code>.js</code>, <code>.txt</code>…)</td><td>Se abre en el editor (Monaco o Scintilla según tipo)</td></tr>
-      <tr><td>Ficheros HTML</td><td>Puedes elegir: editor de código o panel de vista previa</td></tr>
-      <tr><td>Ficheros binarios (<code>.exe</code>, <code>.dll</code>, imágenes…)</td><td>Se abre con la aplicación asociada de Windows</td></tr>
+      <tr><td>Texto y codigo (<code>.prg</code>, <code>.js</code>, <code>.txt</code>...)</td><td>Se abre en el editor (Monaco o Scintilla segun tipo)</td></tr>
+      <tr><td>Ficheros HTML</td><td>Puedes elegir: editor de codigo o panel de vista previa</td></tr>
+      <tr><td>Ficheros binarios (<code>.exe</code>, <code>.dll</code>, imagenes...)</td><td>Se abre con la aplicacion asociada de Windows</td></tr>
     </table>
     <div class="callout">
-      Cada fichero abierto ocupa su propia <strong>pestaña</strong> en la zona de edición. Puedes tener varios ficheros abiertos a la vez y navegar entre ellos.
+      Cada fichero abierto ocupa su propia <strong>pestana</strong> en la zona de edicion. Puedes tener varios ficheros abiertos a la vez y navegar entre ellos.
     </div>
   </section>
 
-  <!-- 5 – AGENTES -->
+  <!-- 5 - AGENTES -->
   <section id="agentes">
-    <h2><span class="sec-num">4</span> Agentes de IA — instalación recomendada</h2>
-    <p>XDForCode funciona con agentes externos que se instalan en tu sistema. La aplicación los detecta y los invoca automáticamente. A continuación los recomendados:</p>
+    <h2><span class="sec-num">5</span> Agentes de IA — instalacion recomendada</h2>
+    <p>XDForCode funciona con agentes externos que se instalan en tu sistema. La aplicacion los detecta y los invoca automaticamente. A continuacion los recomendados:</p>
 
     <div class="agent-grid">
-
       <div class="agent-card">
         <div class="ac-name">Claude Code <span class="ac-badge cloud">Nube</span></div>
-        <p>El agente de Anthropic. Muy potente para razonamiento y edición de código.</p>
+        <p>El agente de Anthropic. Muy potente para razonamiento y edicion de codigo.</p>
         <pre>npm install -g @anthropic-ai/claude-code
 claude</pre>
       </div>
-
       <div class="agent-card">
         <div class="ac-name">OpenClaude <span class="ac-badge cloud">Nube</span></div>
-        <p>Fork de Claude Code con funcionalidades ampliadas. Idéntico en uso.</p>
+        <p>Fork de Claude Code con funcionalidades ampliadas. Identico en uso.</p>
         <pre>npm install -g openclaude</pre>
       </div>
-
       <div class="agent-card">
         <div class="ac-name">OpenCode <span class="ac-badge cloud">Nube</span></div>
-        <p>Agente de código abierto compatible con múltiples proveedores (Anthropic, OpenAI, Google…).</p>
+        <p>Agente de codigo abierto compatible con multiples proveedores (Anthropic, OpenAI, Google...).</p>
         <pre>npm install -g opencode
 opencode auth</pre>
       </div>
-
       <div class="agent-card">
         <div class="ac-name">MIMO <span class="ac-badge cloud">Nube</span></div>
         <p>Fork de OpenCode. Se instala y usa exactamente igual.</p>
         <pre>npm install -g mimo</pre>
       </div>
-
       <div class="agent-card">
         <div class="ac-name">Gemini CLI <span class="ac-badge cloud">Nube</span></div>
-        <p>El agente de Google. Contexto de hasta 1 millón de tokens.</p>
+        <p>El agente de Google. Contexto de hasta 1 millon de tokens.</p>
         <pre>npm install -g @google/gemini-cli
 gemini auth</pre>
       </div>
-
       <div class="agent-card">
-        <div class="ac-name">Ollama <span class="ac-badge free">Gratuito · Local</span></div>
+        <div class="ac-name">Ollama <span class="ac-badge free">Gratuito - Local</span></div>
         <p>Ejecuta modelos de IA <strong>en tu propio ordenador</strong>, sin internet y sin coste.</p>
         <pre>ollama pull llama3.2
 ollama pull qwen2.5-coder</pre>
       </div>
-
     </div>
 
     <div class="callout green" style="margin-top:20px">
-      <strong>¿Sin cuenta, sin internet?</strong> Instala <strong>Ollama</strong>. Es la única opción completamente gratuita, sin API key y que funciona sin conexión.
+      <strong>Sin cuenta, sin internet?</strong> Instala <strong>Ollama</strong>. Es la unica opcion completamente gratuita, sin API key y que funciona sin conexion.
     </div>
 
-    <h3>Comparativa rápida</h3>
+    <h3>Comparativa rapida</h3>
     <table>
       <tr><th>Agente</th><th>Requiere internet</th><th>Coste</th><th>Ideal para</th></tr>
-      <tr><td>Claude Code</td><td>Sí</td><td>Según plan Anthropic</td><td>Razonamiento, código complejo</td></tr>
-      <tr><td>OpenClaude</td><td>Sí</td><td>Según plan Anthropic</td><td>Igual que Claude Code</td></tr>
-      <tr><td>OpenCode</td><td>Sí</td><td>Según proveedor</td><td>Flexibilidad de proveedor</td></tr>
-      <tr><td>MIMO</td><td>Sí</td><td>Según proveedor</td><td>Igual que OpenCode</td></tr>
-      <tr><td>Gemini CLI</td><td>Sí</td><td>Según plan Google</td><td>Contexto grande</td></tr>
+      <tr><td>Claude Code</td><td>Si</td><td>Segun plan Anthropic</td><td>Razonamiento, codigo complejo</td></tr>
+      <tr><td>OpenClaude</td><td>Si</td><td>Segun plan Anthropic</td><td>Igual que Claude Code</td></tr>
+      <tr><td>OpenCode</td><td>Si</td><td>Segun proveedor</td><td>Flexibilidad de proveedor</td></tr>
+      <tr><td>MIMO</td><td>Si</td><td>Segun proveedor</td><td>Igual que OpenCode</td></tr>
+      <tr><td>Gemini CLI</td><td>Si</td><td>Segun plan Google</td><td>Contexto grande</td></tr>
       <tr><td><strong>Ollama</strong></td><td><strong>No</strong></td><td><strong>Gratuito</strong></td><td>Privacidad, sin internet</td></tr>
     </table>
   </section>
 
-  <!-- 5 – ACTIVAR -->
+  <!-- 6 - MODOS -->
+  <section id="modos">
+    <h2><span class="sec-num">6</span> Modos de ejecucion: Run, ACP e Inference</h2>
+    <p>Ademas de los agentes CLI tradicionales, XDForCode dispone de tres modos de ejecucion que determinan como se comunica la aplicacion con el agente de IA.</p>
+
+    <h3>Modo Run</h3>
+    <p>Ejecuta el agente como proceso de linea de comandos en una pestana de terminal. El agente recibe el prompt como texto y devuelve la respuesta por stdout. Es el modo mas sencillo.</p>
+    <p><strong>Agentes que usan este modo:</strong> OpenCode (<code>opencode_run</code>), MIMO (<code>mimo_run</code>).</p>
+
+    <h3>Modo ACP (Agent Communication Protocol)</h3>
+    <p>Establece una comunicacion bidireccional via pipes o HTTP entre XDForCode y el agente. Permite recibir respuestas progresivas (streaming), usar herramientas MCP y mantener memoria de la conversacion.</p>
+    <p><strong>Agentes que usan este modo:</strong> OpenCode (<code>opencode_acp</code>), MIMO (<code>mimo_acp</code>), Gemini (<code>gemini_acp</code>), OpenClaude (<code>openclaude_acp</code>).</p>
+
+    <p><strong>Submodos de sesion ACP:</strong></p>
+    <table>
+      <tr><th>Modo</th><th>Descripcion</th></tr>
+      <tr><td><strong>Modo 1 (Memoria)</strong></td><td>Mantiene una sesion persistente con memoria de la conversacion</td></tr>
+      <tr><td><strong>Modo 2 (Per-request)</strong></td><td>Cada mensaje crea una nueva peticion con el modelo seleccionado</td></tr>
+      <tr><td><strong>Modo 3 (Modelo por defecto)</strong></td><td>Usa el modelo por defecto configurado en opencode</td></tr>
+    </table>
+
+    <h3>Modo Inference</h3>
+    <p>Conecta directamente con APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, Together, HuggingFace) sin necesidad de instalar agentes externos. Usa hbcurl nativo de Harbour con streaming SSE.</p>
+    <p><strong>Configuracion:</strong> Edita el fichero <code>xdinference.json</code> junto al ejecutable para anadir providers y modelos. Cada provider necesita su endpoint y API key.</p>
+    <p><strong>Providers preconfigurados:</strong></p>
+    <table>
+      <tr><th>Provider</th><th>Modelos destacados</th></tr>
+      <tr><td><strong>NVIDIA</strong></td><td>Nemotron, Llama, DeepSeek, Qwen</td></tr>
+      <tr><td><strong>GROQ</strong></td><td>Llama, DeepSeek, Gemma, Mixtral</td></tr>
+      <tr><td><strong>OpenRouter</strong></td><td>Acceso a Claude, GPT-4o, Gemini y otros</td></tr>
+      <tr><td><strong>Together</strong></td><td>Llama, DeepSeek, Qwen, Mistral</td></tr>
+      <tr><td><strong>HuggingFace</strong></td><td>Amplia variedad de modelos open source</td></tr>
+    </table>
+    <div class="callout green">
+      El modo Inference es ideal para usar modelos potentes sin instalar agentes CLI, solo necesitas una API key.
+    </div>
+  </section>
+
+  <!-- 7 - ACTIVAR -->
   <section id="activar">
-    <h2><span class="sec-num">5</span> Activar un agente en la aplicación</h2>
-    <p>Una vez instalados los agentes, actívalos dentro de XDForCode:</p>
+    <h2><span class="sec-num">7</span> Activar y configurar un agente</h2>
+
+    <h3>Seleccionar el agente activo</h3>
     <ol class="steps">
       <li><span>Haz clic en el <strong>selector de agente</strong> en la parte superior del panel de chat (sidebar derecho).</span></li>
-      <li><span>Elige el agente de la lista: OpenCode, MIMO, Claude CLI, OpenClaude, Gemini CLI, Ollama…</span></li>
+      <li><span>Elige el agente de la lista: OpenCode, MIMO, Claude CLI, OpenClaude, Gemini CLI, Ollama, Inference...</span></li>
       <li><span>El panel de chat queda listo para recibir mensajes con el agente seleccionado.</span></li>
     </ol>
     <div class="callout">
-      Puedes tener <strong>varios agentes activos simultáneamente</strong> usando el sistema Kanban (ver sección 9).
+      Puedes tener <strong>varios agentes activos simultaneamente</strong> usando el sistema Kanban (ver seccion 11).
     </div>
-  </section>
 
-  <!-- 6 – MODELO -->
-  <section id="modelo">
-    <h2><span class="sec-num">6</span> Configurar proveedor y modelo</h2>
+    <h3>Configurar proveedor y modelo</h3>
     <p>Cada agente permite seleccionar el proveedor y el modelo concreto a usar. El cambio se aplica en la siguiente consulta.</p>
 
-    <h3>OpenCode / MIMO</h3>
-    <p>En el selector de XDForCode elige proveedor (Anthropic, OpenAI, Google, Mistral…) y modelo (<code>claude-sonnet-4-5</code>, <code>gpt-4o</code>, <code>gemini-2.0-flash</code>…).</p>
+    <h4>OpenCode / MIMO</h4>
+    <p>En el selector de XDForCode elige proveedor (Anthropic, OpenAI, Google, Mistral...) y modelo (<code>claude-sonnet-4-5</code>, <code>gpt-4o</code>, <code>gemini-2.0-flash</code>...).</p>
 
-    <h3>Claude Code / OpenClaude</h3>
-    <p>Modelos disponibles (ejemplos):</p>
+    <h4>Claude Code / OpenClaude</h4>
     <table>
       <tr><th>Modelo</th><th>Perfil</th></tr>
-      <tr><td><code>claude-opus-4-5</code></td><td>Máxima capacidad</td></tr>
+      <tr><td><code>claude-opus-4-5</code></td><td>Maxima capacidad</td></tr>
       <tr><td><code>claude-sonnet-4-5</code></td><td>Equilibrado — recomendado</td></tr>
-      <tr><td><code>claude-haiku-4-5</code></td><td>Rápido y económico</td></tr>
+      <tr><td><code>claude-haiku-4-5</code></td><td>Rapido y economico</td></tr>
     </table>
 
-    <h3>Gemini CLI</h3>
+    <h4>Gemini CLI</h4>
     <table>
       <tr><th>Modelo</th><th>Perfil</th></tr>
-      <tr><td><code>gemini-2.0-flash</code></td><td>Rápido — recomendado</td></tr>
+      <tr><td><code>gemini-2.0-flash</code></td><td>Rapido — recomendado</td></tr>
       <tr><td><code>gemini-2.5-pro</code></td><td>Mayor capacidad</td></tr>
     </table>
 
-    <h3>Ollama</h3>
+    <h4>Ollama</h4>
     <p>Solo aparecen los modelos que ya tienes descargados. Para ver los instalados:</p>
     <pre>ollama list</pre>
-    <p>Para descargar un modelo nuevo:</p>
-    <pre>ollama pull qwen2.5-coder
-ollama pull deepseek-r1</pre>
+
+    <h4>Modo Inference</h4>
+    <p>Selecciona el provider (NVIDIA, GROQ, OpenRouter, Together, HuggingFace) y el modelo de la lista. Los modelos marcados con <strong>[tools]</strong> soportan llamadas a herramientas MCP.</p>
+
+    <h3>Parametros avanzados del agente</h3>
+    <table>
+      <tr><th>Parametro</th><th>Descripcion</th></tr>
+      <tr><td><strong>AcpMode</strong></td><td>Modo de sesion ACP (1=memoria, 2=per-request, 3=por defecto)</td></tr>
+      <tr><td><strong>Stream</strong></td><td>Streaming incremental de respuestas (activado por defecto)</td></tr>
+      <tr><td><strong>Tools Filter</strong></td><td>Filtrado de herramientas MCP (blacklist/whitelist)</td></tr>
+      <tr><td><strong>Auto-approve</strong></td><td>Aprobacion automatica de comandos peligrosos (solo ACP)</td></tr>
+    </table>
   </section>
 
-  <!-- 7 – CHAT -->
+  <!-- 8 - CHAT -->
   <section id="chat">
-    <h2><span class="sec-num">7</span> Usar el panel de chat</h2>
-    <p>El panel de chat (sidebar derecho) es el corazón de la integración con IA.</p>
+    <h2><span class="sec-num">8</span> Usar el panel de chat</h2>
+    <p>El panel de chat (sidebar derecho) es el corazon de la integracion con IA.</p>
 
     <h3>Enviar un mensaje</h3>
-    <p>Escribe tu pregunta o instrucción en el cuadro inferior y pulsa <strong>Enviar</strong> o <kbd>Ctrl+Enter</kbd>.</p>
+    <p>Escribe tu pregunta o instruccion en el cuadro inferior y pulsa <strong>Enviar</strong> o <kbd>Ctrl+Enter</kbd>.</p>
 
-    <h3>Contexto automático</h3>
-    <p>El agente recibe automáticamente el <strong>contenido del fichero que estás editando</strong>. No necesitas copiar y pegar el código.</p>
+    <h3>Contexto automatico</h3>
+    <p>El agente recibe automaticamente el <strong>contenido del fichero que estas editando</strong>. No necesitas copiar y pegar el codigo.</p>
 
     <h3>Comandos de barra <code>/</code></h3>
-    <p>Escribe <code>/</code> en el cuadro de chat y aparecerá automáticamente la lista de todos los comandos disponibles.</p>
+    <p>Escribe <code>/</code> en el cuadro de chat y aparecera automaticamente la lista de todos los comandos disponibles.</p>
     <div class="callout green">
-      <strong>Empieza por <code>/help</code></strong> — es el primer comando que debes probar. Te mostrará una explicación completa de todos los comandos y opciones del chat.
+      <strong>Empieza por <code>/help</code></strong> — es el primer comando que debes probar. Te mostrara una explicacion completa de todos los comandos y opciones del chat.
     </div>
     <table>
-      <tr><th>Comando</th><th>Acción</th></tr>
+      <tr><th>Comando</th><th>Accion</th></tr>
       <tr><td><code>/help</code></td><td>Muestra la ayuda completa del chat y todos los comandos disponibles</td></tr>
       <tr><td><code>/mode</code></td><td>Cambiar el agente o modo activo</td></tr>
       <tr><td><code>/ollama</code></td><td>Listar y cambiar modelos de Ollama</td></tr>
       <tr><td><code>/clear</code></td><td>Limpiar el historial del chat</td></tr>
       <tr><td><code>/skill</code></td><td>Insertar una skill en el mensaje</td></tr>
+      <tr><td><code>/provider</code></td><td>Cambiar el provider de inference</td></tr>
+      <tr><td><code>/model</code></td><td>Cambiar el modelo activo</td></tr>
     </table>
 
     <h3>Cancelar</h3>
-    <p>Mientras el agente responde aparece el botón <strong>Cancelar</strong>. Púlsalo para interrumpir la respuesta en cualquier momento.</p>
+    <p>Mientras el agente responde aparece el boton <strong>Cancelar</strong>. Pulsalo para interrumpir la respuesta en cualquier momento.</p>
 
-    <h3>Preguntar sobre el código abierto en el editor</h3>
-    <p>El agente tiene acceso al contenido del <strong>fichero activo</strong> (el que está en primer plano). Puedes preguntarle sin copiar nada:</p>
+    <h3>Preguntar sobre el codigo abierto en el editor</h3>
+    <p>El agente tiene acceso al contenido del <strong>fichero activo</strong> (el que esta en primer plano). Puedes preguntarle sin copiar nada:</p>
     <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
-      "Explícame qué hace esta función"<br>
-      "¿Hay algún posible error en este código?"<br>
-      "Resume qué hace este fichero"
+      "Expliqueme que hace esta funcion"<br>
+      "Hay algun posible error en este codigo?"<br>
+      "Resume que hace este fichero"
     </div>
-    <p>Si tienes varias pestañas abiertas y quieres preguntar sobre una concreta, menciona el nombre del fichero para evitar ambigüedades:</p>
+    <p>Si tienes varias pestanas abiertas y quieres preguntar sobre una concreta, menciona el nombre del fichero:</p>
     <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
-      "Explícame qué hace el código del fichero <em>fev_server.prg</em> abierto en el editor"<br>
-      "¿Qué función gestiona el login en <em>chat_login.prg</em>?"
-    </div>
-    <p>Para preguntar sobre un fichero que <strong>no está abierto</strong> en el editor, indícalo también de forma explícita:</p>
-    <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
-      "Analiza el fichero <em>fevscode.prg</em> y dime cómo está estructurado"<br>
-      "¿Qué hace la función AdjustLayout en <em>fev_layout.prg</em>?"
+      "Expliqueme que hace el codigo del fichero <em>fev_server.prg</em> abierto en el editor"<br>
+      "Que funcion gestiona el login en <em>chat_login.prg</em>?"
     </div>
 
-    <h3>Pedir modificaciones de código</h3>
-    <p>El agente puede modificar el fichero activo directamente. Algunos ejemplos habituales:</p>
+    <h3>Pedir modificaciones de codigo</h3>
+    <p>El agente puede modificar el fichero activo directamente:</p>
     <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
-      "Añade validación de que el campo usuario no esté vacío antes de hacer el login"<br>
-      "Refactoriza la función XDServerStart separando la lógica de login en una función propia"<br>
-      "Añade al final del fichero una nueva función GetUserCount que devuelva el número de usuarios en xdusers.json"<br>
-      "Corrige el bug en remotePoll para que reintente si la respuesta está vacía"
+      "Anade validacion de que el campo usuario no este vacio antes de hacer el login"<br>
+      "Refactoriza la funcion XDServerStart separando la logica de login en una funcion propia"<br>
+      "Anade al final del fichero una nueva funcion GetUserCount que devuelva el numero de usuarios en xdusers.json"
     </div>
   </section>
 
-  <!-- 8 – SKILLS -->
+  <!-- 9 - SKILLS -->
   <section id="skills">
-    <h2><span class="sec-num">8</span> Skills — fragmentos y plantillas de contexto</h2>
-    <p>Las <strong>Skills</strong> son fragmentos de texto predefinidos (instrucciones, plantillas, fragmentos de código frecuentes) que puedes insertar en tus mensajes con un solo clic.</p>
+    <h2><span class="sec-num">9</span> Skills — tipos y uso avanzado</h2>
+    <p>Las <strong>Skills</strong> son fragmentos de texto predefinidos que puedes insertar en tus mensajes para dar contexto, instrucciones o plantillas al agente.</p>
 
-    <h3>Para qué sirven</h3>
-    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; margin-bottom:12px; line-height:2;">
-      <li>Instrucciones de sistema permanentes ("responde siempre en español", "actúa como experto en FiveWin…")</li>
-      <li>Plantillas de código que usas con frecuencia</li>
-      <li>Contexto del proyecto que quieres enviar al agente sin reescribirlo</li>
-    </ul>
+    <h3>Tipos de skills</h3>
+    <table>
+      <tr><th>Tipo</th><th>Comportamiento</th></tr>
+      <tr><td><strong>action</strong></td><td>Se inserta como prefijo del prompt con una tarea concreta</td></tr>
+      <tr><td><strong>system</strong></td><td>Se envia como system prompt permanente para toda la conversacion</td></tr>
+      <tr><td><strong>context</strong></td><td>Carga conocimiento desde ficheros locales o URLs y lo inyecta como contexto</td></tr>
+      <tr><td><strong>template</strong></td><td>Sustituye <code>{message}</code> con el texto del usuario. Util para flujos guiados</td></tr>
+      <tr><td><strong>modifier</strong></td><td>Modifica el estilo de la respuesta (tono, idioma, formato)</td></tr>
+      <tr><td><strong>rule</strong></td><td>Regla obligatoria de codificacion que el agente debe seguir</td></tr>
+    </table>
 
-    <h3>Cómo usarlas</h3>
+    <h3>Skills predefinidas</h3>
+    <table>
+      <tr><th>Skill</th><th>Tipo</th><th>Descripcion</th></tr>
+      <tr><td><code>explain</code></td><td>action</td><td>Explica el codigo activo paso a paso</td></tr>
+      <tr><td><code>findbugs</code></td><td>action</td><td>Busca bugs y problemas en el codigo</td></tr>
+      <tr><td><code>refactor</code></td><td>action</td><td>Propone refactorizacion del codigo</td></tr>
+      <tr><td><code>test</code></td><td>action</td><td>Genera tests unitarios</td></tr>
+      <tr><td><code>docstring</code></td><td>action</td><td>Genera documentacion para la seleccion</td></tr>
+      <tr><td><code>formal</code></td><td>modifier</td><td>Responde en tono tecnico y formal</td></tr>
+      <tr><td><code>concise</code></td><td>modifier</td><td>Responde de forma concisa y directa</td></tr>
+      <tr><td><code>harbour</code></td><td>context</td><td>Contexto del proyecto Harbour + FiveWin</td></tr>
+      <tr><td><code>harbour-locals</code></td><td>rule</td><td>Reglas de declaracion de variables en Harbour</td></tr>
+    </table>
+
+    <h3>Como usarlas</h3>
     <ol class="steps">
-      <li><span>Escribe <code>/skill</code> en el cuadro de mensaje o usa el botón de Skills del panel.</span></li>
+      <li><span>Escribe <code>/skill</code> en el cuadro de mensaje o usa el boton de Skills del panel.</span></li>
       <li><span>Aparece la lista de skills disponibles.</span></li>
       <li><span>Selecciona una y su contenido se inserta en el mensaje.</span></li>
     </ol>
 
     <div class="callout yellow">
-      Las Skills se guardan en el fichero <code>xdskills.json</code> junto al ejecutable. Puedes editarlo directamente con XDForCode para añadir o modificar skills.
+      Las Skills se guardan en el fichero <code>xdskills.json</code> junto al ejecutable. Puedes gestionarlas desde el dialogo CRUD accesible en el menu, o editar el JSON directamente.
     </div>
+
+    <h3>Skills tipo context: conocimiento externo</h3>
+    <p>Las skills de tipo <code>context</code> pueden cargar contenido desde ficheros locales o URLs remotas. Soportan multiples fuentes:</p>
+    <pre>{
+  "name": "mi-proyecto",
+  "type": "context",
+  "sources": ["docs/arquitectura.md", "CLAUDE.md"],
+  "prompt": "Conoce la arquitectura del proyecto desde las fuentes."
+}</pre>
   </section>
 
-  <!-- 9 – KANBAN -->
+  <!-- 10 - PREVIEW -->
+  <section id="preview">
+    <h2><span class="sec-num">10</span> Preview HTML en vivo</h2>
+    <p>XDForCode incluye un <strong>panel de vista previa HTML</strong> en el sidebar izquierdo que muestra en tiempo real el resultado de los ficheros HTML que estas editando.</p>
+
+    <h3>Como usarlo</h3>
+    <ol class="steps">
+      <li><span>Abre un fichero <code>.html</code> en el editor.</span></li>
+      <li><span>Pulsa el boton de <strong>Preview HTML</strong> en la barra lateral de iconos (el icono de ojo).</span></li>
+      <li><span>El sidebar izquierdo cambia para mostrar la vista previa del HTML.</span></li>
+      <li><span>Cada vez que guardas el fichero, la vista previa se actualiza automaticamente.</span></li>
+    </ol>
+
+    <h3>Comportamiento</h3>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>El boton de Preview solo se activa cuando el tab activo es un fichero HTML.</li>
+      <li>Si el sidebar derecho o la consola estaban visibles, se ocultan temporalmente.</li>
+      <li>Al cerrar el preview, se restauran los paneles que estaban visibles antes.</li>
+    </ul>
+  </section>
+
+  <!-- 11 - KANBAN -->
   <section id="kanban">
-    <h2><span class="sec-num">9</span> Kanban — múltiples agentes en paralelo</h2>
-    <p>El <strong>Kanban</strong> permite lanzar y coordinar múltiples agentes de IA simultáneamente, cada uno con su propia tarea.</p>
+    <h2><span class="sec-num">11</span> Kanban — multiples agentes en paralelo</h2>
+    <p>El <strong>Kanban</strong> permite lanzar y coordinar multiples agentes de IA simultaneamente, cada uno con su propia tarea.</p>
 
     <h3>Abrir el Kanban</h3>
     <p>Pulsa el icono de <strong>Kanban</strong> en la barra lateral. Se abre el tablero en el panel central.</p>
 
-    <h3>Cómo funciona</h3>
+    <h3>Como funciona</h3>
     <ol class="steps">
-      <li><span>Crea una <strong>tarea</strong> en el tablero: asígnale nombre, descripción y agente.</span></li>
-      <li><span>El agente arranca en su propia pestaña de terminal.</span></li>
+      <li><span>Crea una <strong>tarea</strong> en el tablero: asigname nombre, descripcion y agente.</span></li>
+      <li><span>El agente arranca en su propia pestana de terminal o en el agente IA activo.</span></li>
       <li><span>El tablero muestra el estado: pendiente, en curso, completada.</span></li>
-      <li><span>Puedes ver la conversación de cada agente en su pestaña individual.</span></li>
+      <li><span>Puedes ver la conversacion de cada agente en su pestana individual.</span></li>
     </ol>
+
+    <h3>Dependencias entre tareas</h3>
+    <p>El Kanban soporta <strong>dependencias</strong>: puedes indicar que una tarea no se ejecute hasta que otra haya terminado. El prompt de una tarea puede referenciar el resultado de una anterior — basta con usar el boton <strong>{ }</strong> al editar el prompt y seleccionar la tarea cuyo resultado quieres insertar.</p>
+    <p>Tambien puedes reutilizar el prompt completo de otra tarea, util cuando varias tareas deben hacer lo mismo pero con datos distintos.</p>
+
+    <h3>Reordenar tareas</h3>
+    <p>Desde el dialogo <strong>VER PLAN</strong> puedes cambiar el orden de ejecucion de cualquier tarea pendiente. Si alguna otra tarea referenciaba a la que has movido, su referencia se actualiza automaticamente para seguir apuntando a la misma tarea en su nueva posicion. El resto de tareas que tambien hayan cambiado de posicion se actualizan de la misma manera.</p>
+
+    <h3>Modo silencioso y auto-aprobacion</h3>
+    <p>Las tareas pueden ejecutarse en <strong>modo silencioso</strong>: trabajan en segundo plano sin mostrar los mensajes en el panel de chat. En este modo, si el agente solicita confirmacion para realizar alguna accion, el sistema la aprueba automaticamente para no interrumpir el flujo.</p>
+
+    <h3>Editar el prompt de una tarea</h3>
+    <p>Cada tarjeta tiene un boton <strong>&#9999;</strong> que abre un editor directamente sobre la tarjeta. Puedes modificar el prompt antes de que la tarea empiece, sin necesidad de abrir ningun dialogo aparte.</p>
+
+    <h3>Eliminar tareas y planes</h3>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Boton <strong>&#x2715;</strong> en la tarjeta: elimina una tarea individual que todavia no ha empezado.</li>
+      <li>Boton <strong>Eliminar plan</strong> en la barra del tablero: elimina el plan completo.</li>
+    </ul>
+
+    <h3>Cancelar tareas y watchdog</h3>
+    <p>Puedes cancelar tareas en ejecucion desde el tablero. Si una tarea lleva demasiado tiempo sin terminar, el sistema la marca automaticamente como fallida para evitar que quede bloqueada.</p>
+
+    <h3>Herramientas utilizadas por cada tarea</h3>
+    <p>Al terminar, cada tarjeta muestra las herramientas que el agente uso durante su ejecucion. Util para auditar que hizo el agente y detectar patrones de uso.</p>
 
     <h3>Casos de uso</h3>
     <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
       <li>Lanzar un agente que refactoriza mientras otro escribe los tests.</li>
       <li>Pedir a Claude, Gemini y Ollama la misma pregunta y comparar resultados.</li>
       <li>Dejar tareas largas en segundo plano mientras trabajas en otra cosa.</li>
+      <li>Crear flujos de trabajo encadenados donde cada paso usa el resultado del anterior.</li>
+      <li>Repetir el mismo prompt en varias tareas para aplicar una instruccion a multiples ficheros.</li>
     </ul>
   </section>
 
-  <!-- 10 – REMOTO -->
+  <!-- 12 - BUILD -->
+  <section id="build">
+    <h2><span class="sec-num">12</span> Sistema de Build y Toolchains</h2>
+    <p>XDForCode incluye un <strong>sistema de build completo</strong> para compilar proyectos Harbour/FiveWin directamente desde el IDE.</p>
+
+    <h3>Que es una toolchain?</h3>
+    <p>Una <strong>toolchain</strong> es un perfil de compilacion que define las rutas y opciones de todas las herramientas necesarias: Harbour, compilador C, linker, recursos y librerias.</p>
+
+    <h3>Configurar una toolchain</h3>
+    <p>Desde el menu, abre el <strong>editor de toolchains</strong> (fichero <code>XDToolchains.json</code>). Puedes configurar:</p>
+    <table>
+      <tr><th>Componente</th><th>Que configura</th></tr>
+      <tr><td><strong>Harbour</strong></td><td>Ruta de instalacion, flags de compilacion, includes adicionales</td></tr>
+      <tr><td><strong>Compilador C</strong></td><td>Ruta del compilador (cl.exe), flags, includes</td></tr>
+      <tr><td><strong>Linker</strong></td><td>Ejecutable del linker y flags</td></tr>
+      <tr><td><strong>Recursos</strong></td><td>Ruta de rc.exe para compilar ficheros <code>.rc</code></td></tr>
+      <tr><td><strong>Librerias</strong></td><td>Lista de <code>.lib</code> del sistema, Harbour y FiveWin</td></tr>
+      <tr><td><strong>Batch de entorno</strong></td><td>Opcional, un <code>.bat</code> que configura las variables de entorno</td></tr>
+    </table>
+
+    <h3>Compilar el fichero activo</h3>
+    <p>Pulsa la tecla de build o usa el menu para compilar el <code>.prg</code> que estas editando. El resultado aparece en la pestana <strong>Results</strong> del panel inferior.</p>
+    <div class="callout green">
+      Si la compilacion termina sin errores y la opcion "ejecutar tras build" esta activada, el <code>.exe</code> resultante se ejecuta automaticamente.
+    </div>
+
+    <h3>Importar desde FivEdit</h3>
+    <p>Si ya tienes un proyecto en el IDE de FiveWin, puedes importarlo:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li><strong>Importar toolchain</strong> (<code>.fiv</code>): lee las preferencias de FivEdit y las convierte en una toolchain compatible.</li>
+      <li><strong>Importar proyecto</strong> (<code>.prj</code>): lee las fuentes, recursos y librerias y genera un <code>.xdprj</code>.</li>
+    </ul>
+  </section>
+
+  <!-- 13 - PROYECTOS -->
+  <section id="proyectos">
+    <h2><span class="sec-num">13</span> Proyectos (.xdprj)</h2>
+    <p>Un <strong>proyecto</strong> en XDForCode es un fichero <code>.xdprj</code> (formato JSON) que agrupa las fuentes, recursos, librerias y configuracion de compilacion de tu aplicacion.</p>
+
+    <h3>Editor visual de proyectos</h3>
+    <p>Desde el menu puedes abrir el <strong>editor visual de proyectos</strong> que muestra una interfaz web con:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Lista de fuentes (<code>.prg</code>, <code>.prw</code>, <code>.c</code>, <code>.cpp</code>) con opcion de activar/desactivar cada una.</li>
+      <li>Lista de recursos (<code>.rc</code>, <code>.res</code>).</li>
+      <li>Librerias adicionales del proyecto.</li>
+      <li>Toolchain asociada y ejecutable de salida.</li>
+    </ul>
+
+    <h3>Crear un proyecto nuevo</h3>
+    <ol class="steps">
+      <li><span>Abre el menu y selecciona <strong>Nuevo Proyecto</strong>.</span></li>
+      <li><span>Se crea un <code>.xdprj</code> vacio que puedes rellenar desde el editor visual.</span></li>
+      <li><span>Asocia una toolchain existente o crea una nueva.</span></li>
+    </ol>
+
+    <h3>Compilar un proyecto</h3>
+    <p>El sistema genera un script de compilacion que:</p>
+    <ol class="steps">
+      <li><span>Compila cada fuente <code>.prg</code> &rarr; <code>.c</code> &rarr; <code>.obj</code> con Harbour y el compilador C.</span></li>
+      <li><span>Compila cada fuente <code>.c</code> &rarr; <code>.obj</code>.</span></li>
+      <li><span>Compila los recursos <code>.rc</code> &rarr; <code>.res</code> si los hay.</span></li>
+      <li><span>Linka todos los <code>.obj</code>, librerias y recursos para generar el <code>.exe</code> final.</span></li>
+    </ol>
+  </section>
+
+  <!-- 14 - REMOTO -->
   <section id="remoto">
-    <h2><span class="sec-num">10</span> Acceso remoto desde el navegador</h2>
+    <h2><span class="sec-num">14</span> Acceso remoto desde el navegador</h2>
     <p>XDForCode incluye un <strong>servidor web</strong> que permite acceder al chat con el agente desde cualquier navegador de tu red local.</p>
 
     <h3>Arrancar el servidor web</h3>
-    <p>Pulsa el icono del servidor en la barra lateral. Cuando está activo la barra de estado inferior muestra <code>Server :8003</code>.</p>
+    <p>Pulsa el icono del servidor en la barra lateral. Cuando esta activo la barra de estado inferior muestra <code>Server :8003</code>.</p>
 
     <h3>Acceder desde el navegador</h3>
     <pre>http://localhost:8003</pre>
-    <p>Verás la interfaz de chat idéntica al panel de XDForCode. Las respuestas llegan en tiempo real.</p>
+    <p>Veras la interfaz de chat identica al panel de XDForCode. Las respuestas llegan en tiempo real.</p>
 
-    <h3>Acceso multiusuario con contraseña</h3>
-    <p>Crea el fichero <code>xdusers.json</code> junto al ejecutable:</p>
-    <pre>[
-  { "user": "cristobal", "pass": "&lt;SHA-256 de la contraseña&gt;" }
-]</pre>
-    <p>Con este fichero presente, al acceder desde el navegador aparecerá una pantalla de inicio de sesión.</p>
-    <div class="callout green">
-      Sin <code>xdusers.json</code>, el acceso es libre (modo local, sin contraseña).
-    </div>
+    <h3>Configuracion del servidor</h3>
+    <p>Desde el menu puedes configurar:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li><strong>Puerto</strong> del servidor (por defecto 8003).</li>
+      <li><strong>Carpeta de documentos</strong> (docroot) para los ficheros estaticos.</li>
+      <li><strong>Monitor remoto</strong>: opcion para mostrar en el IDE las consultas que llegan del navegador.</li>
+    </ul>
   </section>
 
-  <!-- 11 – MENÚ -->
-  <section id="menu">
-    <h2><span class="sec-num">11</span> Menú de la aplicación — opciones de configuración</h2>
-    <p>El menú principal de XDForCode cubre la <strong>gran mayoría de opciones de configuración</strong> de la aplicación. Se recomienda revisarlo detenidamente antes de empezar a trabajar, ya que contiene ajustes que no siempre son evidentes desde la interfaz visual.</p>
+  <!-- 15 - USUARIOS -->
+  <section id="usuarios">
+    <h2><span class="sec-num">15</span> Gestion de usuarios del chat remoto</h2>
+    <p>Si quieres proteger el acceso al chat remoto con autenticacion, puedes gestionar los usuarios desde un <strong>dialogo CRUD</strong> accesible desde el menu.</p>
 
+    <h3>Anadir un usuario</h3>
+    <ol class="steps">
+      <li><span>Abre el dialogo de <strong>Gestion de Usuarios</strong> desde el menu.</span></li>
+      <li><span>Pulsa <strong>Anadir</strong>.</span></li>
+      <li><span>Introduce el nombre de usuario y la contrasena (se guarda como hash SHA-256).</span></li>
+      <li><span>Configura opcionalmente el modo IA, provider, modelo y ejecutable.</span></li>
+      <li><span>Pulsa <strong>Aceptar</strong>.</span></li>
+    </ol>
+
+    <h3>Configuracion por usuario</h3>
+    <p>Cada usuario remoto puede tener configurado:</p>
     <table>
-      <tr><th>Sección del menú</th><th>Qué puedes configurar</th></tr>
-      <tr><td><strong>Agente IA</strong></td><td>Selección del agente activo, modo de ejecución, proveedor y modelo</td></tr>
-      <tr><td><strong>Servidor web</strong></td><td>Puerto, carpeta de documentos y opciones de acceso remoto</td></tr>
-      <tr><td><strong>Build / Compilación</strong></td><td>Ruta de Harbour, FiveWin y compilador C</td></tr>
-      <tr><td><strong>Apariencia</strong></td><td>Visibilidad de paneles laterales, consola y barra de estado</td></tr>
-      <tr><td><strong>Editor</strong></td><td>Fuente, tamaño, tema de color y comportamiento del autoguardado</td></tr>
-      <tr><td><strong>MCP Tools</strong></td><td>Gestión de las herramientas MCP disponibles para los agentes</td></tr>
-      <tr><td><strong>Terminales</strong></td><td>Configuración de las pestañas de terminal adicionales</td></tr>
+      <tr><th>Campo</th><th>Descripcion</th></tr>
+      <tr><td><strong>Usuario</strong></td><td>Nombre de login</td></tr>
+      <tr><td><strong>Modo</strong></td><td>Modo de ejecucion IA (opencode_acp, ollama, etc.)</td></tr>
+      <tr><td><strong>Provider</strong></td><td>Proveedor del modelo (Anthropic, NVIDIA, etc.)</td></tr>
+      <tr><td><strong>Modelo</strong></td><td>Modelo concreto a usar</td></tr>
+      <tr><td><strong>Exe</strong></td><td>Ruta del ejecutable del agente</td></tr>
     </table>
-
-    <div class="callout yellow">
-      <strong>Consejo:</strong> dedica unos minutos a explorar cada sección del menú antes de empezar. Muchas funcionalidades de XDForCode solo son accesibles desde ahí.
+    <div class="callout green">
+      Esto permite que cada usuario remoto use un agente y modelo diferente sin afectar a otros.
     </div>
   </section>
 
-  <!-- 12 – EXPLORADOR -->
+  <!-- 16 - EXPLORADOR -->
   <section id="explorador">
-    <h2><span class="sec-num">11</span> Explorador de archivos</h2>
-    <p>El explorador ocupa el panel izquierdo y muestra el árbol de directorios de la carpeta de trabajo actual.</p>
+    <h2><span class="sec-num">16</span> Explorador de archivos</h2>
+    <p>El explorador ocupa el panel izquierdo y muestra el arbol de directorios de la carpeta de trabajo actual.</p>
     <table>
-      <tr><th>Acción</th><th>Resultado</th></tr>
+      <tr><th>Accion</th><th>Resultado</th></tr>
       <tr><td>Clic en un fichero de texto</td><td>Se abre en el editor Monaco</td></tr>
-      <tr><td>Clic en un fichero binario</td><td>Se abre con la aplicación por defecto de Windows</td></tr>
+      <tr><td>Clic en un fichero binario</td><td>Se abre con la aplicacion por defecto de Windows</td></tr>
       <tr><td>Clic en un fichero HTML</td><td>Se abre en el editor o en el panel de vista previa</td></tr>
+      <tr><td>Drag &amp; drop</td><td>Puedes arrastrar ficheros desde el explorador</td></tr>
     </table>
     <div class="callout">
-      El explorador se <strong>actualiza automáticamente</strong> cuando los agentes IA crean o modifican ficheros.
+      El explorador se <strong>actualiza automaticamente</strong> cuando los agentes IA crean o modifican ficheros.
     </div>
   </section>
 
-  <!-- 12 – TERMINALES -->
+  <!-- 17 - TERMINALES -->
   <section id="terminales">
-    <h2><span class="sec-num">12</span> Terminales integradas</h2>
-    <p>En la parte inferior encontrarás varias pestañas de terminal, todas interactivas y con soporte de color:</p>
+    <h2><span class="sec-num">17</span> Terminales y pestanas configurables</h2>
+    <p>En la parte inferior encontraras varias pestanas de terminal:</p>
     <table>
-      <tr><th>Pestaña</th><th>Para qué sirve</th></tr>
-      <tr><td><strong>Results</strong></td><td>Salida de compilación y build</td></tr>
-      <tr><td><strong>GIT</strong></td><td>Terminal Git en la carpeta de trabajo actual</td></tr>
-      <tr><td><strong>SSH</strong></td><td>Conexión SSH a servidores remotos</td></tr>
-      <tr><td><strong>System Console</strong></td><td>Consola de Windows estándar</td></tr>
+      <tr><th>Pestana</th><th>Para que sirve</th></tr>
+      <tr><td><strong>Results</strong></td><td>Salida de compilacion y build</td></tr>
+      <tr><td><strong>GIT</strong></td><td>Terminal Git en la carpeta de trabajo</td></tr>
+      <tr><td><strong>SSH</strong></td><td>Conexion SSH a servidores remotos</td></tr>
+      <tr><td><strong>System Console</strong></td><td>Consola de Windows estandar</td></tr>
       <tr><td><strong>Console CLI</strong></td><td>Terminal donde corre el agente IA</td></tr>
+      <tr><td><strong>WhatsApp</strong></td><td>WhatsApp Web embebido (si esta habilitado)</td></tr>
     </table>
+
+    <h3>Pestanas personalizadas</h3>
+    <p>El fichero <code>XDTermApps.ini</code> permite crear pestanas personalizadas de terminal y agentes:</p>
+
+    <h4>Seccion [APPS]</h4>
+    <p>Pestanas de terminal:</p>
+    <pre>[APPS]
+Mimo     = cmd.exe /k mimo, 1
+OpenCode = cmd.exe /k opencode, 1</pre>
+
+    <h4>Seccion [AGENTS]</h4>
+    <p>Agentes disponibles en el selector:</p>
+    <pre>[AGENTS]
+OpenCode   = cmd.exe /k opencode, 1
+Claude     = cmd.exe /k claude, 1
+Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
+
+    <h3>Modos de las pestanas</h3>
+    <table>
+      <tr><th>Modo</th><th>Comportamiento</th></tr>
+      <tr><td><code>1</code></td><td>Terminal ConPTY, arranca automaticamente al iniciar</td></tr>
+      <tr><td><code>0</code></td><td>Terminal ConPTY, boton "Start" para iniciar manualmente</td></tr>
+      <tr><td><code>shell</code></td><td>App Harbour/FiveWin, boton "Abrir" (ShellExecute)</td></tr>
+      <tr><td><code>http://...</code></td><td>Lanza servidor + abre URL en WebView (manual)</td></tr>
+      <tr><td><code>http://..., 1</code></td><td>Igual pero arranca automaticamente</td></tr>
+    </table>
+  </section>
+
+  <!-- 18 - WHATSAPP -->
+  <section id="whatsapp">
+    <h2><span class="sec-num">18</span> Integracion con WhatsApp</h2>
+    <p>XDForCode incluye una pestana de <strong>WhatsApp Web</strong> embebida en el panel inferior que permite enviar y recibir mensajes de WhatsApp desde el IDE.</p>
+
+    <h3>Activar la pestana</h3>
+    <p>La pestana WhatsApp se muestra si esta habilitada en la configuracion (fichero <code>XDForCodeUI.ini</code>). Puedes activarla o desactivarla desde el menu.</p>
+
+    <h3>Como funciona</h3>
+    <ol class="steps">
+      <li><span>Al abrir la pestana, se carga WhatsApp Web en un WebView embebido.</span></li>
+      <li><span>Inicia sesion con tu cuenta de WhatsApp escaneando el codigo QR.</span></li>
+      <li><span>Puedes enviar mensajes programaticamente desde el chat de IA o mediante tools MCP.</span></li>
+    </ol>
+
+    <h3>Envio de mensajes</h3>
+    <p>El agente IA puede enviar mensajes de WhatsApp mediante la tool MCP <code>mcp_whatsapp_send</code>. Esto permite crear automatizaciones como:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Enviar notificaciones cuando termine una tarea del Kanban.</li>
+      <li>Alertar por WhatsApp si un build falla.</li>
+      <li>Enviar resumenes de conversaciones del chat.</li>
+    </ul>
+  </section>
+
+  <!-- 19 - MENU -->
+  <section id="menu">
+    <h2><span class="sec-num">19</span> Menu de la aplicacion — opciones de configuracion</h2>
+    <p>El menu principal de XDForCode cubre la <strong>gran mayoria de opciones de configuracion</strong> de la aplicacion. Se recomienda revisarlo detenidamente antes de empezar a trabajar.</p>
+
+    <table>
+      <tr><th>Seccion del menu</th><th>Que puedes configurar</th></tr>
+      <tr><td><strong>Agente IA</strong></td><td>Seleccion del agente activo, modo de ejecucion, proveedor y modelo</td></tr>
+      <tr><td><strong>Servidor web</strong></td><td>Puerto, carpeta de documentos y opciones de acceso remoto</td></tr>
+      <tr><td><strong>Build y Compilacion</strong></td><td>Ruta de Harbour, FiveWin y compilador C</td></tr>
+      <tr><td><strong>Toolchains</strong></td><td>Editor visual de perfiles de compilacion</td></tr>
+      <tr><td><strong>Importar</strong></td><td>Importar toolchains y proyectos desde FivEdit (.fiv, .prj)</td></tr>
+      <tr><td><strong>Proyectos</strong></td><td>Crear y gestionar proyectos .xdprj</td></tr>
+      <tr><td><strong>Skills</strong></td><td>Dialogo CRUD para gestionar las skills del agente</td></tr>
+      <tr><td><strong>Usuarios</strong></td><td>Gestion de usuarios del chat remoto</td></tr>
+      <tr><td><strong>Apariencia</strong></td><td>Visibilidad de paneles laterales, consola y barra de estado</td></tr>
+      <tr><td><strong>Editor</strong></td><td>Fuente, tamano, tema de color y comportamiento del autoguardado</td></tr>
+      <tr><td><strong>Herramientas MCP</strong></td><td>Gestion de las tools MCP disponibles para los agentes</td></tr>
+      <tr><td><strong>Terminales</strong></td><td>Configuracion de las pestanas de terminal adicionales</td></tr>
+    </table>
+
     <div class="callout yellow">
-      <strong>Configurable desde el menú:</strong> tanto las pestañas de terminal como los agentes disponibles en el panel inferior pueden añadirse, quitarse o modificarse según tus necesidades. Consulta el menú de la aplicación para personalizar este panel.
+      <strong>Consejo:</strong> dedica unos minutos a explorar cada seccion del menu antes de empezar. Muchas funcionalidades de XDForCode solo son accesibles desde ahi.
     </div>
   </section>
 
-  <!-- 13 – FAQ -->
+  <!-- 20 - FAQ -->
   <section id="faq">
-    <h2><span class="sec-num">13</span> Preguntas frecuentes</h2>
+    <h2><span class="sec-num">20</span> Preguntas frecuentes</h2>
 
     <details>
-      <summary>¿Necesito instalar todos los agentes?</summary>
-      <div class="faq-body"><p>No. Con instalar uno ya puedes trabajar. Si no tienes claro cuál elegir, empieza con <strong>Ollama</strong> (gratuito, sin internet) o <strong>Claude Code</strong>.</p></div>
+      <summary>Necesito instalar todos los agentes?</summary>
+      <div class="faq-body"><p>No. Con instalar uno ya puedes trabajar. Si no tienes claro cual elegir, empieza con <strong>Ollama</strong> (gratuito, sin internet) o <strong>Claude Code</strong>.</p></div>
     </details>
 
     <details>
-      <summary>¿El agente tiene acceso a mis ficheros?</summary>
-      <div class="faq-body"><p>El agente recibe como contexto el contenido del fichero que tienes abierto en el editor. No explora tus directorios automáticamente salvo que le des permiso explícito o uses herramientas MCP.</p></div>
+      <summary>El agente tiene acceso a mis ficheros?</summary>
+      <div class="faq-body"><p>El agente recibe como contexto el contenido del fichero que tienes abierto en el editor. No explora tus directorios automaticamente salvo que le des permiso explicito o uses herramientas MCP.</p></div>
     </details>
 
     <details>
-      <summary>¿Puedo usar varios agentes a la vez?</summary>
-      <div class="faq-body"><p>Sí. Mediante el Kanban puedes tener varios agentes activos en paralelo, cada uno en su propia pestaña con su propia tarea.</p></div>
+      <summary>Puedo usar varios agentes a la vez?</summary>
+      <div class="faq-body"><p>Si. Mediante el Kanban puedes tener varios agentes activos en paralelo, cada uno en su propia pestana con su propia tarea.</p></div>
     </details>
 
     <details>
-      <summary>¿El historial del chat queda guardado?</summary>
-      <div class="faq-body"><p>El historial de la sesión actual se mantiene mientras la aplicación está abierta. Al cerrar, el historial no se persiste por defecto.</p></div>
+      <summary>El historial del chat queda guardado?</summary>
+      <div class="faq-body"><p>El historial de la sesion actual se mantiene mientras la aplicacion esta abierta. Al cerrar, el historial no se persiste por defecto.</p></div>
     </details>
 
     <details>
-      <summary>¿Puedo usar XDForCode sin conexión a internet?</summary>
-      <div class="faq-body"><p>Sí, siempre que uses <strong>Ollama</strong> como agente. El resto requieren conexión para acceder a sus APIs en la nube.</p></div>
+      <summary>Puedo usar XDForCode sin conexion a internet?</summary>
+      <div class="faq-body"><p>Si, siempre que uses <strong>Ollama</strong> como agente o el modo <strong>Inference</strong> con un provider que no requiera autenticacion. El resto de agentes requieren conexion para acceder a sus APIs en la nube.</p></div>
     </details>
 
     <details>
-      <summary>¿Qué hago si el agente tarda demasiado?</summary>
-      <div class="faq-body"><p>Puedes cancelar la respuesta en cualquier momento con el botón <strong>Cancelar</strong> del panel de chat. El agente se detiene y puedes escribir de nuevo.</p></div>
+      <summary>Que hago si el agente tarda demasiado?</summary>
+      <div class="faq-body"><p>Puedes cancelar la respuesta en cualquier momento con el boton <strong>Cancelar</strong> del panel de chat. El agente se detiene y puedes escribir de nuevo.</p></div>
     </details>
 
     <details>
-      <summary>¿Cómo añado usuarios para el acceso remoto?</summary>
-      <div class="faq-body"><p>Crea el fichero <code>xdusers.json</code> junto al ejecutable con el formato indicado en la sección 10. Cada usuario necesita su nombre y el hash SHA-256 de su contraseña.</p></div>
+      <summary>Que es el modo Inference?</summary>
+      <div class="faq-body"><p>Es un modo de conexion directa a APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, etc.) sin necesidad de instalar agentes externos. Solo necesitas configurar una API key en <code>xdinference.json</code>.</p></div>
+    </details>
+
+    <details>
+      <summary>Como configuro las rutas de compilacion?</summary>
+      <div class="faq-body"><p>Desde el menu, abre la seccion de <strong>Build / Compilacion</strong> y configura las rutas de Harbour, FiveWin y el compilador C. Tambien puedes importar perfiles desde FivEdit.</p></div>
+    </details>
+
+    <details>
+      <summary>Puedo compilar mi proyecto directamente desde el IDE?</summary>
+      <div class="faq-body"><p>Si. Configura una toolchain, asocia un proyecto <code>.xdprj</code> y ejecuta el build desde el menu o la tecla de compilacion. Los resultados aparecen en la pestana Results.</p></div>
+    </details>
+
+    <details>
+      <summary>Como anado usuarios para el acceso remoto?</summary>
+      <div class="faq-body"><p>Desde el menu, abre el dialogo de <strong>Gestion de Usuarios</strong> y anade usuarios con su nombre y contrasena. Cada usuario puede tener su propio modo IA, provider y modelo configurado.</p></div>
     </details>
   </section>
 
@@ -799,11 +1083,11 @@ ollama pull deepseek-r1</pre>
 
 <footer>
   <strong>XDEVFORYOU SOLUTIONS</strong>
-  <span>XDForCode &mdash; Manual de usuario &mdash; 2025–2026</span>
+  <span>XDForCode — Manual de usuario — 2025–2026</span>
 </footer>
 
 <script>
-  // Marcar enlace activo en el nav según la sección visible
+  // Marcar enlace activo en el nav segun la seccion visible
   (function () {
     var links = document.querySelectorAll('nav a');
     var sections = document.querySelectorAll('section[id], .hero');
