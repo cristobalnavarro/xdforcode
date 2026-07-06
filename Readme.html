@@ -514,6 +514,12 @@ opencode auth</pre>
 gemini auth</pre>
       </div>
       <div class="agent-card">
+        <div class="ac-name">Pi <span class="ac-badge cloud">Nube / Local</span></div>
+        <p>Agente de coding con protocolo RPC propio (JSONL stdin/stdout). Soporta herramientas interactivas y puede escribir en el editor. El modelo se configura en <code>AGENTS.md</code> del proyecto.</p>
+        <pre>npm install -g @earendil/pi</pre>
+        <p>Activacion en XDForCode: <code>/pi</code></p>
+      </div>
+      <div class="agent-card">
         <div class="ac-name">Ollama <span class="ac-badge free">Gratuito - Local</span></div>
         <p>Ejecuta modelos de IA <strong>en tu propio ordenador</strong>, sin internet y sin coste.</p>
         <pre>ollama pull llama3.2
@@ -533,6 +539,7 @@ ollama pull qwen2.5-coder</pre>
       <tr><td>OpenCode</td><td>Si</td><td>Segun proveedor</td><td>Flexibilidad de proveedor</td></tr>
       <tr><td>MIMO</td><td>Si</td><td>Segun proveedor</td><td>Igual que OpenCode</td></tr>
       <tr><td>Gemini CLI</td><td>Si</td><td>Segun plan Google</td><td>Contexto grande</td></tr>
+      <tr><td>Pi</td><td>Depende del modelo</td><td>Segun proveedor</td><td>Coding agent con RPC, herramientas interactivas</td></tr>
       <tr><td><strong>Ollama</strong></td><td><strong>No</strong></td><td><strong>Gratuito</strong></td><td>Privacidad, sin internet</td></tr>
     </table>
   </section>
@@ -557,6 +564,20 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><strong>Modo 2 (Per-request)</strong></td><td>Cada mensaje crea una nueva peticion con el modelo seleccionado</td></tr>
       <tr><td><strong>Modo 3 (Modelo por defecto)</strong></td><td>Usa el modelo por defecto configurado en opencode</td></tr>
     </table>
+
+    <h3>Modo Pi RPC</h3>
+    <p>Protocolo JSONL bidireccional sobre stdin/stdout propio de Pi. XDForCode lanza <code>pi --mode rpc</code> como proceso y se comunica con el enviando y recibiendo objetos JSON (un objeto por linea).</p>
+    <p><strong>Agentes que usan este modo:</strong> Pi (<code>pi_rpc</code>).</p>
+    <p><strong>Caracteristicas exclusivas:</strong></p>
+    <ul>
+      <li><strong>Streaming nativo</strong>: los tokens llegan en tiempo real sin polling.</li>
+      <li><strong>Herramientas interactivas</strong>: Pi puede solicitar confirmacion (<code>confirm</code>) o seleccion (<code>select</code>) al usuario mediante dialogos en XDForCode; el agente bloquea hasta recibir la respuesta.</li>
+      <li><strong>set_editor_text</strong>: Pi puede enviar texto directamente al chat del IDE.</li>
+      <li><strong>Sin gestion de modelo en XDForCode</strong>: el modelo se configura en el fichero <code>AGENTS.md</code> del proyecto o globalmente en la instalacion de Pi.</li>
+    </ul>
+    <p><strong>Activacion:</strong></p>
+    <pre>/pi
+/exe &lt;ruta-a-pi&gt;    (si pi no esta en el PATH)</pre>
 
     <h3>Modo Inference</h3>
     <p>Conecta directamente con APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, Together, HuggingFace) sin necesidad de instalar agentes externos. Usa hbcurl nativo de Harbour con streaming SSE.</p>

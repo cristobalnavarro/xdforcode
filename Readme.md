@@ -176,6 +176,19 @@ gemini auth
 
 ---
 
+#### Pi (Coding Agent)
+Agente de coding con protocolo RPC propio sobre stdin/stdout. Soporta herramientas interactivas (confirm, select) y puede escribir directamente en el editor del IDE (`set_editor_text`). El modelo y configuración se definen en el fichero `AGENTS.md` de tu proyecto.
+
+```
+npm install -g @earendil/pi
+```
+
+Comando de activación en XDForCode: `/pi`  
+Ejecutable: `pi` (ruta o nombre en PATH)  
+Protocolo: JSONL (`pi --mode rpc`)
+
+---
+
 #### Ollama
 Agente para modelos **locales** (sin conexión a internet, sin coste). Ejecuta los modelos en tu propio ordenador.
 
@@ -201,6 +214,7 @@ ollama pull deepseek-r1
 | OpenCode | Sí | Según proveedor | Flexibilidad de proveedor |
 | MIMO | Sí | Según proveedor | Igual que OpenCode |
 | Gemini CLI | Sí | Según plan Google | Contexto grande, código |
+| Pi | Depende del modelo | Según proveedor | Coding agent con RPC, herramientas interactivas |
 | Ollama | **No** | **Gratuito** | Privacidad, uso sin internet |
 
 ---
@@ -225,6 +239,26 @@ Establece una comunicación bidireccional vía pipes o HTTP entre XDForCode y el
 - **Modo 1 (Memoria)**: mantiene una sesión persistente con memoria de la conversación.
 - **Modo 2 (Per-request)**: cada mensaje crea una nueva petición con el modelo seleccionado.
 - **Modo 3 (Modelo por defecto)**: usa el modelo por defecto configurado en opencode.
+
+### Modo Pi RPC
+
+Protocolo JSONL bidireccional sobre stdin/stdout propio de Pi. XDForCode lanza `pi --mode rpc` como proceso y se comunica con él enviando y recibiendo objetos JSON (un objeto por línea).
+
+**Agentes que usan este modo:** Pi (`pi_rpc`).
+
+**Características exclusivas del modo Pi RPC:**
+- **Streaming nativo**: los tokens llegan en tiempo real sin polling.
+- **Herramientas interactivas**: Pi puede solicitar confirmación (`confirm`) o selección (`select`) al usuario mediante diálogos en XDForCode; el agente bloquea hasta recibir la respuesta.
+- **set_editor_text**: Pi puede enviar texto directamente al chat del IDE.
+- **Sin gestión de modelo en XDForCode**: el modelo se configura en el fichero `AGENTS.md` del proyecto o globalmente en la instalación de Pi.
+
+**Activación:**
+```
+/pi
+/exe <ruta-a-pi>    (si pi no está en el PATH)
+```
+
+---
 
 ### Modo Inference
 
