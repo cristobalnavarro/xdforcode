@@ -490,6 +490,17 @@ El Kanban soporta **dependencias**: puedes indicar que una tarea no se ejecute h
 
 También puedes reutilizar el prompt completo de otra tarea (útil cuando varias tareas deben hacer exactamente lo mismo pero con datos distintos).
 
+### Orden de ejecución de las tareas
+
+Las tareas **no se ejecutan necesariamente en el orden visual** del tablero. El sistema sigue este criterio:
+
+- Las tareas se ordenan internamente por su número de secuencia (`nOrder`).
+- Una tarea se lanza en cuanto su agente está libre **y** todas sus condiciones de dependencia están satisfechas.
+- Si el prompt de una tarea contiene `{{task.X.result}}`, el sistema espera automáticamente a que la tarea X haya terminado antes de lanzarla — aunque no hayas definido `depends_on`.
+- Las tareas asignadas a agentes distintos sin dependencias entre sí pueden ejecutarse **en paralelo**.
+
+Esto significa que en un plan con XDAGENT, MIMO y OPENCODE, si la tarea de OPENCODE usa el resultado de la de MIMO, el sistema lo detecta y respeta el orden. Si no tienen relación, las tres pueden correr simultáneamente.
+
 ### Reordenar tareas
 
 Desde el diálogo **VER PLAN** puedes cambiar el orden de ejecución de cualquier tarea pendiente. Si alguna otra tarea referenciaba a la que has movido, su referencia se actualiza automáticamente para seguir apuntando a la misma tarea en su nueva posición. El resto de tareas que también hayan cambiado de posición se actualizan de la misma manera.

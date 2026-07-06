@@ -792,6 +792,16 @@ ollama pull qwen2.5-coder</pre>
     <p>El Kanban soporta <strong>dependencias</strong>: puedes indicar que una tarea no se ejecute hasta que otra haya terminado. El prompt de una tarea puede referenciar el resultado de una anterior — basta con usar el boton <strong>{ }</strong> al editar el prompt y seleccionar la tarea cuyo resultado quieres insertar.</p>
     <p>Tambien puedes reutilizar el prompt completo de otra tarea, util cuando varias tareas deben hacer lo mismo pero con datos distintos.</p>
 
+    <h3>Orden de ejecucion de las tareas</h3>
+    <p>Las tareas <strong>no se ejecutan necesariamente en el orden visual</strong> del tablero. El sistema sigue este criterio:</p>
+    <ul>
+      <li>Las tareas se ordenan internamente por su numero de secuencia (<code>nOrder</code>).</li>
+      <li>Una tarea se lanza en cuanto su agente esta libre <strong>y</strong> todas sus condiciones de dependencia estan satisfechas.</li>
+      <li>Si el prompt de una tarea contiene <code>&#123;&#123;task.X.result&#125;&#125;</code>, el sistema espera automaticamente a que la tarea X haya terminado antes de lanzarla, aunque no hayas definido <code>depends_on</code>.</li>
+      <li>Las tareas asignadas a agentes distintos sin dependencias entre si pueden ejecutarse <strong>en paralelo</strong>.</li>
+    </ul>
+    <p>Esto significa que en un plan con XDAGENT, MIMO y OPENCODE, si la tarea de OPENCODE usa el resultado de la de MIMO, el sistema lo detecta y respeta el orden. Si no tienen relacion, las tres pueden correr simultaneamente.</p>
+
     <h3>Reordenar tareas</h3>
     <p>Desde el dialogo <strong>VER PLAN</strong> puedes cambiar el orden de ejecucion de cualquier tarea pendiente. Si alguna otra tarea referenciaba a la que has movido, su referencia se actualiza automaticamente para seguir apuntando a la misma tarea en su nueva posicion. El resto de tareas que tambien hayan cambiado de posicion se actualizan de la misma manera.</p>
 
