@@ -1,0 +1,25 @@
+{
+  "name": "Demo MCP: revision de cambios -> commit automatico",
+  "description": "XD Agent revisa el estado del repositorio, Mimo redacta el mensaje de commit, XD Agent registra los cambios. Flujo git completamente automatizado sin nombrar herramientas.",
+  "saved_at": "07/07/2026 10:00:00",
+  "tasks": [
+    {
+      "nOrder": 1,
+      "agent": "XD Agent",
+      "idtask": "1-1",
+      "prompt": "Revisa el estado actual del repositorio y proporciona un resumen completo de los cambios pendientes: ficheros modificados, añadidos o eliminados, y el contenido de los cambios."
+    },
+    {
+      "nOrder": 2,
+      "agent": "Mimo",
+      "idtask": "2-1",
+      "prompt": "Estado y cambios actuales del repositorio:\n{{task.1-1.result}}\n\nRedacta un mensaje de commit siguiendo el estándar Conventional Commits (tipo: descripción breve en la primera línea, cuerpo opcional explicando el por qué). Devuelve SOLO el mensaje de commit, sin explicaciones adicionales."
+    },
+    {
+      "nOrder": 3,
+      "agent": "XD Agent",
+      "idtask": "1-2",
+      "prompt": "Mensaje de commit preparado:\n{{task.2-1.result}}\n\nRegistra todos los cambios pendientes en el repositorio usando exactamente el mensaje de commit proporcionado. Confirma el resultado con el hash del commit creado."
+    }
+  ]
+}

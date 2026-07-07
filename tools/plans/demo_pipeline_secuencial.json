@@ -1,0 +1,25 @@
+{
+  "name": "Demo: pipeline secuencial entre agentes",
+  "description": "OpenCode genera codigo, Mimo escribe tests, OpenCode refactoriza con los tests. Muestra cadena A->B->A y el mismo agente con dos tareas distintas (3-1 y 3-2).",
+  "saved_at": "07/07/2026 10:00:00",
+  "tasks": [
+    {
+      "nOrder": 1,
+      "agent": "OpenCode",
+      "idtask": "3-1",
+      "prompt": "Escribe en Harbour una función Static llamada ParseConfigLine(cLine) que reciba una línea de un fichero INI (formato clave = valor) y devuelva un array de dos elementos [clave, valor]. Debe gestionar espacios alrededor del = y devolver [\"\",\"\"] si la línea es un comentario (;) o está vacía. Incluye el código completo listo para usar."
+    },
+    {
+      "nOrder": 2,
+      "agent": "Mimo",
+      "idtask": "2-1",
+      "prompt": "Aquí tienes una función Harbour:\n{{task.3-1.result}}\n\nEscribe una batería completa de casos de prueba para esta función usando comentarios inline (sin framework externo). Cubre al menos: línea normal, espacios alrededor del signo =, comentario con ;, línea vacía, línea sin =, valor vacío después del =. Para cada caso muestra la llamada y el resultado esperado."
+    },
+    {
+      "nOrder": 3,
+      "agent": "OpenCode",
+      "idtask": "3-2",
+      "prompt": "Función original:\n{{task.3-1.result}}\n\nCasos de prueba identificados:\n{{task.2-1.result}}\n\nRevisa la función y asegúrate de que supera todos los casos de prueba. Si necesita correcciones, aplícalas y explica los cambios. Si ya era correcta, confírmalo. Devuelve la versión final definitiva."
+    }
+  ]
+}
