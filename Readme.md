@@ -248,8 +248,9 @@ Protocolo JSONL bidireccional sobre stdin/stdout propio de Pi. XDForCode lanza `
 
 **Características exclusivas del modo Pi RPC:**
 - **Streaming nativo**: los tokens llegan en tiempo real sin polling.
-- **Herramientas interactivas**: Pi puede solicitar confirmación (`confirm`) o selección (`select`) al usuario mediante diálogos en XDForCode; el agente bloquea hasta recibir la respuesta.
-- **set_editor_text**: Pi puede enviar texto directamente al chat del IDE.
+- **confirm / select**: Pi puede solicitar confirmación o selección al usuario; XDForCode muestra un diálogo y Pi bloquea hasta recibir la respuesta.
+- **input / editor**: Pi puede pedir texto al usuario; XDForCode muestra un formulario inline en el chat (campo de una línea para `input`, multiline para `editor`) y espera la respuesta antes de continuar.
+- **set_editor_text**: Pi escribe texto directamente en el editor activo del IDE (Scintilla o Monaco).
 - **Sin gestión de modelo en XDForCode**: el modelo se configura en el fichero `AGENTS.md` del proyecto o globalmente en la instalación de Pi.
 
 **Activación:**
@@ -257,6 +258,13 @@ Protocolo JSONL bidireccional sobre stdin/stdout propio de Pi. XDForCode lanza `
 /pi
 /exe <ruta-a-pi>    (si pi no está en el PATH)
 ```
+
+**Comandos exclusivos del modo Pi:**
+
+| Comando | Acción |
+|---|---|
+| `/steer <texto>` | Inyecta una instrucción en mitad de una respuesta sin interrumpirla |
+| Botón cancelar | Envía `abort` al proceso Pi (cancela el turno sin matar el proceso) |
 
 ---
 
@@ -360,6 +368,22 @@ Algunos de los comandos más habituales:
 | `/skill` | Insertar una skill en el mensaje |
 | `/provider` | Cambiar el provider de inference |
 | `/model` | Cambiar el modelo activo |
+
+### Información de uso al terminar cada respuesta
+
+Al terminar una respuesta en modo ACP aparece un pie de texto con los datos del turno:
+
+```
+opencode_acp · qwen3:32b · tokens: 130↑ 23↓ · total 17710 · cache 17536 · razonamiento 21 · 4.7 t/s
+```
+
+- **↑ / ↓** — tokens de entrada y salida del turno
+- **total** — tokens acumulados de la sesión
+- **cache** — tokens servidos desde caché (no se refacturan)
+- **razonamiento** — tokens de *thinking* interno (qwen3, deepseek-r1…); usa `/no_think` al inicio del prompt para suprimirlos
+- **t/s** — velocidad de generación (tokens de salida por segundo)
+
+La etiqueta **modo · modelo** de la barra superior se actualiza automáticamente cada vez que cambias de agente o modelo con un comando `/`.
 
 ### Cancelar una respuesta en curso
 
@@ -526,6 +550,40 @@ Puedes cancelar tareas en ejecución desde el tablero. Si una tarea lleva demasi
 
 Al terminar, cada tarjeta muestra las herramientas que el agente usó durante su ejecución. Útil para auditar qué hizo el agente y detectar patrones de uso.
 
+### Guardar y cargar planes
+
+Desde el diálogo **VER PLAN** puedes guardar el conjunto de tareas actual como una plantilla reutilizable:
+
+1. Pulsa **💾 Guardar plan** e introduce un nombre.
+2. El plan se guarda en `tools/plans/<nombre>.json` junto al ejecutable.
+3. Para cargarlo más adelante, pulsa **📂 Planes guardados**, selecciona el plan y pulsa **Cargar**.
+
+El plan guarda por cada tarea: el agente al que pertenece, el prompt y el `idtask` (identificador interno). Esto permite que al cargarlo el sistema pueda reparar automáticamente las referencias entre tareas si los IDs han cambiado.
+
+#### Validación de agentes al cargar un plan
+
+Al cargar un plan, XDForCode comprueba que **todos los agentes que el plan necesita están activos** antes de añadir ninguna tarea al tablero. Si falta alguno:
+
+- Se muestra un aviso con la lista de agentes ausentes.
+- Se ofrece activarlos en `XDTermApps.ini` (equivale al botón "Añadir a Inicio").
+- Se informa de que la aplicación debe reiniciarse para que la activación surta efecto.
+- **El plan no se carga** hasta que todos los agentes estén disponibles.
+
+Si el agente faltante no tiene entrada en `[APPS]` (solo en `[AGENTS]`), habrá que añadirla manualmente al INI.
+
+#### Remapeo automático de tokens al cargar
+
+Si los IDs internos de los agentes han cambiado desde que se guardó el plan (por ejemplo porque se desactivó un agente que estaba antes en la lista), los tokens `{{task.X-Y.result}}` de los prompts quedarían apuntando a IDs incorrectos. XDForCode detecta estos cambios y **repara automáticamente los tokens** en todos los prompts al cargar el plan.
+
+#### Compatibilidad con planes guardados antes de esta versión
+
+Los planes guardados con versiones anteriores (sin campo `idtask` por tarea) **cargan sin ningún problema**: simplemente no se benefician del remapeo automático de tokens (porque no se guardó el ID original). Para convertir un plan antiguo al nuevo formato basta con:
+
+1. Cargarlo (los agentes deben estar activos).
+2. Abrir **VER PLAN** y pulsar **💾 Guardar plan** con el mismo nombre.
+
+A partir de ese momento el plan quedará en el nuevo formato con `idtask` por tarea.
+
 ### Casos de uso típicos
 
 - Lanzar un agente que refactoriza el código mientras otro escribe los tests.
@@ -682,39 +740,98 @@ En la parte inferior encontrarás varias pestañas de terminal. Las pestañas di
 | **GIT** | Terminal Git en la carpeta de trabajo |
 | **SSH** | Conexión SSH a servidores remotos |
 | **System Console** | Consola de Windows estándar |
-| **Console CLI** | Terminal donde corre el agente IA |
+| **Console CLI** | Terminal interactiva; dropdown AGENTS para lanzar agentes |
 | **WhatsApp** | WhatsApp Web embebido (si está habilitado) |
+
+La pestaña **Console CLI** incluye dos botones flotantes que aparecen al iniciar un proceso:
+- **Home** — vuelve a la pantalla inicial manteniendo el proceso activo en segundo plano
+- **Repintar** — fuerza un redibujado del terminal
+
+El dropdown **AGENTS** de Console CLI se abre automáticamente hacia arriba o hacia abajo según el espacio disponible, y tiene scroll si hay muchos agentes.
 
 ### Pestañas personalizadas
 
 El fichero `XDTermApps.ini` permite crear pestañas personalizadas de terminal y agentes:
 
-**Sección `[APPS]`** — Pestañas de terminal:
+Cada entrada sigue el formato `Nombre = comando, flag`:
+
+| Flag | Comportamiento |
+|---|---|
+| `1` | Crea la pestaña y arranca automáticamente al iniciar |
+| `0` | No crea pestaña (equivale a comentar la línea con `;`) |
+| `shell` | App Harbour/FiveWin, botón "Abrir" (ShellExecute) |
+| `http://...` | Lanza servidor + abre URL en WebView (manual) |
+| `http://..., 1` | Igual pero arranca automáticamente |
+
+El flag `0` es útil para tener entradas preconfiguradas pero inactivas, sin necesidad de borrarlas o comentarlas.
+
+**Sección `[APPS]`** — Pestañas de terminal (también elegibles como agentes en el Kanban):
 ```ini
 [APPS]
-Mimo     = cmd.exe /k mimo, 1
-OpenCode = cmd.exe /k opencode, 1
+Mimo     = cmd.exe /k mimo --never-ask, 1   ; pestaña activa
+OpenCode = cmd.exe /k opencode --auto, 1    ; pestaña activa
+OpenWiki = cmd.exe /k openwiki, 0           ; desactivada (sin pestaña)
 ```
 
-**Sección `[AGENTS]`** — Agentes disponibles en el selector:
+**Sección `[AGENTS]`** — Agentes disponibles en el dropdown de Console CLI (sin pestaña fija propia):
 ```ini
 [AGENTS]
+OpenWiki   = cmd.exe /k openwiki, 1
 OpenCode   = cmd.exe /k opencode, 1
 Claude     = cmd.exe /k claude, 1
 Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1
 ```
 
-### Modos de las pestañas
+Todas son terminales interactivas completas con soporte de color ANSI.
 
-| Modo | Comportamiento |
+### OpenWiki
+
+[OpenWiki](https://github.com/langchain-ai/openwiki) es una herramienta LangChain que combina búsqueda en Wikipedia con resumen mediante LLM. Permite preguntar en lenguaje natural sobre cualquier tema y obtener respuestas fundamentadas en artículos de Wikipedia.
+
+**Instalación:**
+```
+pip install openwiki
+```
+
+**Integración en XDForCode:**
+
+- En `[AGENTS]` con flag `1`: disponible en el dropdown de Console CLI. Se lanza bajo demanda desde la consola interactiva.
+- En `[APPS]` con flag `1`: crea una pestaña permanente en el panel inferior; queda disponible también como agente Kanban.
+- En `[APPS]` con flag `0` (por defecto): desactivado sin borrar la entrada — cámbialo a `1` si lo usas frecuentemente.
+
+> **Combinación recomendada:** `0` en `[APPS]` y `1` en `[AGENTS]` — accesible desde el dropdown sin ocupar pestaña fija.
+
+#### Ejemplo Kanban con OpenWiki
+
+OpenWiki resulta especialmente útil como primer eslabón en un plan Kanban: busca y resume información de Wikipedia y pasa el resultado a otro agente que lo procesa.
+
+```
+┌───────────────────────────┐        ┌──────────────────────────────┐
+│  Tarea 1 — OpenWiki       │───────▶│  Tarea 2 — OpenCode          │
+│                           │        │                              │
+│  "Busca en Wikipedia      │        │  "Usando {{task.1.result}},  │
+│   información sobre el    │        │   crea documentación técnica │
+│   protocolo WebSocket y   │        │   en README.md para nuestro  │
+│   devuelve un resumen"    │        │   proyecto Harbour"          │
+│                           │        │                              │
+│  Agente: OpenWiki         │        │  Agente: OpenCode            │
+│  Estado: done ✓           │        │  depends_on: [tarea-1]       │
+└───────────────────────────┘        └──────────────────────────────┘
+```
+
+El marcador `{{task.1.result}}` se sustituye automáticamente por la salida de la tarea 1 antes de enviar el prompt a OpenCode. Las tareas con dependencias implícitas (usan `{{task.N.result}}`) esperan automáticamente aunque no se declare `depends_on` de forma explícita.
+
+### Diálogo de gestión de agentes ("Añadir a Inicio")
+
+Desde la consola CLI hay un botón que abre el listado de agentes definidos en `[AGENTS]`. Al seleccionar uno y pulsar **Añadir a Inicio**, XDForCode modifica `XDTermApps.ini` con estas reglas:
+
+| Situación | Acción |
 |---|---|
-| `1` | Terminal ConPTY, arranca automáticamente al iniciar |
-| `0` | Terminal ConPTY, botón "Start" para iniciar manualmente |
-| `shell` | App Harbour/FiveWin, botón "Abrir" (ShellExecute) |
-| `http://...` | Lanza servidor + abre URL en WebView (manual) |
-| `http://..., 1` | Igual pero arranca automáticamente |
+| El agente **no existe** en `[APPS]` | Se añade al **final** de la sección con flag `1` |
+| El agente existe con flag **`0`** (desactivado) | Se reactiva cambiando el flag a `1` |
+| El agente existe con flag **`1`** (ya activo) | Pregunta si se desea **desactivar** (cambia a `0`) |
 
-Todas son terminales interactivas completas con soporte de color.
+El cambio requiere reiniciar la aplicación para que tenga efecto.
 
 ---
 

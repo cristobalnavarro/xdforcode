@@ -571,13 +571,20 @@ ollama pull qwen2.5-coder</pre>
     <p><strong>Caracteristicas exclusivas:</strong></p>
     <ul>
       <li><strong>Streaming nativo</strong>: los tokens llegan en tiempo real sin polling.</li>
-      <li><strong>Herramientas interactivas</strong>: Pi puede solicitar confirmacion (<code>confirm</code>) o seleccion (<code>select</code>) al usuario mediante dialogos en XDForCode; el agente bloquea hasta recibir la respuesta.</li>
-      <li><strong>set_editor_text</strong>: Pi puede enviar texto directamente al chat del IDE.</li>
+      <li><strong>confirm / select</strong>: Pi puede solicitar confirmacion o seleccion al usuario; XDForCode muestra un dialogo y Pi bloquea hasta recibir la respuesta.</li>
+      <li><strong>input / editor</strong>: Pi puede pedir texto al usuario; XDForCode muestra un formulario inline en el chat (campo de una linea para <code>input</code>, multiline para <code>editor</code>) y espera la respuesta antes de continuar.</li>
+      <li><strong>set_editor_text</strong>: Pi escribe texto directamente en el editor activo del IDE (Scintilla o Monaco).</li>
       <li><strong>Sin gestion de modelo en XDForCode</strong>: el modelo se configura en el fichero <code>AGENTS.md</code> del proyecto o globalmente en la instalacion de Pi.</li>
     </ul>
     <p><strong>Activacion:</strong></p>
     <pre>/pi
 /exe &lt;ruta-a-pi&gt;    (si pi no esta en el PATH)</pre>
+    <p><strong>Comandos exclusivos del modo Pi:</strong></p>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/steer &lt;texto&gt;</code></td><td>Inyecta una instruccion en mitad de una respuesta sin interrumpirla</td></tr>
+      <tr><td>Boton cancelar</td><td>Envia <code>abort</code> al proceso Pi (cancela el turno sin matar el proceso)</td></tr>
+    </table>
 
     <h3>Modo Inference</h3>
     <p>Conecta directamente con APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, Together, HuggingFace) sin necesidad de instalar agentes externos. Usa hbcurl nativo de Harbour con streaming SSE.</p>
@@ -674,6 +681,20 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><code>/provider</code></td><td>Cambiar el provider de inference</td></tr>
       <tr><td><code>/model</code></td><td>Cambiar el modelo activo</td></tr>
     </table>
+
+    <h3>Informacion de uso al terminar cada respuesta</h3>
+    <p>Al terminar una respuesta en modo ACP aparece un pie de texto con los datos del turno:</p>
+    <pre>opencode_acp · qwen3:32b · tokens: 130↑ 23↓ · total 17710 · cache 17536 · razonamiento 21 · 4.7 t/s</pre>
+    <table>
+      <tr><th>Campo</th><th>Significado</th></tr>
+      <tr><td><code>130↑</code></td><td>Tokens de entrada (prompt + contexto)</td></tr>
+      <tr><td><code>23↓</code></td><td>Tokens de salida generados</td></tr>
+      <tr><td><code>total</code></td><td>Tokens acumulados de la sesion ACP</td></tr>
+      <tr><td><code>cache</code></td><td>Tokens servidos desde cache (no se refacturan)</td></tr>
+      <tr><td><code>razonamiento</code></td><td>Tokens de <em>thinking</em> interno (qwen3, deepseek-r1…); usa <code>/no_think</code> al inicio del prompt para suprimirlos</td></tr>
+      <tr><td><code>t/s</code></td><td>Velocidad de generacion: tokens de salida por segundo</td></tr>
+    </table>
+    <p>La etiqueta <strong>modo · modelo</strong> de la barra superior del chat se actualiza automaticamente cada vez que cambias de agente o modelo con un comando <code>/</code>.</p>
 
     <h3>Cancelar</h3>
     <p>Mientras el agente responde aparece el boton <strong>Cancelar</strong>. Pulsalo para interrumpir la respuesta en cualquier momento.</p>
@@ -822,6 +843,36 @@ ollama pull qwen2.5-coder</pre>
 
     <h3>Herramientas utilizadas por cada tarea</h3>
     <p>Al terminar, cada tarjeta muestra las herramientas que el agente uso durante su ejecucion. Util para auditar que hizo el agente y detectar patrones de uso.</p>
+
+    <h3>Guardar y cargar planes</h3>
+    <p>Desde el dialogo <strong>VER PLAN</strong> puedes guardar el conjunto de tareas actual como una plantilla reutilizable:</p>
+    <ol class="steps">
+      <li><span>Pulsa <strong>&#128190; Guardar plan</strong> e introduce un nombre.</span></li>
+      <li><span>El plan se guarda en <code>tools/plans/&lt;nombre&gt;.json</code> junto al ejecutable.</span></li>
+      <li><span>Para cargarlo, pulsa <strong>&#128194; Planes guardados</strong>, selecciona el plan y pulsa <strong>Cargar</strong>.</span></li>
+    </ol>
+    <p>El plan guarda por cada tarea: el agente, el prompt y el <code>idtask</code> (identificador interno). Esto permite reparar automaticamente las referencias entre tareas si los IDs cambian.</p>
+
+    <h4>Validacion de agentes al cargar un plan</h4>
+    <p>Al cargar un plan, XDForCode comprueba que <strong>todos los agentes que el plan necesita estan activos</strong> antes de anadir ninguna tarea al tablero. Si falta alguno:</p>
+    <ul>
+      <li>Se muestra un aviso con la lista de agentes ausentes.</li>
+      <li>Se ofrece activarlos en <code>XDTermApps.ini</code> (equivale al boton "Anadir a Inicio").</li>
+      <li>Se informa de que la aplicacion debe reiniciarse para que la activacion surta efecto.</li>
+      <li><strong>El plan no se carga</strong> hasta que todos los agentes esten disponibles.</li>
+    </ul>
+    <p>Si el agente faltante no tiene entrada en <code>[APPS]</code> (solo en <code>[AGENTS]</code>), habra que anadirla manualmente al INI.</p>
+
+    <h4>Remapeo automatico de tokens al cargar</h4>
+    <p>Si los IDs internos de los agentes han cambiado desde que se guardo el plan (por ejemplo porque se desactivo un agente anterior en la lista), los tokens <code>&#123;&#123;task.X-Y.result&#125;&#125;</code> de los prompts quedarian apuntando a IDs incorrectos. XDForCode detecta estos cambios y <strong>repara automaticamente los tokens</strong> en todos los prompts al cargar el plan.</p>
+
+    <h4>Compatibilidad con planes antiguos</h4>
+    <p>Los planes guardados con versiones anteriores (sin campo <code>idtask</code> por tarea) <strong>cargan sin ningun problema</strong>: simplemente no se benefician del remapeo automatico de tokens. Para actualizarlos al nuevo formato:</p>
+    <ol class="steps">
+      <li><span>Carga el plan (los agentes deben estar activos).</span></li>
+      <li><span>Abre <strong>VER PLAN</strong> y pulsa <strong>&#128190; Guardar plan</strong> con el mismo nombre.</span></li>
+    </ol>
+    <div class="callout green">A partir de ese momento el plan queda en el nuevo formato con <code>idtask</code> por tarea y el remapeo automatico funcionara en el futuro.</div>
 
     <h3>Casos de uso</h3>
     <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
@@ -974,35 +1025,82 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><strong>GIT</strong></td><td>Terminal Git en la carpeta de trabajo</td></tr>
       <tr><td><strong>SSH</strong></td><td>Conexion SSH a servidores remotos</td></tr>
       <tr><td><strong>System Console</strong></td><td>Consola de Windows estandar</td></tr>
-      <tr><td><strong>Console CLI</strong></td><td>Terminal donde corre el agente IA</td></tr>
+      <tr><td><strong>Console CLI</strong></td><td>Terminal interactiva; dropdown AGENTS para lanzar agentes</td></tr>
       <tr><td><strong>WhatsApp</strong></td><td>WhatsApp Web embebido (si esta habilitado)</td></tr>
     </table>
 
+    <p>La pestana <strong>Console CLI</strong> incluye dos botones flotantes que aparecen al iniciar un proceso:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li><strong>Home</strong> — vuelve a la pantalla inicial manteniendo el proceso activo en segundo plano</li>
+      <li><strong>Repintar</strong> — fuerza un redibujado del terminal</li>
+    </ul>
+    <p>El dropdown <strong>AGENTS</strong> de Console CLI se abre hacia arriba o hacia abajo segun el espacio disponible, y tiene scroll si hay muchos agentes.</p>
+
     <h3>Pestanas personalizadas</h3>
-    <p>El fichero <code>XDTermApps.ini</code> permite crear pestanas personalizadas de terminal y agentes:</p>
+    <p>El fichero <code>XDTermApps.ini</code> permite crear pestanas personalizadas de terminal y agentes. Cada entrada sigue el formato <code>Nombre = comando, flag</code>.</p>
 
-    <h4>Seccion [APPS]</h4>
-    <p>Pestanas de terminal:</p>
-    <pre>[APPS]
-Mimo     = cmd.exe /k mimo, 1
-OpenCode = cmd.exe /k opencode, 1</pre>
-
-    <h4>Seccion [AGENTS]</h4>
-    <p>Agentes disponibles en el selector:</p>
-    <pre>[AGENTS]
-OpenCode   = cmd.exe /k opencode, 1
-Claude     = cmd.exe /k claude, 1
-Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
-
-    <h3>Modos de las pestanas</h3>
+    <h3>Flags del segundo parametro</h3>
     <table>
-      <tr><th>Modo</th><th>Comportamiento</th></tr>
-      <tr><td><code>1</code></td><td>Terminal ConPTY, arranca automaticamente al iniciar</td></tr>
-      <tr><td><code>0</code></td><td>Terminal ConPTY, boton "Start" para iniciar manualmente</td></tr>
+      <tr><th>Flag</th><th>Comportamiento</th></tr>
+      <tr><td><code>1</code></td><td>Crea la pestana y arranca automaticamente al iniciar</td></tr>
+      <tr><td><code>0</code></td><td>No crea pestana (equivale a comentar la linea con <code>;</code>) — util para tener entradas preconfiguradas pero inactivas</td></tr>
       <tr><td><code>shell</code></td><td>App Harbour/FiveWin, boton "Abrir" (ShellExecute)</td></tr>
       <tr><td><code>http://...</code></td><td>Lanza servidor + abre URL en WebView (manual)</td></tr>
       <tr><td><code>http://..., 1</code></td><td>Igual pero arranca automaticamente</td></tr>
     </table>
+
+    <h4>Seccion [APPS] — Pestanas de terminal (tambien elegibles como agentes del Kanban)</h4>
+    <pre>[APPS]
+Mimo     = cmd.exe /k mimo --never-ask, 1   ; pestaña activa
+OpenCode = cmd.exe /k opencode --auto, 1    ; pestaña activa
+OpenWiki = cmd.exe /k openwiki, 0           ; desactivada (sin pestaña)</pre>
+
+    <h4>Seccion [AGENTS] — Agentes disponibles en el dropdown de Console CLI (sin pestana fija propia)</h4>
+    <pre>[AGENTS]
+OpenWiki   = cmd.exe /k openwiki, 1
+OpenCode   = cmd.exe /k opencode, 1
+Claude     = cmd.exe /k claude, 1
+Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
+
+    <h3>OpenWiki</h3>
+    <p><a href="https://github.com/langchain-ai/openwiki">OpenWiki</a> es una herramienta LangChain que combina busqueda en Wikipedia con resumen mediante LLM. Permite preguntar en lenguaje natural sobre cualquier tema y obtener respuestas fundamentadas en articulos de Wikipedia.</p>
+    <p><strong>Instalacion:</strong></p>
+    <pre>pip install openwiki</pre>
+    <p><strong>Integracion en XDForCode:</strong></p>
+    <ul>
+      <li>En <code>[AGENTS]</code> con flag <code>1</code>: disponible en el dropdown de Console CLI. Se lanza bajo demanda desde la consola interactiva.</li>
+      <li>En <code>[APPS]</code> con flag <code>1</code>: crea una pestana permanente en el panel inferior; queda disponible tambien como agente Kanban.</li>
+      <li>En <code>[APPS]</code> con flag <code>0</code> (por defecto): desactivado sin borrar la entrada — cambiarlo a <code>1</code> si se usa frecuentemente.</li>
+    </ul>
+    <div class="callout green">
+      Combinacion recomendada: <code>0</code> en <code>[APPS]</code> y <code>1</code> en <code>[AGENTS]</code> — accesible desde el dropdown sin ocupar pestana fija.
+    </div>
+
+    <h4>Ejemplo Kanban con OpenWiki</h4>
+    <p>OpenWiki resulta especialmente util como primer eslabon en un plan Kanban: busca y resume informacion de Wikipedia y pasa el resultado a otro agente que lo procesa.</p>
+    <pre>
+┌───────────────────────────┐        ┌──────────────────────────────┐
+│  Tarea 1 — OpenWiki       │───────▶│  Tarea 2 — OpenCode          │
+│                           │        │                              │
+│  "Busca en Wikipedia      │        │  "Usando {{task.1.result}},  │
+│   informacion sobre el    │        │   crea documentacion tecnica │
+│   protocolo WebSocket y   │        │   en README.md para nuestro  │
+│   devuelve un resumen"    │        │   proyecto Harbour"          │
+│                           │        │                              │
+│  Agente: OpenWiki         │        │  Agente: OpenCode            │
+│  Estado: done ✓           │        │  depends_on: [tarea-1]       │
+└───────────────────────────┘        └──────────────────────────────┘</pre>
+    <p>El marcador <code>{{task.1.result}}</code> se sustituye automaticamente por la salida de la tarea 1. Las tareas con dependencias implicitas (usan <code>{{task.N.result}}</code>) esperan automaticamente aunque no se declare <code>depends_on</code> de forma explicita.</p>
+
+    <h3>Dialogo de gestion de agentes ("Anadir a Inicio")</h3>
+    <p>Desde la consola CLI hay un boton que abre el listado de agentes definidos en <code>[AGENTS]</code>. Al seleccionar uno y pulsar <strong>Anadir a Inicio</strong>, XDForCode modifica <code>XDTermApps.ini</code> con estas reglas:</p>
+    <table>
+      <tr><th>Situacion</th><th>Accion</th></tr>
+      <tr><td>El agente <strong>no existe</strong> en <code>[APPS]</code></td><td>Se anade al <strong>final</strong> de la seccion con flag <code>1</code></td></tr>
+      <tr><td>El agente existe con flag <strong><code>0</code></strong> (desactivado)</td><td>Se reactiva cambiando el flag a <code>1</code></td></tr>
+      <tr><td>El agente existe con flag <strong><code>1</code></strong> (ya activo)</td><td>Pregunta si se desea <strong>desactivar</strong> (cambia a <code>0</code>)</td></tr>
+    </table>
+    <p>El cambio requiere reiniciar la aplicacion para que tenga efecto.</p>
   </section>
 
   <!-- 18 - WHATSAPP -->
