@@ -444,12 +444,15 @@ Las **Skills** son fragmentos de texto predefinidos que puedes insertar en tus m
 | `concise` | modifier | Responde de forma concisa y directa |
 | `harbour` | context | Contexto del proyecto Harbour + FiveWin |
 | `harbour-locals` | rule | Reglas de declaración de variables en Harbour |
+| `harbexpert` | system | Consulta el repositorio oficial de Harbour antes de responder |
+| `fivexpert` | system | Consulta la instalación de FiveWin (C:\fwh) antes de responder |
+| `XDForCode` | context | Carga el doc de referencia de XDForCode y el README como base de conocimiento |
 
 ### Cómo usarlas
 
-1. Escribe `/skill` en el cuadro de mensaje o usa el botón de Skills en el panel.
+1. Escribe `/skills` en el cuadro de mensaje o usa el botón de Skills en el panel.
 2. Aparece la lista de skills disponibles.
-3. Selecciona la que quieras: su contenido se inserta en el mensaje.
+3. Activa las que quieras: permanecen activas en todos los mensajes hasta que las desactives.
 
 ### Gestionar Skills (diálogo CRUD)
 
@@ -461,6 +464,12 @@ Las skills de tipo `context` pueden cargar contenido desde:
 
 - **Ficheros locales**: rutas absolutas o relativas al directorio de la aplicación.
 - **URLs remotas**: contenido descargado vía HTTP (se eliminan los tags HTML automáticamente).
+
+El contenido se inyecta automáticamente en el **system prompt** de cada mensaje mientras el skill está activo, sin necesidad de adjuntar nada manualmente. Para forzar la recarga del contenido del disco usa `/context clear`.
+
+El skill `XDForCode` incluido carga dos fuentes en cada mensaje:
+- `docs/xdforcode.md` — arquitectura completa y referencia técnica del proyecto
+- `Readme.md` — descripción de funcionalidades y guía de usuario
 
 Ejemplo de skill con múltiples fuentes:
 ```json
@@ -583,6 +592,52 @@ Los planes guardados con versiones anteriores (sin campo `idtask` por tarea) **c
 2. Abrir **VER PLAN** y pulsar **💾 Guardar plan** con el mismo nombre.
 
 A partir de ese momento el plan quedará en el nuevo formato con `idtask` por tarea.
+
+### Planes de ejemplo incluidos
+
+La carpeta `tools/plans/` incluye 8 planes listos para cargar que cubren todas las capacidades del motor:
+
+| Fichero | Qué demuestra |
+|---|---|
+| `demo_paralelo_fanin.json` | Mimo y OpenCode trabajan **en paralelo**; XD Agent hace fan-in con ambos resultados via `{{task}}` |
+| `demo_pipeline_secuencial.json` | OpenCode genera código → Mimo escribe tests → OpenCode refactoriza; **mismo agente dos veces** (`3-1` y `3-2`) |
+| `demo_mismo_agente_dos_veces.json` | Patrón **A→B→A**: Mimo busca → OpenCode documenta → Mimo aplica en los ficheros |
+| `demo_todas_capacidades.json` | Combinación completa: paralelo + fan-in + cadena + token `{{repeat:}}` + múltiples tareas por agente |
+| `demo_mcp_git_workflow.json` | XD Agent revisa el estado del repositorio → Mimo redacta el mensaje de commit → XD Agent registra los cambios |
+| `demo_mcp_entorno_changelog.json` | XD Agent obtiene fecha, versión de Harbour y commits recientes → OpenCode redacta entrada de CHANGELOG → Mimo la inserta |
+| `demo_mcp_leer_parchear.json` | XD Agent lee fev_layout.prg y analiza expresiones repetidas (dos tareas propias); OpenCode aplica el refactor |
+| `demo_cruzado.json` | OpenCode y XD Agent analizan el proyecto **en paralelo** (fan-in real con dos fuentes); Mimo sintetiza y OpenCode evalúa viabilidad |
+
+Los tres planes `demo_mcp_*` ilustran el patrón más potente de XD Agent: **recopilar datos reales del entorno** (estado git, fecha/hora, versión de Harbour, contenido de ficheros) y pasarlos a los agentes de código mediante tokens `{{task.X-Y.result}}`. El agente decide qué herramienta usar según el objetivo de cada tarea.
+
+### Generar un plan con IA (`/plan`)
+
+En lugar de crear las tareas manualmente, puedes describir el objetivo en lenguaje natural y dejar que el agente IA genere el plan por ti.
+
+**Uso:**
+
+```
+/plan Analiza el fichero fev_layout.prg, lista todas sus funciones y genera un índice Markdown
+```
+
+**Cómo funciona:**
+
+1. El agente recibe la descripción y genera un plan en JSON con las tareas, agentes y dependencias necesarias.
+2. El resultado se muestra en el chat como siempre (puedes ver el JSON generado).
+3. Aparece una barra verde con el botón **📋 Cargar en Kanban** y el nombre y número de tareas del plan.
+4. Al pulsar el botón, el plan se guarda en `tools/plans/` con el nombre que la IA le asignó y se abre automáticamente en el tablero listo para ejecutar.
+
+El plan generado queda guardado en disco y puede reutilizarse y editarse como cualquier otro plan guardado manualmente.
+
+> **Planes consecutivos:** Al cargar un nuevo plan con el botón **📋 Cargar en Kanban**, el tablero se limpia automáticamente (las tareas sin ejecutar del plan anterior desaparecen). No es necesario pulsar "Limpiar" manualmente antes de generar un segundo `/plan`.
+
+**Otro ejemplo con paralelismo:**
+
+```
+/plan Revisa fev_agent.prg y fev_kanban.prg por separado y combina los resultados en un documento comparativo de sus funciones públicas
+```
+
+El agente generará tres tareas: dos en paralelo (una por fichero, en agentes distintos) y una tercera que hace fan-in usando los resultados de ambas.
 
 ### Casos de uso típicos
 

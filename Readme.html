@@ -749,13 +749,16 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><code>concise</code></td><td>modifier</td><td>Responde de forma concisa y directa</td></tr>
       <tr><td><code>harbour</code></td><td>context</td><td>Contexto del proyecto Harbour + FiveWin</td></tr>
       <tr><td><code>harbour-locals</code></td><td>rule</td><td>Reglas de declaracion de variables en Harbour</td></tr>
+      <tr><td><code>harbexpert</code></td><td>system</td><td>Consulta el repositorio oficial de Harbour antes de responder</td></tr>
+      <tr><td><code>fivexpert</code></td><td>system</td><td>Consulta la instalacion de FiveWin (C:\fwh) antes de responder</td></tr>
+      <tr><td><code>XDForCode</code></td><td>context</td><td>Carga el doc de referencia de XDForCode y el README como base de conocimiento</td></tr>
     </table>
 
     <h3>Como usarlas</h3>
     <ol class="steps">
-      <li><span>Escribe <code>/skill</code> en el cuadro de mensaje o usa el boton de Skills del panel.</span></li>
+      <li><span>Escribe <code>/skills</code> en el cuadro de mensaje o usa el boton de Skills del panel.</span></li>
       <li><span>Aparece la lista de skills disponibles.</span></li>
-      <li><span>Selecciona una y su contenido se inserta en el mensaje.</span></li>
+      <li><span>Activa las que quieras: permanecen activas en todos los mensajes hasta que las desactives.</span></li>
     </ol>
 
     <div class="callout yellow">
@@ -763,7 +766,12 @@ ollama pull qwen2.5-coder</pre>
     </div>
 
     <h3>Skills tipo context: conocimiento externo</h3>
-    <p>Las skills de tipo <code>context</code> pueden cargar contenido desde ficheros locales o URLs remotas. Soportan multiples fuentes:</p>
+    <p>Las skills de tipo <code>context</code> pueden cargar contenido desde ficheros locales o URLs remotas. Soportan multiples fuentes. El contenido se inyecta automaticamente en el system prompt de cada mensaje mientras el skill esta activo, sin necesidad de adjuntar nada manualmente. Para forzar la recarga del disco usa <code>/context clear</code>.</p>
+    <p>El skill <code>XDForCode</code> incluido carga dos fuentes en cada mensaje:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2; margin-bottom:12px;">
+      <li><code>docs/xdforcode.md</code> &mdash; arquitectura completa y referencia tecnica del proyecto</li>
+      <li><code>Readme.md</code> &mdash; descripcion de funcionalidades y guia de usuario</li>
+    </ul>
     <pre>{
   "name": "mi-proyecto",
   "type": "context",
@@ -873,6 +881,39 @@ ollama pull qwen2.5-coder</pre>
       <li><span>Abre <strong>VER PLAN</strong> y pulsa <strong>&#128190; Guardar plan</strong> con el mismo nombre.</span></li>
     </ol>
     <div class="callout green">A partir de ese momento el plan queda en el nuevo formato con <code>idtask</code> por tarea y el remapeo automatico funcionara en el futuro.</div>
+
+    <h3>Planes de ejemplo incluidos</h3>
+    <p>La carpeta <code>tools/plans/</code> incluye 8 planes listos para cargar que cubren todas las capacidades del motor:</p>
+    <table>
+      <thead><tr><th>Fichero</th><th>Que demuestra</th></tr></thead>
+      <tbody>
+        <tr><td><code>demo_paralelo_fanin.json</code></td><td>Mimo y OpenCode trabajan <strong>en paralelo</strong>; XD Agent hace fan-in con ambos resultados</td></tr>
+        <tr><td><code>demo_pipeline_secuencial.json</code></td><td>OpenCode genera codigo &rarr; Mimo escribe tests &rarr; OpenCode refactoriza; <strong>mismo agente dos veces</strong></td></tr>
+        <tr><td><code>demo_mismo_agente_dos_veces.json</code></td><td>Patron <strong>A&rarr;B&rarr;A</strong>: Mimo busca &rarr; OpenCode documenta &rarr; Mimo aplica en los ficheros</td></tr>
+        <tr><td><code>demo_todas_capacidades.json</code></td><td>Paralelo + fan-in + cadena + token <code>&#123;&#123;repeat:&#125;&#125;</code> + multiples tareas por agente</td></tr>
+        <tr><td><code>demo_mcp_git_workflow.json</code></td><td>XD Agent revisa el estado del repositorio &rarr; Mimo redacta el mensaje de commit &rarr; XD Agent registra los cambios</td></tr>
+        <tr><td><code>demo_mcp_entorno_changelog.json</code></td><td>XD Agent obtiene fecha, version de Harbour y commits recientes &rarr; OpenCode redacta entrada de CHANGELOG &rarr; Mimo la inserta</td></tr>
+        <tr><td><code>demo_mcp_leer_parchear.json</code></td><td>XD Agent lee fev_layout.prg y analiza expresiones repetidas (dos tareas propias); OpenCode aplica el refactor</td></tr>
+        <tr><td><code>demo_cruzado.json</code></td><td>OpenCode y XD Agent analizan el proyecto <strong>en paralelo</strong> (fan-in real con dos fuentes); Mimo sintetiza y OpenCode evalua viabilidad</td></tr>
+      </tbody>
+    </table>
+    <div class="callout blue">Los tres planes <code>demo_mcp_*</code> ilustran el patron mas potente de XD Agent: <strong>recopilar datos reales del entorno</strong> (estado git, fecha/hora, version de Harbour, contenido de ficheros) y pasarlos a los agentes de codigo mediante tokens <code>&#123;&#123;task.X-Y.result&#125;&#125;</code>. El agente decide que herramienta usar segun el objetivo de cada tarea.</div>
+
+    <h3>Generar un plan con IA (<code>/plan</code>)</h3>
+    <p>En lugar de crear las tareas manualmente, puedes describir el objetivo en lenguaje natural y dejar que el agente IA genere el plan por ti.</p>
+    <pre><code>/plan Analiza el fichero fev_layout.prg, lista todas sus funciones y genera un indice Markdown</code></pre>
+    <p><strong>Como funciona:</strong></p>
+    <ol style="padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>El agente recibe la descripcion y genera un plan en JSON con las tareas, agentes y dependencias necesarias.</li>
+      <li>El resultado se muestra en el chat como siempre (puedes ver el JSON generado en tiempo real).</li>
+      <li>Aparece una barra verde con el boton <strong>&#128203; Cargar en Kanban</strong> y el nombre y numero de tareas del plan.</li>
+      <li>Al pulsar el boton, el plan se guarda en <code>tools/plans/</code> con el nombre que la IA le asigno y se abre automaticamente en el tablero listo para ejecutar.</li>
+    </ol>
+    <p>El plan generado queda guardado en disco y puede reutilizarse y editarse como cualquier otro plan guardado manualmente.</p>
+    <div class="callout blue"><strong>Planes consecutivos:</strong> Al cargar un nuevo plan con el boton <strong>&#128203; Cargar en Kanban</strong>, el tablero se limpia automaticamente (las tareas sin ejecutar del plan anterior desaparecen). No es necesario pulsar &ldquo;Limpiar&rdquo; manualmente antes de generar un segundo <code>/plan</code>.</div>
+    <p><strong>Ejemplo con paralelismo:</strong></p>
+    <pre><code>/plan Revisa fev_agent.prg y fev_kanban.prg por separado y combina los resultados en un documento comparativo de sus funciones publicas</code></pre>
+    <p>El agente generara tres tareas: dos en paralelo (una por fichero, en agentes distintos) y una tercera que hace fan-in usando los resultados de ambas.</p>
 
     <h3>Casos de uso</h3>
     <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
