@@ -354,6 +354,7 @@
   <a href="#terminales">Terminales</a>
   <a href="#whatsapp">WhatsApp</a>
   <a href="#menu">Menu y configuracion</a>
+  <a href="#codegraph">CodeGraph (Indexacion)</a>
 
   <div class="nav-section">Ayuda</div>
   <a href="#faq">Preguntas frecuentes</a>
@@ -1247,6 +1248,144 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
       <summary>Como anado usuarios para el acceso remoto?</summary>
       <div class="faq-body"><p>Desde el menu, abre el dialogo de <strong>Gestion de Usuarios</strong> y anade usuarios con su nombre y contrasena. Cada usuario puede tener su propio modo IA, provider y modelo configurado.</p></div>
     </details>
+  </section>
+
+  <section id="codegraph">
+    <h2><span class="sec-num">21</span> Indexacion de Codigo y Documentos (CodeGraph)</h2>
+    <p>XDForCode incluye un potente motor interno de indexacion llamado <strong>CodeGraph</strong>. Este motor permite a los agentes de IA entender todo tu proyecto al instante, realizando busquedas ultrarrapidas tanto sobre tu codigo fuente como sobre tu documentacion, sin necesidad de que el agente tenga que leer todos los ficheros del disco en cada mensaje.</p>
+    <p>Al usar CodeGraph, la IA adquiere una memoria instantanea y global de como estan estructuradas tus clases, que funciones llaman a otras funciones, y donde encontrar respuestas exactas en tus manuales.</p>
+    
+    <h3>21.1 Como configurarlo? (<code>codegraph.json</code>)</h3>
+    <p>Para que el sistema sepa que partes de tu disco duro debe leer, necesita un archivo de configuracion llamado <code>codegraph.json</code> en la raiz de tu proyecto.</p>
+    <p>Si el archivo no existe, puedes crearlo con la siguiente estructura basica. Este archivo te permite tener un control total (mediante la propiedad <code>"enabled"</code>) de que quieres indexar.</p>
+    
+<pre>{
+  "db": ".codegraph\\codegraph.db",
+  "sources": [
+    {
+      "path": "E:\\ruta\\a\\tu\\proyecto",
+      "label": "Proyecto principal",
+      "enabled": true,
+      "extensions": ["*.prg", "*.ch"]
+    }
+  ],
+  "documents": [
+    {
+      "path": "E:\\ruta\\a\\tu\\proyecto\\docs",
+      "label": "Documentacion",
+      "enabled": true,
+      "extensions": ["*.txt", "*.md"]
+    }
+  ],
+  "databases": [
+    {
+      "path": "E:\\ruta\\a\\tu\\proyecto\\data",
+      "label": "Datos DBF",
+      "enabled": true,
+      "extensions": ["*.dbf", "*.db"]
+    }
+  ],
+  "options": {
+    "max_doc_size_kb": 15,
+    "skip_dirs": [
+      ".git",
+      "node_modules",
+      "build",
+      "build64",
+      "obj"
+    ]
+  }
+}</pre>
+
+    <p><strong>Explicacion de las secciones:</strong></p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li><strong><code>db</code></strong>: Donde se guardara la base de datos de SQLite. Por defecto se recomienda ponerlo dentro de una carpeta oculta <code>.codegraph</code>.</li>
+      <li><strong><code>sources</code></strong>: Rutas de carpetas donde guardas codigo fuente. Puedes configurar que extensiones buscar en <code>extensions</code> (por defecto <code>*.prg</code> y <code>*.ch</code>).</li>
+      <li><strong><code>documents</code></strong>: Rutas de carpetas donde guardas archivos de texto o Markdown (<code>*.txt</code>, <code>*.md</code>). Es ideal para que la IA se empape de las reglas de negocio o manuales de tu aplicacion.</li>
+      <li><strong><code>databases</code></strong>: Novedad. Rutas a tus tablas <code>.dbf</code> o bases <code>.sqlite</code>. CodeGraph extraera de forma inteligente su estructura (campos) y todo el contenido util de sus registros, <strong>separando automaticamente los campos largos (Memos)</strong> para evitar limites de tamano, permitiendo a la IA contestar preguntas precisas sobre tu modelo de datos y clientes sin esfuerzo.</li>
+      <li><strong><code>options</code></strong>: 
+        <ul style="list-style:circle; padding-left:24px; margin-top:4px;">
+          <li><code>max_doc_size_kb</code>: El tamano maximo en KB que leera de cada documento (para evitar colapsar la base de datos con logs inmensos).</li>
+          <li><code>skip_dirs</code>: Nombres de carpetas que el indexador debe ignorar completamente al buscar archivos recursivamente.</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <h3>21.2 Como iniciar la indexacion?</h3>
+    <p>Una vez tienes tu archivo <code>codegraph.json</code> listo, abre tu proyecto en XDForCode.</p>
+    <p>Desde el menu superior del IDE:<br>👉 <strong>TOOLS → CodeGraph Index</strong></p>
+    
+    <p>Aqui encontraras varias opciones que te permitiran tener control total sobre que indexar sin perder tiempo:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2; margin-bottom:12px;">
+      <li><strong>Index ALL</strong>: Escanea y actualiza absolutamente todo (Fuentes, Documentos y Bases de datos).</li>
+      <li><strong>Index SOURCES</strong>: Escanea unicamente los ficheros de codigo fuente, ignorando lo demas.</li>
+      <li><strong>Index DOCUMENTS</strong>: Util cuando solo has anadido o modificado un manual <code>.md</code> o <code>.txt</code> y quieres que la IA lo sepa rapido.</li>
+      <li><strong>Index DATABASES</strong>: Exclusivo para re-escanear tablas y sus registros.</li>
+    </ul>
+
+    <p>Al hacer clic, el proceso comienza inmediatamente de forma local. Veras un mensaje en pantalla indicandote que parte del proyecto se esta procesando en ese instante.</p>
+    
+    <p><strong>El proceso es 100% automatico y transparente:</strong></p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li><strong>Sin dependencias</strong>: No necesitas Node.js, Python ni conexiones a internet. Todo ocurre dentro del nucleo Harbour de XDForCode de manera silenciosa.</li>
+      <li><strong>Creacion de la BD</strong>: Se crea automaticamente el archivo <code>codegraph.db</code> y todas sus tablas e indices si es la primera vez.</li>
+      <li><strong>Auto-limpieza Inteligente (Categorizada)</strong>: Si borras un archivo o modificas algo, el sistema de limpieza borrara automaticamente los restos antiguos de la base de datos (nodos huerfanos) para que la IA no se confunda. <strong>Y lo mejor:</strong> si eliges indexar solo Documentos, el sistema sabe que solo debe limpiar Documentos, preservando a la perfeccion tu codigo fuente y tus bases de datos intactas sin necesidad de reescanearlo todo.</li>
+      <li><strong>Reset de la Base de Datos</strong>: Si en algun momento necesitas empezar de cero o hay un cambio estructural en las tablas, desde el menu <strong>TOOLS</strong> puedes seleccionar <strong>Reset CodeGraph DB</strong> para eliminar la base de datos completa y regenerar su estructura limpia instantaneamente.</li>
+    </ul>
+    
+    <h3>21.3 Auto-Indexacion en Tiempo Real (Incremental)</h3>
+    <p>El indexador global a traves del menu solo necesitas usarlo la primera vez o cuando configuras el proyecto inicialmente. A partir de entonces, el IDE se encarga de todo:</p>
+    
+    <p><strong>¡Indexacion Magica al Guardar!</strong><br>
+    Cada vez que modificas un archivo de codigo (<code>.prg</code>, <code>.ch</code>) o un documento web/markdown y lo guardas (<code>Ctrl+S</code>), XDForCode intercepta el evento silenciosamente. En tan solo 1 milisegundo:</p>
+    <ol class="steps" style="margin-top: 10px; margin-bottom: 20px;">
+      <li><span>Elimina los registros antiguos de ese fichero de la base de datos local.</span></li>
+      <li><span>Analiza los nuevos cambios y los inyecta en la BD (incluyendo su AST o su estructura de capitulos).</span></li>
+      <li><span>Todo ocurre en segundo plano, sin bloqueos ni barras de carga. Los agentes de IA siempre dispondran de la informacion actualizada al segundo, incluso si son ellos mismos los que te escriben un nuevo fichero.</span></li>
+    </ol>
+    
+    <h3>21.4 Como utilizan la IA el proyecto indexado?</h3>
+    <p>Una vez que el proyecto y los documentos estan indexados, los agentes integran herramientas (<em>tools</em>) que se conectan en tiempo real a esta base de datos local.</p>
+    
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li><strong>Para tu codigo</strong>: Si le pides a la IA "Busca donde se usa la funcion Facturar()", la IA no intentara leer tus 500 archivos <code>.prg</code>. Consultara la base de datos y sabra en milisegundos la linea exacta, quien la llama y a quien llama.</li>
+      <li><strong>Clasificacion por Importancia (PageRank interno)</strong>: Al buscar en el codigo, el sistema utiliza un algoritmo de <em>In-Degree Centrality</em>. Esto significa que cuando el agente busca codigo, los resultados se ordenan devolviendo primero aquellos ficheros y funciones que son mas llamados por el resto del proyecto. ¡El codigo mas critico siempre aparece primero!</li>
+      <li><strong>Para tus documentos</strong>: Si le pides a la IA "Dime que dice el manual sobre la conexion", usara el sistema de busqueda de texto completo <strong>(FTS5)</strong> integrado. CodeGraph descompone automaticamente los Markdown (<code>.md</code>) por capitulos (<code>#</code>), de manera que el agente recupera exactamente la seccion relevante al instante.</li>
+    </ul>
+<h3 id="21-5-exploracion-visual-del-grafo-menu-contextual">21.5 Exploración Visual del Grafo</h3>
+<p>Puedes explorar tu código visualmente e interrogar a la base de datos de CodeGraph de dos formas:</p>
+<ul>
+<li>A través del menú principal: <strong>TOOLS -&gt; Native CodeGraph</strong></li>
+<li>(Próximamente) Haciendo clic derecho sobre cualquier palabra o función en el editor de código para abrir el menú contextual.</li>
+</ul>
+<p>Dispones de las siguientes opciones:</p>
+<ol>
+<li><strong>Find Definition (Ir a la definición)</strong>
+<ul>
+<li><strong>Qué hace:</strong> Busca exactamente el archivo <code>.prg</code> y la línea donde está escrita la definición original de la clase o función (<code>CLASS TPanel</code>, <code>Function TTimer()</code>, etc.).</li>
+<li><strong>Cuándo usarlo:</strong> Úsalo cuando necesites ver cómo está programada por dentro una función o qué propiedades tiene una clase en su código original.</li>
+</ul>
+</li>
+<li><strong>Find Callers (Quién me llama)</strong>
+<ul>
+<li><strong>Qué hace:</strong> Busca en todo tu proyecto y en FiveWin todos los lugares donde se invoca o utiliza la función o clase sobre la que has hecho clic.</li>
+<li><strong>Cuándo usarlo:</strong> Úsalo cuando quieras ver ejemplos de cómo se usa una función (buscando dónde la has usado antes) o cuando vayas a modificar los parámetros de una función y necesites saber a quién tienes que ir a corregir para que no dé error al compilar.</li>
+</ul>
+</li>
+<li><strong>Find Callees (A quién llamo yo)</strong>
+<ul>
+<li><strong>Qué hace:</strong> Es exactamente lo contrario a Callers. Busca dentro de la función que has seleccionado y te hace un resumen de qué otras funciones o métodos invoca internamente.</li>
+<li><strong>Cuándo usarlo:</strong> Úsalo cuando estés leyendo una función muy larga o compleja que hizo otro programador (o tú mismo hace tiempo) y quieras un resumen rápido de qué dependencias tiene o en qué otras subrutinas se apoya, sin tener que leerte el código línea por línea.</li>
+</ul>
+</li>
+<li><strong>Blast Radius / Impact Analysis (Radio de Impacto en cadena)</strong>
+<ul>
+<li><strong>Qué hace:</strong> Es una versión &quot;extrema&quot; y recursiva de Callers. No solo te dice quién te llama a ti directamente, sino quién llama al que te llama, y quién llama al que llama al que te llama...</li>
+<li><strong>Cuándo usarlo:</strong> Úsalo exclusivamente cuando vayas a modificar una función &quot;Core&quot; o crítica (por ejemplo, una función de conexión a BD o de login). El radio de impacto te dirá absolutamente todas las partes del programa que podrían &quot;romperse&quot; en cadena por culpa de ese cambio, para que sepas qué pantallas tienes que testear antes de darlo por bueno.</li>
+<li><strong>Nota sobre la columna &quot;Line&quot;:</strong> Si en los resultados ves ficheros completos (ej. <code>fev_build.prg</code>) y en la columna Line te aparece un <code>1</code>, significa que la llamada en cadena proviene del cuerpo principal del código de ese fichero (fuera de cualquier función). CodeGraph indexa el fichero entero como nodo padre, y lógicamente, su línea de inicio es la 1.</li>
+</ul>
+</li>
+</ol>
   </section>
 
 </div><!-- /content -->

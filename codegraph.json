@@ -1,0 +1,115 @@
+{
+  "db": ".codegraph\\codegraph.db",
+  "sources": [
+    {
+      "path": "C:\\XDForCode",
+      "label": "Proyecto principal",
+      "extensions": [
+        "*.prg",
+        "*.ch"
+      ],
+      "enabled": true
+    },
+    {
+      "path": "C:\\FWH",
+      "label": "FiveWin",
+      "extensions": [
+        "*.prg",
+        "*.ch"
+      ],
+      "excludes": [
+        "C:\\FWH\\SAMPLES"
+      ],
+      "enabled": true
+    },
+    {
+      "path": "C:\\PROYECTO\\GESTION",
+      "label": "FiveWin - Gestion",
+      "extensions": [
+        "*.prg",
+        "*.ch"
+      ],
+      "enabled": true
+    },
+    {
+      "path": "C:\\HARBOUR",
+      "label": "Harbour Compiler",
+      "extensions": [
+        "*.prg",
+        "*.ch",
+        "*.c"
+      ],
+      "enabled": true
+    }
+  ],
+  "documents": [
+    {
+      "path": "C:\\XDForCode\\docs",
+      "label": "Documentación del proyecto",
+      "extensions": [
+        "*.txt",
+        "*.md",
+        "*.pdf",
+        "*.xls",
+        "*.xlsx",
+        "*.doc",
+        "*.docx"
+      ],
+      "enabled": true
+    },
+    {
+      "path": "C:\\PROYECTO\\GESTION\\Manuales",
+      "label": "Manuales personales",
+      "extensions": [
+        "*.txt",
+        "*.md",
+        "*.pdf",
+        "*.xls",
+        "*.xlsx",
+        "*.doc",
+        "*.docx"
+      ],
+      "enabled": false
+    }
+  ],
+  "databases": [
+    {
+      "path": "C:\\XDForCode\\data",
+      "label": "Tablas locales del proyecto",
+      "extensions": [
+        "*.dbf",
+        "*.db"
+      ],
+      "excludes": [
+        "xdchat.db"
+      ],
+      "enabled": true
+    }
+  ],
+  "images": [
+    {
+      "path": "C:\\XDForCode\\imgs",
+      "label": "Imagenes y recursos visuales",
+      "extensions": [
+        "*.png",
+        "*.jpg",
+        "*.jpeg",
+        "*.gif",
+        "*.ico",
+        "*.svg",
+        "*.bmp"
+      ],
+      "enabled": true
+    }
+  ],
+  "options": {
+    "max_doc_size_kb": 15,
+    "skip_dirs": [
+      ".git",
+      "node_modules",
+      "build",
+      "build64",
+      "obj"
+    ]
+  }
+}
