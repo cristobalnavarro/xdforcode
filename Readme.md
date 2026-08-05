@@ -1855,13 +1855,13 @@ El Dashboard actualiza los datos cada vez que se abre (no hace polling continuo)
 
 ## 27. API REST Local Integrada
 
-XDForCode incorpora de forma nativa un servidor HTTP embebido (basado en CivetWeb) que, además de servir el chat remoto, provee una API REST completa en la ruta `/xd/v12/` para permitir controlar el motor de IA desde fuera del IDE (por ejemplo, desde otras aplicaciones, scripts de automatización o llamadas `curl`).
+XDForCode incorpora de forma nativa un servidor HTTP embebido que, además de servir el chat remoto, provee una API REST completa en la ruta `/xd/v12/` para permitir controlar el motor de IA desde fuera del IDE (por ejemplo, desde otras aplicaciones, scripts de automatización o llamadas `curl`).
 
 ### Autenticación
 Todos los endpoints requieren un **Token de Seguridad (Bearer)**. 
 - Enviar por cabecera: `Authorization: Bearer <token>`
 - En pruebas iniciales, usa el token configurado en tu IDE o base de datos.
-- A nivel del wrapper en C, CivetWeb protege adicionalmente las conexiones WebSocket exigiendo el token, y rechaza los frames de datos que no lo incluyan, ofreciendo un escudo frente a ataques masivos.
+- A nivel del wrapper en C, protege adicionalmente las conexiones WebSocket exigiendo el token, y rechaza los frames de datos que no lo incluyan, ofreciendo un escudo frente a ataques masivos.
 
 ### Endpoints Disponibles
 
@@ -1892,7 +1892,7 @@ De esta forma, puedes automatizar llamadas por detrás sin que afecte en absolut
 Puedes probar todos estos endpoints directamente desde dentro de XDForCode sin necesidad de usar herramientas externas como Postman:
 1. Ve al menú **TESTS** de la barra superior.
 2. Selecciona **Test API REST local**.
-3. Se abrirá un diálogo con estilo visual integrado donde podrás seleccionar el endpoint desde un desplegable (se autorellena interrogando a CivetWeb), meter tu token, especificar un JSON en el Body y ver la respuesta.
+3. Se abrirá un diálogo con estilo visual integrado donde podrás seleccionar el endpoint desde un desplegable (se autorellena interrogando al servidor), meter tu token, especificar un JSON en el Body y ver la respuesta.
 4. Internamente este diálogo utiliza la librería `libcurl` nativa de Harbour para realizar las llamadas (GET/POST automáticos) en lugar de depender de ejecutables externos de Windows.
 
 *XDForCode — XDEVFORYOU SOLUTIONS · 2026*
