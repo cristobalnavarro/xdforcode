@@ -339,6 +339,8 @@
   <div class="nav-section">Agentes IA</div>
   <a href="#agentes">Instalacion recomendada</a>
   <a href="#modos">Modos de ejecucion</a>
+  <a href="#puter">Modo Puter</a>
+  <a href="#fallback">Auto-fallback</a>
   <a href="#activar">Activar y configurar agente</a>
   <a href="#chat">Panel de chat</a>
 
@@ -355,6 +357,11 @@
   <a href="#whatsapp">WhatsApp</a>
   <a href="#menu">Menu y configuracion</a>
   <a href="#codegraph">CodeGraph (Indexacion)</a>
+  <a href="#reportes">Motor de Reportes</a>
+  <a href="#mysql">MySQL/MariaDB MCP</a>
+  <a href="#config-gui">Config GUI</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#api-rest">API REST Local</a>
 
   <div class="nav-section">Ayuda</div>
   <a href="#faq">Preguntas frecuentes</a>
@@ -417,6 +424,46 @@
         <strong>Preview HTML</strong>
         <span>Vista previa en vivo de ficheros HTML en el sidebar</span>
       </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#128260;</div>
+        <strong>/loop autonomo</strong>
+        <span>El agente itera solo sobre un objetivo hasta resolverlo</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#128444;</div>
+        <strong>Adjuntar imagenes</strong>
+        <span>Pega o adjunta imagenes al chat; el agente las interpreta</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#128202;</div>
+        <strong>Dashboard</strong>
+        <span>Panel de estado en tiempo real: agentes, MCP, Kanban, servidor</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#128221;</div>
+        <strong>Motor de reportes</strong>
+        <span>Los agentes muestran tablas, diagramas, diffs y botones de accion</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#128190;</div>
+        <strong>Perfiles (.xdprofile)</strong>
+        <span>Guarda y carga configuracion de agente y proyecto en un clic</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#9729;</div>
+        <strong>Modo Puter</strong>
+        <span>549+ modelos de IA sin API key propia via Puter.com, con streaming NDJSON</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#9889;</div>
+        <strong>Auto-fallback</strong>
+        <span>Cambio automatico de provider cuando se agota la cuota; cadena configurable por modo</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#128274;</div>
+        <strong>SQLCipher AES-256</strong>
+        <span>Todas las bases de datos SQLite (chat, CodeGraph, MCP tools) cifradas con contrasena</span>
+      </div>
     </div>
   </section>
 
@@ -467,6 +514,29 @@
 
     <h3>Scintilla</h3>
     <p>Editor nativo de Windows, mas ligero. Se usa para ficheros que se abren en sus propias pestanas del IDE, con resaltado optimizado para Harbour y FiveWin.</p>
+
+    <h3>Pantalla de inicio — botones de accion</h3>
+    <p>Al abrir XDForCode sin fichero activo se muestra la pantalla de bienvenida. Cuatro botones en la esquina superior derecha del editor dan acceso rapido a las funciones principales:</p>
+    <table>
+      <tr><th>Boton</th><th>Accion</th></tr>
+      <tr><td><strong>DASHBOARD</strong></td><td>Abre el panel de estado del IDE (ver seccion Dashboard)</td></tr>
+      <tr><td><strong>TASK MANAGER</strong></td><td>Abre el tablero Kanban directamente</td></tr>
+      <tr><td><strong>LOAD PROFILE</strong></td><td>Carga un perfil de configuracion (.xdprofile)</td></tr>
+      <tr><td><strong>SAVE PROFILE</strong></td><td>Guarda el perfil actual en la carpeta <code>profiles\</code></td></tr>
+    </table>
+    <p>El triangulo <strong>▲</strong> en la barra de estado inferior recarga la configuracion desde <code>XDForCodeUI.ini</code> sin reiniciar la aplicacion.</p>
+
+    <h3>Sistema de perfiles (.xdprofile)</h3>
+    <p>Un perfil guarda toda la configuracion del agente activo y la carpeta de trabajo en un unico fichero JSON. Util para cambiar rapidamente entre proyectos o configuraciones de agente.</p>
+    <table>
+      <tr><th>Campo guardado</th><th>Contenido</th></tr>
+      <tr><td><code>ai.mode</code></td><td>Modo de ejecucion (opencode_acp, claude_cli, ollama, inference…)</td></tr>
+      <tr><td><code>ai.model</code></td><td>Modelo activo</td></tr>
+      <tr><td><code>ai.exe</code></td><td>Ruta al ejecutable del agente</td></tr>
+      <tr><td><code>ai.provider</code></td><td>Proveedor (Anthropic, NVIDIA, GROQ…)</td></tr>
+      <tr><td><code>work_folder</code></td><td>Carpeta de trabajo del proyecto</td></tr>
+    </table>
+    <p>Los perfiles se guardan en <code>profiles\&lt;modo&gt;_&lt;fecha&gt;.xdprofile</code> junto al ejecutable. Al cargar un perfil con <code>mode = "inference"</code> los providers se recargan automaticamente.</p>
 
     <h3>Comportamiento al abrir un fichero</h3>
     <table>
@@ -565,6 +635,9 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><strong>Modo 2 (Per-request)</strong></td><td>Cada mensaje crea una nueva peticion con el modelo seleccionado</td></tr>
       <tr><td><strong>Modo 3 (Modelo por defecto)</strong></td><td>Usa el modelo por defecto configurado en opencode</td></tr>
     </table>
+    <div class="callout" style="margin-top:12px;">
+      <strong>Compatibilidad de sesiones entre agentes:</strong> cada agente ACP (opencode, mimo, gemini) usa su propio formato interno de sesion. Si cambias de agente con una sesion activa, el nuevo agente puede rechazarla. XDForCode detecta este error automaticamente, descarta la sesion anterior y crea una nueva sin mostrar ningun aviso. La conversacion continua con normalidad.
+    </div>
 
     <h3>Modo Pi RPC</h3>
     <p>Protocolo JSONL bidireccional sobre stdin/stdout propio de Pi. XDForCode lanza <code>pi --mode rpc</code> como proceso y se comunica con el enviando y recibiendo objetos JSON (un objeto por linea).</p>
@@ -588,8 +661,8 @@ ollama pull qwen2.5-coder</pre>
     </table>
 
     <h3>Modo Inference</h3>
-    <p>Conecta directamente con APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, Together, HuggingFace) sin necesidad de instalar agentes externos. Usa hbcurl nativo de Harbour con streaming SSE.</p>
-    <p><strong>Configuracion:</strong> Edita el fichero <code>xdinference.json</code> junto al ejecutable para anadir providers y modelos. Cada provider necesita su endpoint y API key.</p>
+    <p>Conecta directamente con APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, Together, HuggingFace, OLLAMA) sin necesidad de instalar agentes externos. Usa hbcurl nativo de Harbour con streaming SSE.</p>
+    <p><strong>Configuracion:</strong> Gestiona providers y modelos desde <strong>TOOLS &rarr; Inference Providers...</strong>. Cada modelo puede tener un bloque <code>params</code> con sus parametros de inferencia (temperature, top_p, max_tokens, y para OLLAMA: num_ctx, top_k, repeat_penalty en <code>options</code>).</p>
     <p><strong>Providers preconfigurados:</strong></p>
     <table>
       <tr><th>Provider</th><th>Modelos destacados</th></tr>
@@ -598,10 +671,70 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><strong>OpenRouter</strong></td><td>Acceso a Claude, GPT-4o, Gemini y otros</td></tr>
       <tr><td><strong>Together</strong></td><td>Llama, DeepSeek, Qwen, Mistral</td></tr>
       <tr><td><strong>HuggingFace</strong></td><td>Amplia variedad de modelos open source</td></tr>
+      <tr><td><strong>OLLAMA</strong></td><td>Modelos locales (Qwen, DeepSeek, Gemma, Llama...)</td></tr>
     </table>
     <div class="callout green">
-      El modo Inference es ideal para usar modelos potentes sin instalar agentes CLI, solo necesitas una API key.
+      El modo Inference es ideal para usar modelos potentes sin instalar agentes CLI. Para modelos locales, OLLAMA con num_ctx: 32768 evita problemas de truncacion de contexto.
     </div>
+    <p><strong>Herramientas MCP sin agente externo:</strong> el modo Inference incluye un bucle de tool calling nativo. Cuando el toggle <strong>Agente externo (ACP) [ OFF ]</strong> esta desactivado en el menu TOOLS, XDForCode envía las herramientas MCP directamente al LLM y ejecuta el ciclo <em>tool_use → resultado → siguiente vuelta</em> internamente — sin necesidad de tener opencode o mimo instalados. Cualquier provider que soporte tool calling (GROQ, OpenRouter, NVIDIA, OLLAMA con modelos compatibles) puede ejecutar herramientas MCP en modo completamente autonomo.</p>
+
+    <h3 id="puter">Modo Puter</h3>
+    <p>Conecta con la plataforma <strong>Puter.com</strong> — mas de 549 modelos de IA (Claude, Gemini, GPT-4o, Llama, Mistral y cientos mas) disponibles gratuitamente sin API key propia, usando solo tu cuenta Puter.</p>
+    <table>
+      <tr><th>Caracteristica</th><th>Detalle</th></tr>
+      <tr><td><strong>Autenticacion JWT</strong></td><td>XDForCode solicita el token al servidor Puter y lo renueva en cada sesion sin intervencion manual</td></tr>
+      <tr><td><strong>Streaming NDJSON</strong></td><td>Los tokens llegan en tiempo real igual que en otros modos de streaming</td></tr>
+      <tr><td><strong>549+ modelos</strong></td><td>Autodiscovery via <code>/drivers/list</code>: Claude, Gemini, GPT-4o, Llama, Mistral, DeepSeek y mas</td></tr>
+      <tr><td><strong>Tools MCP</strong></td><td>Inyeccion de contexto: fecha/hora, IP publica, temperatura, version de Harbour se resuelven antes del mensaje</td></tr>
+    </table>
+    <p><strong>Configuracion:</strong> Crea una cuenta gratuita en <strong>puter.com</strong> e inicia sesion una vez desde <strong>TOOLS &rarr; Configurar Puter...</strong>. El token JWT se guarda en <code>XDForCodeUI.ini [PUTER]</code> y se renueva automaticamente.</p>
+    <p><strong>Activacion:</strong> <code>/puter</code></p>
+    <div class="callout yellow">
+      <strong>Limitacion:</strong> el driver <code>puter-chat-completion</code> no admite function calling nativo. Las herramientas MCP se resuelven previamente e inyectan como datos reales en el system message, evitando que el modelo los invente.
+    </div>
+  </section>
+
+  <section id="fallback">
+    <h3>&#9889; Auto-fallback de provider</h3>
+    <p>Cuando un provider devuelve un error de cuota o limite de tasa (<code>429</code>, <code>rate_limit</code>, <code>quota_exceeded</code>, <code>insufficient_credits</code>...), XDForCode cambia automaticamente al siguiente provider de la cadena y reintenta la misma consulta sin intervencion del usuario.</p>
+
+    <h4>Cadena de degradacion por familia de modo</h4>
+    <table>
+      <tr><th>Modo activo</th><th>Cadena de fallback</th></tr>
+      <tr><td><code>opencode*</code> / <code>mimo*</code> / <code>gemini*</code> / <code>claude*</code></td><td>&#8594; inference &#8594; puter &#8594; ollama (local)</td></tr>
+      <tr><td><code>inference</code> (cualquier provider)</td><td>&#8594; puter &#8594; ollama</td></tr>
+      <tr><td><code>puter</code></td><td>&#8594; inference &#8594; ollama</td></tr>
+      <tr><td><code>ollama</code></td><td>Ultimo recurso, sin fallback</td></tr>
+    </table>
+
+    <h4>Comportamiento</h4>
+    <table>
+      <tr><th>Aspecto</th><th>Detalle</th></tr>
+      <tr><td><strong>Notificacion</strong></td><td>El error original aparece en el chat; a continuacion <code>&#9889; Limite alcanzado &mdash; cambiando a <strong>X</strong>...</code> y la respuesta del nuevo provider</td></tr>
+      <tr><td><strong>Persistencia</strong></td><td>El cambio de provider queda activo para el siguiente mensaje (no se restaura el original)</td></tr>
+      <tr><td><strong>Reintento inline</strong></td><td>Para modos HTTP (<code>inference</code>, <code>puter</code>): el reintento ocurre en el mismo hilo, sin relanzar el proceso</td></tr>
+      <tr><td><strong>Reintento por proceso</strong></td><td>Para modos de proceso (<code>opencode_*</code>, <code>mimo_*</code>, etc.): el provider se cambia y el proceso se relanza automaticamente</td></tr>
+      <tr><td><strong>Max reintentos</strong></td><td>1 por turno (configurable en <code>xdfallback.json</code> &rarr; <code>max_retries</code>)</td></tr>
+    </table>
+
+    <h4>Configuracion (<code>xdfallback.json</code>)</h4>
+    <p>Fichero junto al ejecutable. Campos principales:</p>
+    <table>
+      <tr><th>Campo</th><th>Descripcion</th></tr>
+      <tr><td><code>enabled</code></td><td>Activa o desactiva el fallback globalmente</td></tr>
+      <tr><td><code>triggers.http</code></td><td>Lista de palabras clave que identifican errores de cuota en la respuesta cruda del provider</td></tr>
+      <tr><td><code>rules[]</code></td><td>Reglas por <code>(mode, provider)</code>: cada regla tiene un <code>match</code> y un array <code>fallbacks</code> con entradas <code>{ mode, provider, model, label }</code></td></tr>
+      <tr><td><code>provider: "*"</code></td><td>Regla catch-all aplicada cuando ninguna regla especifica coincide</td></tr>
+    </table>
+
+    <h4>Comandos</h4>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/fallback</code></td><td>Muestra estado actual y cadena de degradacion por modo</td></tr>
+      <tr><td><code>/fallback on</code></td><td>Activa el fallback automatico (estado por defecto)</td></tr>
+      <tr><td><code>/fallback off</code></td><td>Desactiva; los errores de cuota se muestran sin reintento</td></tr>
+    </table>
+    <p>El estado aparece siempre en la tabla de <code>/mode</code> en la fila <strong>fallback</strong>.</p>
   </section>
 
   <!-- 7 - ACTIVAR -->
@@ -672,16 +805,169 @@ ollama pull qwen2.5-coder</pre>
     <div class="callout green">
       <strong>Empieza por <code>/help</code></strong> — es el primer comando que debes probar. Te mostrara una explicacion completa de todos los comandos y opciones del chat.
     </div>
+    <h4>Estado y configuracion general</h4>
+    <table>
+      <tr><th>Comando</th><th>Argumentos</th><th>Accion</th></tr>
+      <tr><td><code>/</code></td><td>—</td><td>Mostrar configuracion actual (modo, modelo, endpoint, tools…)</td></tr>
+      <tr><td><code>/help</code></td><td>—</td><td>Mostrar ayuda completa del chat</td></tr>
+      <tr><td><code>/mode</code></td><td>—</td><td>Mostrar modo y agente activo</td></tr>
+      <tr><td><code>/savemode</code></td><td>—</td><td>Guardar snapshot de la configuracion actual</td></tr>
+      <tr><td><code>/restoremode</code></td><td>—</td><td>Restaurar configuracion guardada (guarda la actual antes)</td></tr>
+    </table>
+
+    <h4>Seleccion de agente / modo</h4>
     <table>
       <tr><th>Comando</th><th>Accion</th></tr>
-      <tr><td><code>/help</code></td><td>Muestra la ayuda completa del chat y todos los comandos disponibles</td></tr>
-      <tr><td><code>/mode</code></td><td>Cambiar el agente o modo activo</td></tr>
-      <tr><td><code>/ollama</code></td><td>Listar y cambiar modelos de Ollama</td></tr>
-      <tr><td><code>/clear</code></td><td>Limpiar el historial del chat</td></tr>
-      <tr><td><code>/skill</code></td><td>Insertar una skill en el mensaje</td></tr>
-      <tr><td><code>/provider</code></td><td>Cambiar el provider de inference</td></tr>
-      <tr><td><code>/model</code></td><td>Cambiar el modelo activo</td></tr>
+      <tr><td><code>/opencode-acp</code></td><td>Modo OpenCode ACP (streaming + herramientas)</td></tr>
+      <tr><td><code>/mimo-acp</code></td><td>Modo MIMO ACP (streaming + herramientas)</td></tr>
+      <tr><td><code>/gemini-acp</code></td><td>Modo Gemini ACP</td></tr>
+      <tr><td><code>/openclaude-acp</code></td><td>Modo OpenClaude ACP</td></tr>
+      <tr><td><code>/opencode</code></td><td>Modo OpenCode headless (run)</td></tr>
+      <tr><td><code>/mimo</code></td><td>Modo MIMO headless</td></tr>
+      <tr><td><code>/claude</code></td><td>Modo Claude Code headless (-p)</td></tr>
+      <tr><td><code>/openclaude</code></td><td>Modo OpenClaude headless</td></tr>
+      <tr><td><code>/gemini</code></td><td>Modo Gemini CLI headless</td></tr>
+      <tr><td><code>/pi</code></td><td>Modo Pi RPC (agente coding, JSONL stdin/stdout)</td></tr>
+      <tr><td><code>/ollama</code></td><td>Modo Ollama (modelos locales)</td></tr>
+      <tr><td><code>/openai</code></td><td>Modo OpenAI compatible (REST directo)</td></tr>
+      <tr><td><code>/inference</code></td><td>Modo Inference HTTP directo</td></tr>
+      <tr><td><code>/puter</code></td><td>Modo Puter (549+ modelos, sin API key propia)</td></tr>
+      <tr><td><code>/fallback</code></td><td>Ver estado del auto-fallback; <code>on</code> / <code>off</code> para activar/desactivar</td></tr>
     </table>
+
+    <h4>Modelo, proveedor y endpoint</h4>
+    <table>
+      <tr><th>Comando</th><th>Argumentos</th><th>Accion</th></tr>
+      <tr><td><code>/model</code></td><td>&lt;nombre&gt;</td><td>Cambiar el modelo activo</td></tr>
+      <tr><td><code>/models</code></td><td>—</td><td>Elegir modelo desde un desplegable</td></tr>
+      <tr><td><code>/provider</code></td><td>&lt;nombre&gt;</td><td>Establecer proveedor activo (inference)</td></tr>
+      <tr><td><code>/providers</code></td><td>—</td><td>Elegir proveedor desde un desplegable</td></tr>
+      <tr><td><code>/endpoint</code></td><td>&lt;url&gt;</td><td>Cambiar la URL del endpoint</td></tr>
+      <tr><td><code>/key</code></td><td>&lt;key&gt;</td><td>Establecer API key</td></tr>
+      <tr><td><code>/exe</code></td><td>&lt;nombre&gt;</td><td>Nombre o ruta del ejecutable CLI del agente</td></tr>
+      <tr><td><code>/acpmode</code></td><td>1|2|3</td><td>Sesion ACP: 1=memoria compartida, 2=tu modelo, 3=default</td></tr>
+      <tr><td><code>/stream</code></td><td>on|off</td><td>Activar/desactivar streaming en agentes headless</td></tr>
+    </table>
+
+    <h4>Contexto del editor</h4>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/file</code></td><td>Adjuntar el fichero activo del editor al prompt</td></tr>
+      <tr><td><code>/sel</code></td><td>Adjuntar la seleccion actual del editor al prompt</td></tr>
+      <tr><td><code>/nocontext</code></td><td>No adjuntar contexto del editor en este prompt</td></tr>
+      <tr><td><code>/attach</code></td><td>Adjuntar fichero externo (imagen o texto, max. 4)</td></tr>
+      <tr><td><code>/detach</code></td><td>Quitar todos los ficheros adjuntos</td></tr>
+    </table>
+
+    <h4>Skills y herramientas MCP</h4>
+    <table>
+      <tr><th>Comando</th><th>Argumentos</th><th>Accion</th></tr>
+      <tr><td><code>/skills</code></td><td>[off &lt;nombre&gt;|clear]</td><td>Gestionar skills activos (prompt templates persistentes)</td></tr>
+      <tr><td><code>/reloadskills</code></td><td>—</td><td>Recargar xdskills.json sin reiniciar</td></tr>
+      <tr><td><code>/context</code></td><td>[clear]</td><td>Ver o limpiar cache de skills de contexto (docs/URLs)</td></tr>
+      <tr><td><code>/tools</code></td><td>—</td><td>Gestionar filtro de tools MCP (picker visual)</td></tr>
+      <tr><td><code>/mcplist</code></td><td>—</td><td>Listar todas las tools MCP disponibles</td></tr>
+      <tr><td><code>/reloadmcp</code></td><td>—</td><td>Recargar la lista de tools MCP sin reiniciar</td></tr>
+      <tr><td><code>/showmcpused</code></td><td>0|1</td><td>Mostrar u ocultar las tools MCP usadas en cada respuesta</td></tr>
+      <tr><td><code>/showtools</code></td><td>0|1</td><td>Mostrar u ocultar el nombre del tool ejecutado en el chat (&#8250; nombre_tool)</td></tr>
+    </table>
+
+    <h4>Bucle autonomo</h4>
+    <table>
+      <tr><th>Comando</th><th>Argumentos</th><th>Accion</th></tr>
+      <tr><td><code>/loop</code></td><td>&lt;objetivo&gt;</td><td>Iniciar bucle autonomo: el agente itera hasta escribir [LISTO]</td></tr>
+      <tr><td><code>/loop stop</code></td><td>—</td><td>Detener el bucle en curso</td></tr>
+      <tr><td><code>/loop max</code></td><td>&lt;n&gt;</td><td>Establecer numero maximo de iteraciones (por defecto: 20)</td></tr>
+      <tr><td><code>/loop status</code></td><td>—</td><td>Mostrar estado del bucle actual</td></tr>
+    </table>
+
+    <h4>Planes multi-agente</h4>
+    <table>
+      <tr><th>Comando</th><th>Argumentos</th><th>Accion</th></tr>
+      <tr><td><code>/plan</code></td><td>&lt;descripcion&gt;</td><td>Generar un plan Kanban multi-agente desde lenguaje natural</td></tr>
+    </table>
+
+    <h4>ACP HTTP (chat remoto desde navegador)</h4>
+    <table>
+      <tr><th>Comando</th><th>Argumentos</th><th>Accion</th></tr>
+      <tr><td><code>/http</code></td><td>1|0</td><td>Activar o desactivar el servidor ACP HTTP (puerto 8003)</td></tr>
+      <tr><td><code>/httpport</code></td><td>&lt;puerto&gt;</td><td>Cambiar el puerto del servidor ACP HTTP</td></tr>
+      <tr><td><code>/httphost</code></td><td>&lt;host&gt;</td><td>Cambiar el host del servidor ACP HTTP</td></tr>
+      <tr><td><code>/httpstatus</code></td><td>—</td><td>Mostrar la configuracion ACP HTTP actual</td></tr>
+    </table>
+
+    <h4>Historial y sesion</h4>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/savechat</code></td><td>Guardar historial del chat en fichero con fecha y hora</td></tr>
+      <tr><td><code>/restorechat</code></td><td>Restaurar o elegir una sesion anterior del chat</td></tr>
+      <tr><td><code>/search &lt;texto&gt;</code></td><td>Buscar texto en el historial de todas las sesiones guardadas</td></tr>
+      <tr><td><code>/diffreview on|off</code></td><td>Activar revision de diff antes de que la IA aplique cambios de ficheros (solo ACP)</td></tr>
+      <tr><td><code>/autoapprove on|off</code></td><td>Auto-aprobar comandos del agente sin pedir confirmacion</td></tr>
+      <tr><td><code>/clear</code></td><td>Limpiar la pantalla (el agente <strong>sigue recordando</strong> el historial)</td></tr>
+      <tr><td><code>/reset</code> / <code>/new</code></td><td>Nueva sesion: limpia pantalla e historial, olvida memoria ACP</td></tr>
+      <tr><td><code>/reload</code></td><td>Recargar la pagina del chat</td></tr>
+      <tr><td><code>/refresh</code></td><td>Recargar la pagina conservando el historial de prompts</td></tr>
+    </table>
+
+    <h4>Especificos de agente Pi</h4>
+    <table>
+      <tr><th>Comando</th><th>Argumentos</th><th>Accion</th></tr>
+      <tr><td><code>/steer</code></td><td>&lt;texto&gt;</td><td>Pi: inyectar una instruccion en mitad de una respuesta en curso</td></tr>
+      <tr><td><code>/cmd</code></td><td>&lt;comando&gt;</td><td>Ejecutar un comando de shell desde el chat</td></tr>
+    </table>
+
+    <h3>Buscar en el historial de conversaciones anteriores</h3>
+    <p>Todas las sesiones se guardan automaticamente en <code>data/xdchat.db</code>. Hay dos formas de buscar en ellas:</p>
+
+    <h4>Desde el chat con <code>/search</code></h4>
+    <p>El comando <code>/search</code> busca en todos los mensajes guardados de todas las sesiones y muestra los resultados directamente en el chat. Cada resultado muestra la fecha, el rol y un fragmento del mensaje. Al hacer clic en un resultado se carga esa sesion completa.</p>
+    <pre>/search CodeGraph
+/search funcion AdjustLayout
+/search error OrdIsUnique</pre>
+    <p class="note">La busqueda cubre los mensajes no comprimidos (todos los mensajes de usuario y los de asistente cortos). Los mensajes muy largos del asistente que se almacenan comprimidos no se incluyen.</p>
+
+    <h4>Desde el agente con la tool MCP <code>chat_search</code></h4>
+    <p>Los agentes de IA pueden buscar en el historial directamente mediante la tool MCP <code>chat_search</code>:</p>
+    <table>
+      <tr><th>Parametro</th><th>Descripcion</th></tr>
+      <tr><td><code>query</code></td><td>Texto a buscar (requerido)</td></tr>
+      <tr><td><code>session_id</code></td><td>Limitar a una sesion concreta (usar /restorechat para ver los IDs)</td></tr>
+      <tr><td><code>role</code></td><td>Filtrar por <code>"user"</code> (tus preguntas) o <code>"assistant"</code> (respuestas del agente)</td></tr>
+      <tr><td><code>limit</code></td><td>Maximo de resultados (defecto 20)</td></tr>
+      <tr><td><code>context</code></td><td>Mensajes antes/despues del match como contexto (defecto 1)</td></tr>
+    </table>
+    <p><strong>Ejemplos:</strong></p>
+    <pre>Busca en el historial que dijimos sobre CodeGraph
+→ chat_search({"query": "CodeGraph"})
+
+Busca solo en tus preguntas anteriores sobre el Kanban
+→ chat_search({"query": "kanban", "role": "user"})
+
+Busca la solucion al error OrdIsUnique explicada por el agente
+→ chat_search({"query": "OrdIsUnique", "role": "assistant"})
+
+Busca con mas contexto alrededor de cada match
+→ chat_search({"query": "harbour", "context": 3})</pre>
+
+    <h3>Historial y limite de contexto</h3>
+    <p>Para evitar que sesiones muy largas superen el limite de tokens del modelo, XDForCode aplica automaticamente un <strong>limite de historial</strong>: solo se envian los ultimos N pares de mensajes (por defecto 30). Los mensajes mas antiguos se descartan del contexto enviado al modelo, pero siguen visibles en pantalla y persisten en la base de datos.</p>
+    <p>El limite se configura en <code>XDForCodeUI.ini</code>:</p>
+    <pre>[AI]
+maxhistory = 30    ; 0 = sin limite (envia todo el historial)</pre>
+
+    <h3>Diff review — revisar cambios de la IA antes de aplicarlos</h3>
+    <p>Cuando el diff review esta activo, <strong>cada vez que un agente ACP quiere escribir un fichero</strong>, XDForCode interrumpe la escritura y muestra el diff en el panel de chat antes de aplicarlo:</p>
+    <ul>
+      <li>Las lineas <strong style="color:#e57">eliminadas</strong> se muestran en rojo.</li>
+      <li>Las lineas <strong style="color:#5c5">anadidas</strong> se muestran en verde.</li>
+      <li>Dos botones: <strong>&#10003; Aplicar</strong> (el fichero se escribe) y <strong>&#10007; Rechazar</strong> (la escritura se cancela).</li>
+    </ul>
+    <p>El agente queda en espera hasta que el usuario responde. Si rechaza el cambio, el agente puede proponer una alternativa.</p>
+    <pre>/diffreview on     → activa la revision de diff
+/diffreview off    → desactiva (los cambios se aplican directamente)</pre>
+    <p>El estado persiste en <code>XDForCodeUI.ini [AI] diffreview</code>.</p>
+    <p class="note"><strong>Limitacion:</strong> solo cubre el path ACP (<code>fs/write_text_file</code>). Las escrituras via MCP HTTP no pasan por este filtro. Con <code>/autoapprove on</code> o en planes Kanban con modo silencioso, el diff review se salta automaticamente.</p>
 
     <h3>Informacion de uso al terminar cada respuesta</h3>
     <p>Al terminar una respuesta en modo ACP aparece un pie de texto con los datos del turno:</p>
@@ -720,36 +1006,88 @@ ollama pull qwen2.5-coder</pre>
       "Refactoriza la funcion XDServerStart separando la logica de login en una funcion propia"<br>
       "Anade al final del fichero una nueva funcion GetUserCount que devuelva el numero de usuarios en xdusers.json"
     </div>
+
+    <h3>Adjuntar ficheros e imagenes al prompt</h3>
+    <p>Puedes incluir hasta <strong>4 ficheros o imagenes</strong> como adjunto en cualquier mensaje del chat.</p>
+    <table>
+      <tr><th>Boton</th><th>Que hace</th></tr>
+      <tr><td>&#128206; (adjuntar fichero)</td><td>Abre selector de ficheros. Texto: su contenido se anade al mensaje como bloque de codigo. Imagen (.png/.jpg/.gif/.webp): se envia al agente para que la interprete.</td></tr>
+      <tr><td>Paste</td><td>Detecta el portapapeles: si hay imagen la adjunta; si hay texto lo pega en el cuadro de mensaje.</td></tr>
+    </table>
+    <p>Los adjuntos aparecen como chips bajo el cuadro de mensaje. Cada chip muestra el nombre del fichero y un boton <strong>x</strong> para eliminarlo.</p>
+    <div class="callout blue"><strong>Soporte de vision:</strong> Claude 3+, Gemini 1.5+ y GPT-4V procesan imagenes nativamente. En modos ACP (<code>opencode_acp</code>, <code>mimo_acp</code>, <code>gemini_acp</code>) las imagenes se envian en formato base64 dentro del protocolo de sesion.</div>
+
+    <h3>/loop — Bucle autonomo</h3>
+    <p>El comando <code>/loop</code> pone al agente en modo autonomo: itera sobre un objetivo hasta que lo considera resuelto o hasta que le indicas que pare.</p>
+    <pre><code>/loop Implementa el sistema de login completo con validacion y tests</code></pre>
+    <p><strong>Como funciona:</strong></p>
+    <ol class="steps">
+      <li><span>Envias <code>/loop &lt;objetivo&gt;</code>.</span></li>
+      <li><span>El agente trabaja y en cada turno evalua si el objetivo esta cumplido.</span></li>
+      <li><span>Si no lo esta, XDForCode lanza automaticamente la siguiente iteracion.</span></li>
+      <li><span>El agente escribe <code>[LISTO]</code>, <code>[DONE]</code> o <code>[FIN]</code> al terminar.</span></li>
+    </ol>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/loop &lt;objetivo&gt;</code></td><td>Inicia el bucle</td></tr>
+      <tr><td><code>/loop stop</code></td><td>Para el bucle al terminar el turno actual</td></tr>
+      <tr><td><code>/loop max &lt;n&gt;</code></td><td>Limita a n iteraciones maximas</td></tr>
+      <tr><td><code>/loop status</code></td><td>Estado actual del bucle</td></tr>
+    </table>
+    <div class="callout green"><strong>Integracion con Build:</strong> Si el loop activa una compilacion, XDForCode inyecta automaticamente la salida (errores, warnings) en el siguiente turno del agente para que pueda corregirlos solo.</div>
+
+    <h3>Guardar y restaurar la configuracion del chat</h3>
+    <p>Para cambiar rapidamente entre proyectos o agentes sin reconfigurar todo manualmente:</p>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/savemode</code></td><td>Guarda un snapshot de la configuracion actual (modo, exe, modelo, provider, ACP, http, stream)</td></tr>
+      <tr><td><code>/restoremode</code></td><td>Restaura el snapshot (la config actual pasa a ser el nuevo snapshot; un segundo <code>/restoremode</code> deshace el cambio)</td></tr>
+      <tr><td><code>/savechat</code></td><td>Copia el historial de chat a <code>xdchat_YYYYMMDD_HH-MM-SS.json</code></td></tr>
+      <tr><td><code>/restorechat</code></td><td>Lista los chats guardados y permite restaurar cualquiera</td></tr>
+      <tr><td><code>/search &lt;texto&gt;</code></td><td>Busca texto en el historial de todas las sesiones (resultados con click-to-load)</td></tr>
+    </table>
+    <p>Los agentes de IA tambien pueden buscar en el historial completo de sesiones pasadas con la tool MCP <strong>chat_search</strong>. Soporta busqueda por texto libre, filtros de rol (<code>user</code>/<code>assistant</code>), sesion concreta y configuracion del contexto alrededor de cada match. El historial se persiste en <code>data/xdchat.db</code> aunque la aplicacion se reinicie.</p>
   </section>
 
   <!-- 9 - SKILLS -->
   <section id="skills">
     <h2><span class="sec-num">9</span> Skills — tipos y uso avanzado</h2>
-    <p>Las <strong>Skills</strong> son fragmentos de texto predefinidos que puedes insertar en tus mensajes para dar contexto, instrucciones o plantillas al agente.</p>
+    <p>Las <strong>Skills</strong> son fragmentos de texto predefinidos que se activan en el panel de chat para dar instrucciones permanentes, contexto o plantillas al agente.</p>
 
-    <h3>Tipos de skills</h3>
+    <div class="callout yellow">
+      <strong>Estado inicial:</strong> ningun skill esta activo al arrancar. El estado tampoco persiste entre sesiones: si recargas el panel o reinicias el IDE, vuelve a cero. Debes activarlos de nuevo cada vez que los necesites.
+    </div>
+
+    <h3>Tipos de skills y donde va su contenido</h3>
+    <p>La diferencia clave entre tipos es <strong>donde llega el texto del skill al modelo</strong>:</p>
     <table>
-      <tr><th>Tipo</th><th>Comportamiento</th></tr>
-      <tr><td><strong>action</strong></td><td>Se inserta como prefijo del prompt con una tarea concreta</td></tr>
-      <tr><td><strong>system</strong></td><td>Se envia como system prompt permanente para toda la conversacion</td></tr>
-      <tr><td><strong>context</strong></td><td>Carga conocimiento desde ficheros locales o URLs y lo inyecta como contexto</td></tr>
-      <tr><td><strong>template</strong></td><td>Sustituye <code>{message}</code> con el texto del usuario. Util para flujos guiados</td></tr>
-      <tr><td><strong>modifier</strong></td><td>Modifica el estilo de la respuesta (tono, idioma, formato)</td></tr>
-      <tr><td><strong>rule</strong></td><td>Regla obligatoria de codificacion que el agente debe seguir</td></tr>
+      <tr><th>Tipo</th><th>Donde llega</th><th>Uso tipico</th></tr>
+      <tr><td><strong>system</strong></td><td>System prompt</td><td>Instrucciones globales de comportamiento que el modelo debe seguir siempre</td></tr>
+      <tr><td><strong>context</strong></td><td>System prompt (como bloque de conocimiento); el campo <code>prompt</code> tambien al system</td><td>Cargar ficheros o URLs como base de conocimiento</td></tr>
+      <tr><td><strong>template</strong></td><td>Reemplaza por completo el mensaje del usuario; usa <code>{message}</code> como placeholder</td><td>Flujos guiados donde el mensaje se inserta dentro de una plantilla mayor</td></tr>
+      <tr><td><strong>action</strong></td><td>Antepuesto al mensaje del usuario; soporta <code>{code}</code> y <code>{selection}</code></td><td>Tarea concreta sobre el codigo activo o la seleccion</td></tr>
+      <tr><td><strong>modifier</strong></td><td>Antepuesto al mensaje del usuario</td><td>Instrucciones de estilo o tono (respuesta corta, formal, telegrafica...)</td></tr>
+      <tr><td><strong>rule</strong></td><td>Antepuesto al mensaje del usuario</td><td>Reglas de codificacion que el agente debe aplicar en su respuesta</td></tr>
     </table>
+    <div class="callout">
+      <strong>Nota sobre modifier y rule:</strong> sus instrucciones llegan como prefijo del turno del usuario, no como system prompt. Si necesitas que una regla sea mas autoritativa, cambia el tipo a <code>system</code>.
+    </div>
 
-    <h3>Skills predefinidas</h3>
+    <h3>Skills disponibles</h3>
     <table>
       <tr><th>Skill</th><th>Tipo</th><th>Descripcion</th></tr>
       <tr><td><code>explain</code></td><td>action</td><td>Explica el codigo activo paso a paso</td></tr>
       <tr><td><code>findbugs</code></td><td>action</td><td>Busca bugs y problemas en el codigo</td></tr>
-      <tr><td><code>refactor</code></td><td>action</td><td>Propone refactorizacion del codigo</td></tr>
-      <tr><td><code>test</code></td><td>action</td><td>Genera tests unitarios</td></tr>
+      <tr><td><code>refactor</code></td><td>action</td><td>Propone refactorizacion sin cambiar funcionalidad</td></tr>
+      <tr><td><code>test</code></td><td>action</td><td>Genera tests unitarios para el codigo activo</td></tr>
       <tr><td><code>docstring</code></td><td>action</td><td>Genera documentacion para la seleccion</td></tr>
       <tr><td><code>formal</code></td><td>modifier</td><td>Responde en tono tecnico y formal</td></tr>
       <tr><td><code>concise</code></td><td>modifier</td><td>Responde de forma concisa y directa</td></tr>
+      <tr><td><code>caveman</code></td><td>modifier</td><td><strong>Modo telegrafico:</strong> sin preambulos, sin resumenes, sin cortesias. Ahorra 40-65% de tokens de salida. Ideal cuando ya sabes lo que quieres y solo necesitas el codigo</td></tr>
       <tr><td><code>harbour</code></td><td>context</td><td>Contexto del proyecto Harbour + FiveWin</td></tr>
-      <tr><td><code>harbour-locals</code></td><td>rule</td><td>Reglas de declaracion de variables en Harbour</td></tr>
+      <tr><td><code>harbour-locals</code></td><td>rule</td><td>Obliga a declarar LOCAL al inicio de funcion y STATIC antes de cualquier funcion</td></tr>
+      <tr><td><code>kanban-orquestador</code></td><td>rule</td><td>Distribuye automaticamente tareas multi-modulo entre agentes PTY disponibles</td></tr>
+      <tr><td><code>yagni</code></td><td>rule</td><td><strong>YAGNI estricto:</strong> solo implementa lo que se pide; sin manejo de errores imposibles, sin abstracciones prematuras, sin comentarios que expliquen que hace el codigo</td></tr>
       <tr><td><code>harbexpert</code></td><td>system</td><td>Consulta el repositorio oficial de Harbour antes de responder</td></tr>
       <tr><td><code>fivexpert</code></td><td>system</td><td>Consulta la instalacion de FiveWin (C:\fwh) antes de responder</td></tr>
       <tr><td><code>XDForCode</code></td><td>context</td><td>Carga el doc de referencia de XDForCode y el README como base de conocimiento</td></tr>
@@ -757,17 +1095,21 @@ ollama pull qwen2.5-coder</pre>
 
     <h3>Como usarlas</h3>
     <ol class="steps">
-      <li><span>Escribe <code>/skills</code> en el cuadro de mensaje o usa el boton de Skills del panel.</span></li>
-      <li><span>Aparece la lista de skills disponibles.</span></li>
-      <li><span>Activa las que quieras: permanecen activas en todos los mensajes hasta que las desactives.</span></li>
+      <li><span>Escribe <code>/skills</code> en el cuadro de mensaje &mdash; aparece un panel con todos los skills disponibles.</span></li>
+      <li><span>Haz clic en el skill para activarlo (aparece con &#10003; y se muestra en la barra superior).</span></li>
+      <li><span>El skill permanece activo en todos los mensajes hasta que lo desactives.</span></li>
+      <li><span>Para desactivar uno concreto: <code>/skills off &lt;nombre&gt;</code>. Para desactivar todos: <code>/skills clear</code>.</span></li>
     </ol>
 
+    <h3>Recargar skills sin reiniciar</h3>
+    <p>Si editas <code>xdskills.json</code> directamente o anades skills nuevas, usa <code>/reloadskills</code> para recargar el fichero en caliente sin necesidad de reiniciar el IDE ni recompilar nada.</p>
+
     <div class="callout yellow">
-      Las Skills se guardan en el fichero <code>xdskills.json</code> junto al ejecutable. Puedes gestionarlas desde el dialogo CRUD accesible en el menu, o editar el JSON directamente.
+      Las Skills se guardan en <code>xdskills.json</code> junto al ejecutable. Puedes gestionarlas desde el dialogo CRUD accesible en el menu, o editar el JSON directamente y recargar con <code>/reloadskills</code>.
     </div>
 
     <h3>Skills tipo context: conocimiento externo</h3>
-    <p>Las skills de tipo <code>context</code> pueden cargar contenido desde ficheros locales o URLs remotas. Soportan multiples fuentes. El contenido se inyecta automaticamente en el system prompt de cada mensaje mientras el skill esta activo, sin necesidad de adjuntar nada manualmente. Para forzar la recarga del disco usa <code>/context clear</code>.</p>
+    <p>Las skills de tipo <code>context</code> pueden cargar contenido desde ficheros locales o URLs remotas. El contenido se inyecta automaticamente en el system prompt como bloques <code>### CONOCIMIENTO: nombre &mdash; fuente ###</code> mientras el skill esta activo. Para forzar la recarga del disco usa <code>/context clear</code>.</p>
     <p>El skill <code>XDForCode</code> incluido carga dos fuentes en cada mensaje:</p>
     <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2; margin-bottom:12px;">
       <li><code>docs/xdforcode.md</code> &mdash; arquitectura completa y referencia tecnica del proyecto</li>
@@ -916,6 +1258,26 @@ ollama pull qwen2.5-coder</pre>
     <pre><code>/plan Revisa fev_agent.prg y fev_kanban.prg por separado y combina los resultados en un documento comparativo de sus funciones publicas</code></pre>
     <p>El agente generara tres tareas: dos en paralelo (una por fichero, en agentes distintos) y una tercera que hace fan-in usando los resultados de ambas.</p>
 
+    <h3>El agente como orquestador — auto-generacion de tareas</h3>
+    <p>XDForCode incluye dos herramientas MCP especiales que permiten a los propios agentes de IA crear y programar tareas en el Kanban <strong>sin intervencion manual</strong>:</p>
+    <table>
+      <tr><th>Tool MCP</th><th>Para que sirve</th></tr>
+      <tr><td><code>ide_kanban_agents</code></td><td>Devuelve la lista de agentes disponibles con sus IDs actuales</td></tr>
+      <tr><td><code>ide_kanban_add_task</code></td><td>Aniade una tarea al Kanban (staged o en cola, con dependencias opcionales)</td></tr>
+    </table>
+    <p>Con estas tools, un agente (por ejemplo XDAGENT) puede analizar el objetivo, dividirlo en subtareas y asignar cada una al agente mas adecuado — todo de forma automatica.</p>
+    <pre><code>Tu → XDAGENT: "Refactoriza todos los modulos separando la logica de UI"
+
+XDAGENT (usando ide_kanban_agents):
+  → descubre que hay MIMO y OPENCODE disponibles
+
+XDAGENT (usando ide_kanban_add_task):
+  → anade tarea a MIMO: "Refactoriza fev_layout.prg"
+  → anade tarea a OPENCODE: "Refactoriza fev_agent.prg"
+  → anade tarea a MIMO: "Unifica los cambios" (depends_on: las dos anteriores)
+</code></pre>
+    <div class="callout yellow"><strong>Nota:</strong> Para este flujo, los agentes MIMO y OPENCODE deben estar activos (pestanas abiertas en el panel de consola).</div>
+
     <h3>Casos de uso</h3>
     <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
       <li>Lanzar un agente que refactoriza mientras otro escribe los tests.</li>
@@ -923,6 +1285,7 @@ ollama pull qwen2.5-coder</pre>
       <li>Dejar tareas largas en segundo plano mientras trabajas en otra cosa.</li>
       <li>Crear flujos de trabajo encadenados donde cada paso usa el resultado del anterior.</li>
       <li>Repetir el mismo prompt en varias tareas para aplicar una instruccion a multiples ficheros.</li>
+      <li><strong>Delegar la planificacion al propio agente</strong>: pidele que disene y encole el plan Kanban completo.</li>
     </ul>
   </section>
 
@@ -1188,6 +1551,8 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
       <tr><td><strong>Editor</strong></td><td>Fuente, tamano, tema de color y comportamiento del autoguardado</td></tr>
       <tr><td><strong>Herramientas MCP</strong></td><td>Gestion de las tools MCP disponibles para los agentes</td></tr>
       <tr><td><strong>Terminales</strong></td><td>Configuracion de las pestanas de terminal adicionales</td></tr>
+      <tr><td><strong>Log ACP (diagnostico)</strong></td><td>Toggle que activa el registro del protocolo ACP en <code>xdacp.log</code> — util para depurar problemas de comunicacion con el agente</td></tr>
+      <tr><td><strong>Agente externo (ACP) [ ON/OFF ]</strong></td><td>Toggle que controla si el modo Inference necesita opencode/mimo para ejecutar herramientas MCP. Con <strong>OFF</strong> XDForCode ejecuta el bucle tool_use internamente — cualquier provider inference puede usar MCP tools sin agente externo instalado</td></tr>
     </table>
 
     <div class="callout yellow">
@@ -1216,7 +1581,23 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
 
     <details>
       <summary>El historial del chat queda guardado?</summary>
-      <div class="faq-body"><p>El historial de la sesion actual se mantiene mientras la aplicacion esta abierta. Al cerrar, el historial no se persiste por defecto.</p></div>
+      <div class="faq-body"><p>Si. Todas las sesiones se guardan automaticamente en <code>data/xdchat.db</code> (SQLite). Puedes restaurar cualquier sesion anterior con <code>/restorechat</code>, buscar en el historial desde el chat con <code>/search &lt;texto&gt;</code>, y los agentes pueden buscar en el historial completo con la tool MCP <code>chat_search</code>.</p></div>
+    </details>
+
+    <details>
+      <summary>Los datos que el agente busca en mis ficheros locales (CodeGraph, DBF) salen del equipo?</summary>
+      <div class="faq-body">
+        <p>Depende del modelo que uses. El agente MCP busca en la base de datos local (SQLite de CodeGraph) y eso no sale del equipo. Sin embargo, los <strong>resultados</strong> se envian al modelo como parte del contexto de la conversacion.</p>
+        <ul>
+          <li>Con un <strong>modelo en la nube</strong> (Claude, OpenAI, GROQ, NVIDIA, HuggingFace...), los datos de la busqueda viajan a los servidores del proveedor.</li>
+          <li>Con un <strong>modelo local</strong> (Ollama, vLLM o LM Studio en <code>localhost</code>), los datos nunca salen del equipo.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>Puede el agente buscar en mis ficheros DBF y encontrar datos de clientes o proveedores?</summary>
+      <div class="faq-body"><p>Si, siempre que esos ficheros esten indexados en CodeGraph (<strong>TOOLS → CodeGraph Index → Index DATABASES</strong>). Una vez indexados, el agente puede buscar cualquier dato de empresa, CIF, importe o texto libre usando la tool MCP <code>project_search</code>. Si no encuentra nada en el indice puede hacer busqueda en tiempo real con <code>db_open_dbf(mode="smart_search")</code>.</p></div>
     </details>
 
     <details>
@@ -1226,7 +1607,10 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
 
     <details>
       <summary>Que hago si el agente tarda demasiado?</summary>
-      <div class="faq-body"><p>Puedes cancelar la respuesta en cualquier momento con el boton <strong>Cancelar</strong> del panel de chat. El agente se detiene y puedes escribir de nuevo.</p></div>
+      <div class="faq-body">
+        <p>XDForCode tiene un sistema de watchdog automatico: si el agente lleva <strong>45 segundos</strong> sin responder, aparece un aviso en el chat. Si tras 45 segundos adicionales sigue sin responder (90s en total), el proceso se cancela automaticamente y el chat queda libre.</p>
+        <p>Tambien puedes cancelar en cualquier momento con el boton <strong>Cancelar</strong> del panel de chat. Si el agente cancela repetidamente por limite de cuota del modelo, cambia a otro modelo o proveedor con <code>/model</code>.</p>
+      </div>
     </details>
 
     <details>
@@ -1333,7 +1717,43 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
       <li><strong>Reset de la Base de Datos</strong>: Si en algun momento necesitas empezar de cero o hay un cambio estructural en las tablas, desde el menu <strong>TOOLS</strong> puedes seleccionar <strong>Reset CodeGraph DB</strong> para eliminar la base de datos completa y regenerar su estructura limpia instantaneamente.</li>
     </ul>
     
-    <h3>21.3 Auto-Indexacion en Tiempo Real (Incremental)</h3>
+    <h3>21.3 Indexar PDF, ficheros Office e imagenes (OCR)</h3>
+    <p>CodeGraph puede extraer texto de formatos binarios mediante scripts Python embebidos. Instalar una sola vez:</p>
+    <pre><code>pip install markitdown[all] Pillow pytesseract</code></pre>
+    <p>Para imagenes escaneadas tambien necesitas <a href="https://github.com/UB-Mannheim/tesseract/wiki">Tesseract OCR</a>.</p>
+    <table>
+      <tr><th>Formato</th><th>Motor</th></tr>
+      <tr><td>PDF (texto nativo)</td><td>pdfminer.six (incluido en markitdown[all])</td></tr>
+      <tr><td>PDF (escaneado)</td><td>Tesseract OCR via pytesseract</td></tr>
+      <tr><td>Excel / Word / PowerPoint</td><td>markitdown</td></tr>
+      <tr><td>Imagenes (PNG, JPG…)</td><td>Tesseract OCR</td></tr>
+    </table>
+    <p>Tras la instalacion, aniade las rutas a <code>codegraph.json</code> y ejecuta <strong>TOOLS → CodeGraph Index → Index DOCUMENTS</strong>.</p>
+
+    <h3>21.4 <code>project_search</code> — busqueda de codigo y datos en CodeGraph</h3>
+    <p>La tool MCP <code>project_search</code> es la herramienta de busqueda universal del proyecto. Busca simultaneamente en dos fuentes:</p>
+    <table>
+      <tr><th>Fuente FTS5</th><th>Que contiene</th><th>Ejemplos</th></tr>
+      <tr><td><code>nodes_fts</code></td><td>Codigo fuente Harbour: funciones, clases, metodos, variables</td><td>AdjustLayout, CreateWebView, KanbanScheduler</td></tr>
+      <tr><td><code>documents_fts</code></td><td>Registros DBF indexados, documentos Markdown, PDFs, imagenes</td><td>Empresas, CIFs, importes, nombres de cliente, contenido de manuales</td></tr>
+    </table>
+    <pre>Busca que tenemos sobre "Hermanos Puertas"
+→ project_search({"query": "Hermanos Puertas"})
+
+Cuanto le vendimos a Cobra Instal.?
+→ project_search({"query": "Cobra Instal"})
+
+Donde esta definida AdjustLayout?
+→ project_search({"query": "AdjustLayout"})</pre>
+    <p><strong>Importante:</strong> para que encuentre datos de DBF, los ficheros deben estar indexados (<strong>TOOLS → CodeGraph Index → Index DATABASES</strong>). La busqueda usa prefijos automaticos ("Cobra" encuentra "COBRA INSTAL.").</p>
+    <p><code>codegraph_explore</code> solo busca en <code>nodes_fts</code> (codigo fuente). Para datos de negocio usa siempre <code>project_search</code>.</p>
+
+    <h3>21.5 <code>harbour_search</code> — busqueda de simbolos Harbour/FiveWin</h3>
+    <p>La tool MCP <code>harbour_search</code> permite a los agentes buscar clases, metodos y funciones del runtime de Harbour y FiveWin directamente, sin leer los fuentes. Accede a la misma base de datos SQLite de CodeGraph.</p>
+    <pre><code>Usa harbour_search para buscar la clase TBrowse y ver sus metodos</code></pre>
+    <p>Los resultados incluyen firma, fichero y numero de linea del simbolo en la instalacion de FiveWin/Harbour.</p>
+
+    <h3>21.6 Auto-Indexacion en Tiempo Real (Incremental)</h3>
     <p>El indexador global a traves del menu solo necesitas usarlo la primera vez o cuando configuras el proyecto inicialmente. A partir de entonces, el IDE se encarga de todo:</p>
     
     <p><strong>¡Indexacion Magica al Guardar!</strong><br>
@@ -1344,7 +1764,7 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
       <li><span>Todo ocurre en segundo plano, sin bloqueos ni barras de carga. Los agentes de IA siempre dispondran de la informacion actualizada al segundo, incluso si son ellos mismos los que te escriben un nuevo fichero.</span></li>
     </ol>
     
-    <h3>21.4 Como utilizan la IA el proyecto indexado?</h3>
+    <h3>21.6 Como utilizan la IA el proyecto indexado?</h3>
     <p>Una vez que el proyecto y los documentos estan indexados, los agentes integran herramientas (<em>tools</em>) que se conectan en tiempo real a esta base de datos local.</p>
     
     <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
@@ -1352,7 +1772,7 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
       <li><strong>Clasificacion por Importancia (PageRank interno)</strong>: Al buscar en el codigo, el sistema utiliza un algoritmo de <em>In-Degree Centrality</em>. Esto significa que cuando el agente busca codigo, los resultados se ordenan devolviendo primero aquellos ficheros y funciones que son mas llamados por el resto del proyecto. ¡El codigo mas critico siempre aparece primero!</li>
       <li><strong>Para tus documentos</strong>: Si le pides a la IA "Dime que dice el manual sobre la conexion", usara el sistema de busqueda de texto completo <strong>(FTS5)</strong> integrado. CodeGraph descompone automaticamente los Markdown (<code>.md</code>) por capitulos (<code>#</code>), de manera que el agente recupera exactamente la seccion relevante al instante.</li>
     </ul>
-<h3 id="21-5-exploracion-visual-del-grafo-menu-contextual">21.5 Exploración Visual del Grafo</h3>
+<h3 id="21-7-exploracion-visual-del-grafo-menu-contextual">21.7 Exploración Visual del Grafo</h3>
 <p>Puedes explorar tu código visualmente e interrogar a la base de datos de CodeGraph de dos formas:</p>
 <ul>
 <li>A través del menú principal: <strong>TOOLS -&gt; Native CodeGraph</strong></li>
@@ -1388,11 +1808,302 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
 </ol>
   </section>
 
+  <!-- 22 - MySQL/MariaDB MCP -->
+  <section id="mysql">
+    <h2><span class="sec-num">24</span> Herramientas MCP para MySQL/MariaDB</h2>
+    <p>XDForCode incluye un conjunto completo de herramientas MCP que permiten a los agentes de IA acceder directamente a bases de datos MySQL y MariaDB. Hay dos familias de tools, cada una con su propia implementacion interna, pero ambas comparten el mismo fichero de configuracion de conexiones.</p>
+
+    <h3>24.1 Familias de tools</h3>
+    <table>
+      <thead><tr><th>Familia</th><th>Prefijo</th><th>Motor interno</th><th>Tools</th></tr></thead>
+      <tbody>
+        <tr><td><strong>TDolphin</strong></td><td><code>mysql_*</code></td><td>TDolphinSrv (FiveWin)</td><td>13</td></tr>
+        <tr><td><strong>FWMaria</strong></td><td><code>fwmaria_*</code></td><td>FWMariaConnection (FiveWin)</td><td>15</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:12px; color:var(--text2); font-size:0.92rem;">Ambas familias hacen CRUD basico. Usa <code>fwmaria_*</code> si necesitas stored procedures, vistas, triggers, importar/exportar DBF, o pivotes de datos. Usa <code>mysql_*</code> para operaciones CRUD estandar con TDolphin.</p>
+
+    <h3>24.2 Configurar conexiones (<code>mysql_shared.ini</code>)</h3>
+    <p>Crea el fichero <code>mysql_shared.ini</code> en la carpeta del ejecutable (o en <code>tools/mcp/</code>). Cada seccion <code>[nombre]</code> define una conexion nombrada:</p>
+<pre>[local1]
+host=127.0.0.1
+user=root
+password=mi_contrasena
+database=mi_base
+port=3306
+
+[produccion]
+host=192.168.1.100
+user=app_user
+password=app_pass
+database=prod_db
+port=3306</pre>
+    <p style="margin-top:10px; color:var(--text2); font-size:0.92rem;">Al llamar a cualquier tool indica la conexion con el parametro <code>"connection"</code> (por defecto <code>"local1"</code>).</p>
+
+    <h3>24.3 Tools <code>mysql_*</code> — referencia rapida</h3>
+    <table>
+      <thead><tr><th>Tool</th><th>Para que sirve</th></tr></thead>
+      <tbody>
+        <tr><td><code>mysql_list_tables</code></td><td>Lista todas las tablas de la BD</td></tr>
+        <tr><td><code>mysql_table_info</code></td><td>Estructura de columnas de una tabla</td></tr>
+        <tr><td><code>mysql_query</code></td><td>Ejecuta un SELECT y devuelve filas</td></tr>
+        <tr><td><code>mysql_exec</code></td><td>INSERT, UPDATE, DELETE, CREATE TABLE...</td></tr>
+        <tr><td><code>mysql_insert</code></td><td>Inserta una fila (<code>values</code>) o varias (<code>rows</code>)</td></tr>
+        <tr><td><code>mysql_update</code></td><td>Actualiza filas (requiere <code>where</code>)</td></tr>
+        <tr><td><code>mysql_delete</code></td><td>Elimina filas (requiere <code>where</code> o <code>confirm_all</code>)</td></tr>
+        <tr><td><code>mysql_transaction</code></td><td>Ejecuta varios SQL como una transaccion</td></tr>
+        <tr><td><code>mysql_create_table</code></td><td>Crea una tabla a partir de una struct Harbour</td></tr>
+        <tr><td><code>mysql_table_ops</code></td><td>Acciones sobre tablas: listar, count, drop, truncate, rename...</td></tr>
+        <tr><td><code>mysql_databases</code></td><td>Listar, crear o eliminar bases de datos</td></tr>
+        <tr><td><code>mysql_server_info</code></td><td>Version del servidor, charset, ping</td></tr>
+        <tr><td><code>mysql_backup</code></td><td>Exporta tablas a un fichero SQL de volcado</td></tr>
+      </tbody>
+    </table>
+
+    <h3>24.4 Tools <code>fwmaria_*</code> — referencia rapida</h3>
+    <table>
+      <thead><tr><th>Tool</th><th>Para que sirve</th></tr></thead>
+      <tbody>
+        <tr><td><code>fwmaria_query</code></td><td>SELECT con LIMIT automatico</td></tr>
+        <tr><td><code>fwmaria_exec</code></td><td>DML/DDL arbitrario</td></tr>
+        <tr><td><code>fwmaria_insert</code></td><td>INSERT simple o batch; con opcion upsert</td></tr>
+        <tr><td><code>fwmaria_update</code></td><td>UPDATE (requiere <code>where</code>)</td></tr>
+        <tr><td><code>fwmaria_delete</code></td><td>DELETE (requiere <code>where</code> o <code>confirm_all</code>)</td></tr>
+        <tr><td><code>fwmaria_transaction</code></td><td>Transaccion multi-SQL con COMMIT/ROLLBACK automatico</td></tr>
+        <tr><td><code>fwmaria_server_info</code></td><td>Version, IsMariaDB, ping, charset</td></tr>
+        <tr><td><code>fwmaria_databases</code></td><td>Listar/crear/eliminar/seleccionar BD</td></tr>
+        <tr><td><code>fwmaria_table_ops</code></td><td>Acciones sobre tablas: listar, count, drop, truncate, rename...</td></tr>
+        <tr><td><code>fwmaria_create_table</code></td><td>Crear tabla desde struct Harbour</td></tr>
+        <tr><td><code>fwmaria_backup</code></td><td>Volcado SQL de tablas seleccionadas</td></tr>
+        <tr><td><code>fwmaria_schema</code></td><td>Columnas, indices, vistas y triggers de una tabla</td></tr>
+        <tr><td><code>fwmaria_procedures</code></td><td>Listar y llamar stored procedures y funciones SQL</td></tr>
+        <tr><td><code>fwmaria_dbf</code></td><td>Importar/exportar .dbf, copiar tablas, pivotes de datos</td></tr>
+        <tr><td><code>fwmaria_alter</code></td><td>Anadir, modificar, renombrar y eliminar columnas e indices</td></tr>
+      </tbody>
+    </table>
+
+    <h3>24.5 Ejemplos de uso</h3>
+<pre>Usa mysql_query para listar los 10 ultimos pedidos de la tabla 'orders'
+en la conexion 'produccion'
+
+Con fwmaria_insert inserta un cliente nuevo en la tabla 'clientes':
+nombre='Acme S.A.', ciudad='Madrid'
+
+Usa fwmaria_schema action=columns table=facturas para ver la estructura
+de la tabla de facturas
+
+Con fwmaria_procedures action=call name=sp_calcula_totales llama
+al procedimiento almacenado</pre>
+
+    <h3>24.6 Activar o desactivar estas tools</h3>
+    <p>Escribe <code>/tools</code> en el chat para abrir el selector de herramientas. Todas las tools de base de datos estan en la categoria <strong>GENERAL</strong>. Puedes activarlas o desactivarlas individualmente sin necesidad de reiniciar la aplicacion.</p>
+  </section>
+
+  <!-- REPORTES -->
+  <section id="reportes">
+    <h2><span class="sec-num">22</span> Motor de Reportes — <code>show_report</code></h2>
+    <p>XDForCode incluye un motor de reportes HTML que los agentes de IA pueden usar para mostrar resultados de forma visual y estructurada directamente en el IDE, sin abrir ningún fichero externo.</p>
+
+    <h3>Como lo usa el agente</h3>
+    <p>Los agentes acceden al motor a traves de la tool MCP <code>show_report</code>. XDForCode abre un dialogo emergente con el reporte renderizado.</p>
+    <pre><code>Usa show_report para mostrar los resultados del analisis con una tabla de errores y un diagrama de dependencias</code></pre>
+
+    <h3>Tipos de seccion disponibles</h3>
+    <table>
+      <tr><th>Tipo</th><th>Para que sirve</th></tr>
+      <tr><td><code>table</code></td><td>Tabla con cabecera y filas de datos</td></tr>
+      <tr><td><code>markdown</code></td><td>Texto formateado con Markdown</td></tr>
+      <tr><td><code>code</code></td><td>Bloque de codigo con resaltado de sintaxis</td></tr>
+      <tr><td><code>mermaid</code></td><td>Diagrama Mermaid (flowchart, sequence, gantt…)</td></tr>
+      <tr><td><code>diff</code></td><td>Visor de diferencias lado a lado (unified diff)</td></tr>
+      <tr><td><code>alert</code></td><td>Mensaje de alerta con nivel de severidad (info, warning, error, success)</td></tr>
+      <tr><td><code>accordion</code></td><td>Seccion colapsable para contenido extenso</td></tr>
+      <tr><td><code>chart</code></td><td>Grafico de barras o lineas</td></tr>
+      <tr><td><code>buttons</code></td><td>Botones de accion que interactuan con el IDE</td></tr>
+    </table>
+
+    <h3>Botones de accion interactivos</h3>
+    <p>Las secciones <code>buttons</code> permiten al agente crear botones que hacen cosas reales en el IDE cuando el usuario los pulsa:</p>
+    <table>
+      <tr><th>Accion</th><th>Efecto</th></tr>
+      <tr><td><code>open_file</code></td><td>Abre el fichero en el editor, opcionalmente en una linea concreta</td></tr>
+      <tr><td><code>run_cmd</code></td><td>Envia un comando al terminal Console CLI</td></tr>
+      <tr><td><code>copy</code></td><td>Copia texto al portapapeles</td></tr>
+    </table>
+    <div class="callout blue"><strong>Visor de diffs:</strong> La seccion <code>diff</code> renderiza un unified diff lado a lado con colores. El agente puede mostrar los cambios propuestos antes de aplicarlos, con un boton que los aplica directamente al aceptar.</div>
+  </section>
+
+  <!-- 24 - Interfaces GUI de configuracion -->
+  <section id="config-gui">
+    <h2><span class="sec-num">25</span> Interfaces GUI de configuracion</h2>
+    <p>XDForCode incluye dialogos CRUD para gestionar visualmente todos los ficheros de configuracion, sin necesidad de editar ficheros a mano. Todos accesibles desde el menu <strong>TOOLS</strong>.</p>
+
+    <h3>25.1 Dialogos disponibles</h3>
+    <table>
+      <thead><tr><th>Entrada en TOOLS</th><th>Fichero</th><th>Funcion</th></tr></thead>
+      <tbody>
+        <tr><td>Agente IA...</td><td><code>XDForCodeUI.ini</code></td><td><code>AgentConfigDialog()</code></td></tr>
+        <tr><td>API Keys...</td><td>(variables de entorno)</td><td><code>ApiKeysDialog()</code></td></tr>
+        <tr><td>Configure ACP...</td><td>(conexion ACP)</td><td><code>ACPConfigDialog()</code></td></tr>
+        <tr><td>Log ACP (diagnostico)</td><td><code>xdacp.log</code></td><td>toggle <code>lAcpDebug</code> — registra todo el trafico ACP</td></tr>
+        <tr><td>MCP Tools... <small>(requiere Modo Admin)</small></td><td><code>mcp_tools.db</code> / <code>mcp_tools.json</code></td><td><code>MCPToolsDialog()</code></td></tr>
+        <tr><td>Skills...</td><td><code>xdskills.json</code></td><td><code>SkillsDialog()</code></td></tr>
+        <tr><td>MySQL Connections...</td><td><code>mysql_shared.ini</code></td><td><code>MySQLConnectionsDialog()</code></td></tr>
+        <tr><td>Inference Providers...</td><td><code>xdinference.json</code></td><td><code>InferenceDialog()</code></td></tr>
+        <tr><td>Folder Project Config...</td><td><code>codegraph.json</code></td><td><code>CodeGraphConfigDialog()</code></td></tr>
+        <tr><td>Terminal Apps &amp; Agents...</td><td><code>XDTermApps.ini</code></td><td><code>TermAppsDialog()</code></td></tr>
+        <tr><td>Contrasena BD...</td><td>(cifrado SQLite AES-256)</td><td><code>SQLCipherDialog()</code></td></tr>
+        <tr><td>Configurar Puter...</td><td><code>XDForCodeUI.ini [PUTER]</code></td><td><code>PuterConfigDialog()</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>25.2 Agente IA y API Keys</h3>
+    <p><strong>Agente IA...</strong> — dialogo de configuracion rapida del agente activo: modo de ejecucion, ejecutable, proveedor, modelo, API key y opciones de ACP/HTTP. Util para cambiar la configuracion antes de abrir el chat.</p>
+    <p><strong>API Keys...</strong> — gestiona las claves de API de los 16 proveedores soportados (Anthropic, OpenAI, Google, NVIDIA, GROQ, OpenRouter, Together, HuggingFace, Mistral…). Las claves se muestran enmascaradas. Desde el chat tambien puedes establecer la clave activa con <code>/key &lt;clave&gt;</code>.</p>
+
+    <h3>25.3 MySQL Connections (<code>mysql_shared.ini</code>)</h3>
+    <p>Lista, aniade, modifica y elimina conexiones MySQL/MariaDB compartidas por las tools MCP <code>mysql_*</code> y <code>fwmaria_*</code>.</p>
+    <ul>
+      <li>Columnas: Nombre · Host · Puerto · Base de datos · Usuario</li>
+      <li><strong>Probar &gt;</strong> — menu desplegable: <em>Probar con FWMariaConnection</em> o <em>Probar con TDolphin</em>; muestra la version del servidor si la conexion es exitosa</li>
+    </ul>
+
+    <h3>25.4 Inference Providers (<code>xdinference.json</code>)</h3>
+    <p>Gestiona proveedores de IA en modo inferencia directa (NVIDIA, GROQ, OpenRouter, Together, HuggingFace, OLLAMA...) y sus modelos.</p>
+    <ul>
+      <li><strong>Panel superior</strong> — proveedores: Nombre · Endpoint · Default · API Key (enmascarada)</li>
+      <li><strong>Panel inferior</strong> — modelos del proveedor seleccionado: Nombre · Tools · Default (<code>*</code>) · <strong>Temp</strong>; se actualiza al cambiar de proveedor</li>
+      <li><strong>Set Default</strong> — establece el modelo activo; el primer modelo de un proveedor nuevo queda automaticamente como default</li>
+      <li><strong>Editar modelo</strong> — dialogo expandido con campos de parametros: Temperature · Top-P · Max tokens + (seccion OLLAMA) Num ctx · Top-K · Repeat penalty</li>
+    </ul>
+    <p>Cada modelo puede tener un bloque <code>params</code> opcional en <code>xdinference.json</code>. Los parametros top-level se mezclan directamente en el payload; el bloque <code>options</code> se fusiona en <code>payload.options</code> (exclusivo de OLLAMA).</p>
+    <pre><code>{
+  "name": "qwen3:14b", "tools": true,
+  "params": {
+    "temperature": 0.6, "top_p": 0.9, "max_tokens": 8192,
+    "options": { "num_ctx": 32768, "top_k": 40, "repeat_penalty": 1.1 }
+  }
+}</code></pre>
+
+    <h3>25.5 MCP Tools (<code>mcp_tools.db</code> / <code>mcp_tools.json</code>)</h3>
+    <p>El CRUD de tools MCP esta disponible en <strong>TOOLS &rarr; MCP Tools...</strong> (requiere Modo Admin activo). Permite editar nombre, descripcion, categoria, parametros, tags y codigo fuente, ademas de exportar a JSON.</p>
+    <p>La fuente activa se controla desde <strong>TOOLS &rarr; Fuente MCP tools</strong>: <code>[ JSON ]</code> usa <code>mcp_tools.json</code>; <code>[ SQLite ]</code> usa <code>mcp_tools.db</code> (BD con FTS5 y bytecodes precompilados).</p>
+
+    <h3>25.6 Modo Administrador</h3>
+    <p><strong>TOOLS &rarr; "Modo Admin [ OFF ]"</strong> — toggle sin persistencia que habilita funciones de administracion. En estado OFF (por defecto), MCP Tools... aparece deshabilitado en el menu. Al reiniciar la aplicacion vuelve siempre a OFF.</p>
+
+    <h3>25.7 Cifrado de bases de datos — SQLCipher AES-256</h3>
+    <p><strong>TOOLS &rarr; Contrasena BD...</strong> — cifra con AES-256 todas las bases de datos SQLite del IDE mediante SQLCipher, usando la API BCrypt de Windows (sin OpenSSL). Una sola contrasena protege el historial de chat, el indice CodeGraph y la base de MCP tools.</p>
+    <table>
+      <tr><th>Opcion</th><th>Accion</th></tr>
+      <tr><td>Establecer contrasena</td><td>Cifra todas las BDs con AES-256; pide confirmacion</td></tr>
+      <tr><td>Cambiar contrasena</td><td>Recifra con la nueva contrasena sin perder datos</td></tr>
+      <tr><td>Quitar contrasena</td><td>Descifra todas las BDs (vuelven a SQLite estandar)</td></tr>
+    </table>
+    <div class="callout yellow">Al establecer una contrasena, XDForCode la solicitara en cada arranque. Si es incorrecta el IDE inicia pero sin acceso al historial ni al indice CodeGraph.</div>
+
+    <h3>25.8 Folder Project Config (<code>codegraph.json</code>)</h3>
+    <p>Configura las carpetas que CodeGraph indexa: codigo fuente, documentos, bases de datos e imagenes.</p>
+    <ul>
+      <li>Combobox selector de seccion: <strong>Sources · Documents · Databases · Images</strong></li>
+      <li>Columnas: Ruta · Etiqueta · Habilitado</li>
+      <li><strong>Habilitar/Des.</strong> — activa o desactiva un item sin eliminarlo</li>
+      <li><strong>Opciones...</strong> — ruta de la BD SQLite, <code>max_doc_size_kb</code> y <code>skip_dirs</code></li>
+      <li>Sub-dialogo de item: boton <code>...</code> para explorar carpeta, Extensions (una por linea), Excludes (rutas/ficheros a omitir)</li>
+    </ul>
+
+    <h3>25.9 Terminal Apps &amp; Agents (<code>XDTermApps.ini</code>)</h3>
+    <p>Gestiona las pestanas PTY dinamicas del panel de consola.</p>
+    <ul>
+      <li>Combobox selector de seccion: <strong>APPS · AGENTS · MCPSERVERS</strong></li>
+      <li>Columnas: Nombre · Comando · Modo</li>
+      <li>Campo <strong>Modo</strong>: <code>1</code>=auto al inicio · <code>0</code>=desactivado · <code>shell</code>=ShellExecute · <code>http://url[,1]</code>=WebView servidor</li>
+      <li style="color:var(--text2); font-size:0.9rem;">Las pestanas fijas (GIT, SSH, Console CLI...) se configuran desde <strong>VIEW &rarr; Console Folder Tabs</strong></li>
+    </ul>
+    <table>
+      <thead><tr><th>Seccion</th><th>Que contiene</th></tr></thead>
+      <tbody>
+        <tr><td><strong>APPS</strong></td><td>Aplicaciones PTY de proposito general (shells, herramientas, scripts) que se abren en el panel de consola.</td></tr>
+        <tr><td><strong>AGENTS</strong></td><td>Agentes IA (opencode, mimo...) que se lanzan en terminales PTY propias. El Kanban puede enviarles tareas; ellos escriben ficheros <code>.done</code> en <code>kanban_done/</code> para senalizar el fin de cada tarea.</td></tr>
+        <tr><td><strong>MCPSERVERS</strong></td><td>Servidores MCP en modo stdio que XDForCode arranca automaticamente al inicio. Se registran en la lista <code>mcpServers</code> de las sesiones ACP para que el agente pueda usar sus tools.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard">
+    <h2><span class="sec-num">26</span> Dashboard — Panel de Estado en Tiempo Real</h2>
+    <p>El Dashboard (<strong>TOOLS → Dashboard</strong> o boton <strong>DASHBOARD</strong> en la pantalla de inicio) muestra en tiempo real el estado completo del IDE en un panel de tarjetas. Se renderiza en el mismo panel del editor Monaco, sin abrir ventanas adicionales.</p>
+
+    <h3>Tarjetas disponibles</h3>
+    <table>
+      <thead><tr><th>Tarjeta</th><th>Que muestra</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Web Server</strong></td><td>Estado del servidor (activo/inactivo) y puerto</td></tr>
+        <tr><td><strong>AI Mode</strong></td><td>Modo activo, modelo, ejecutable y proveedor configurado</td></tr>
+        <tr><td><strong>MCP Tools</strong></td><td>Numero de tools disponibles y cuales estan activas</td></tr>
+        <tr><td><strong>Skills</strong></td><td>Skills cargadas y cuales estan activadas en la sesion</td></tr>
+        <tr><td><strong>Inference Providers</strong></td><td>Lista de proveedores con sus modelos y API key configurada</td></tr>
+        <tr><td><strong>Remote Users</strong></td><td>Usuarios del chat remoto con su configuracion individual</td></tr>
+        <tr><td><strong>Agents</strong></td><td>Agentes activos (pestanas abiertas), estado y tarea actual</td></tr>
+        <tr><td><strong>Kanban Plan</strong></td><td>Resumen del plan activo: tareas por estado</td></tr>
+        <tr><td><strong>Terminal Apps</strong></td><td>Apps/agentes definidos en <code>XDTermApps.ini</code> y su estado</td></tr>
+        <tr><td><strong>PTY</strong></td><td>Terminales activos y sus procesos</td></tr>
+        <tr><td><strong>Project</strong></td><td>Carpeta de trabajo, fichero activo y nombre del proyecto</td></tr>
+      </tbody>
+    </table>
+    <div class="callout blue"><strong>Sin polling continuo:</strong> El Dashboard actualiza los datos cada vez que se abre. Es especialmente util para hacer un diagnostico rapido del estado del sistema antes de lanzar un plan Kanban.</div>
+  </section>
+
+  <!-- API REST -->
+  <section id="api-rest">
+    <h2><span class="sec-num">27</span> API REST Local Integrada</h2>
+    <p>XDForCode incorpora de forma nativa un servidor HTTP embebido (basado en CivetWeb) que, ademas de servir el chat remoto, provee una API REST completa en la ruta <code>/xd/v12/</code> para permitir controlar el motor de IA desde fuera del IDE (por ejemplo, desde otras aplicaciones, scripts de automatizacion o llamadas <code>curl</code>).</p>
+
+    <h3>Autenticacion</h3>
+    <p>Todos los endpoints requieren un <strong>Token de Seguridad (Bearer)</strong>.</p>
+    <ul class="steps">
+      <li><span>Enviar por cabecera: <code>Authorization: Bearer &lt;token&gt;</code></span></li>
+      <li><span>En pruebas iniciales, usa el token configurado en tu IDE o base de datos.</span></li>
+      <li><span>A nivel del wrapper en C, CivetWeb protege adicionalmente las conexiones WebSocket exigiendo el token, y rechaza los frames de datos que no lo incluyan, ofreciendo un escudo frente a ataques masivos.</span></li>
+    </ul>
+
+    <h3>Endpoints Disponibles</h3>
+    <p>Todos los endpoints base estan en <code>http://127.0.0.1:8008/xd/v12/</code> (el puerto puede variar segun tu configuracion):</p>
+    <table>
+      <tr><th>Endpoint</th><th>Metodo</th><th>Accion</th><th>Parametros (JSON Body)</th></tr>
+      <tr><td><code>/help</code></td><td>GET</td><td>Lista de rutas disponibles en el API</td><td>-</td></tr>
+      <tr><td><code>/status</code></td><td>GET</td><td>Estado actual del motor (mode, provider, model)</td><td>-</td></tr>
+      <tr><td><code>/mode</code></td><td>GET</td><td>Obtiene el modo activo actualmente</td><td>-</td></tr>
+      <tr><td><code>/mode/inference</code></td><td>POST</td><td>Cambia el motor de IA al modo Inference</td><td>-</td></tr>
+      <tr><td><code>/mode/ollama</code></td><td>POST</td><td>Cambia el motor de IA al modo Ollama</td><td>-</td></tr>
+      <tr><td><code>/mode/opencode_acp</code></td><td>POST</td><td>Cambia el motor de IA al modo OpenCode ACP</td><td>-</td></tr>
+      <tr><td><code>/providers</code></td><td>GET</td><td>Devuelve la lista de proveedores disponibles</td><td>-</td></tr>
+      <tr><td><code>/provider</code></td><td>POST</td><td>Establece el proveedor activo para Inference</td><td><code>{"provider": "NVIDIA"}</code></td></tr>
+      <tr><td><code>/models</code></td><td>GET</td><td>Devuelve la lista de modelos del proveedor activo</td><td>-</td></tr>
+      <tr><td><code>/model</code></td><td>POST</td><td>Establece el modelo activo a usar</td><td><code>{"model": "gemma4"}</code></td></tr>
+      <tr><td><code>/prompt</code></td><td>POST</td><td>Envia un mensaje a la IA y espera la respuesta</td><td><code>{"prompt": "Escribe un hola mundo"}</code></td></tr>
+    </table>
+
+    <h3>Aislamiento de Estado</h3>
+    <p>Cuando haces una peticion a cualquier endpoint que altera el estado (como <code>/model</code> o <code>/provider</code>), <strong>la API realiza una copia de seguridad</strong> del estado de tu IDE. Modifica la configuracion en memoria de Harbour exclusivamente para procesar tu peticion, y al finalizar la restaura (a traves de las funciones <code>XD_ApiSaveMode()</code> y <code>XD_ApiRestoreMode()</code>).</p>
+    <p>De esta forma, puedes automatizar llamadas por detras sin que afecte en absoluto a la conversacion o modelo que tengas activo en el panel de chat del IDE.</p>
+
+    <h3>Herramienta de Testing Integrada</h3>
+    <p>Puedes probar todos estos endpoints directamente desde dentro de XDForCode sin necesidad de usar herramientas externas como Postman:</p>
+    <ol class="steps">
+      <li><span>Ve al menu <strong>TESTS</strong> de la barra superior.</span></li>
+      <li><span>Selecciona <strong>Test API REST local</strong>.</span></li>
+      <li><span>Se abrira un dialogo con estilo visual integrado donde podras seleccionar el endpoint desde un desplegable (se autorellena interrogando a CivetWeb), meter tu token, especificar un JSON en el Body y ver la respuesta.</span></li>
+      <li><span>Internamente este dialogo utiliza la libreria <code>libcurl</code> nativa de Harbour para realizar las llamadas (GET/POST automaticos) en lugar de depender de ejecutables externos de Windows.</span></li>
+    </ol>
+  </section>
+
 </div><!-- /content -->
 
 <footer>
   <strong>XDEVFORYOU SOLUTIONS</strong>
-  <span>XDForCode — Manual de usuario — 2025–2026</span>
+  <span>XDForCode — Manual de usuario — 2026</span>
 </footer>
 
 <script>

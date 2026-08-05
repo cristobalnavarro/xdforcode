@@ -13,6 +13,7 @@
 4. [Editores — Scintilla y Monaco](#4-editores--scintilla-y-monaco)
 5. [Agentes de IA — instalación recomendada](#5-agentes-de-ia--instalación-recomendada)
 6. [Modos de ejecución: Run, ACP e Inference](#6-modos-de-ejecución-run-acp-e-inference)
+   - [Auto-fallback de provider](#auto-fallback-de-provider)
 7. [Activar y configurar un agente](#7-activar-y-configurar-un-agente)
 8. [Usar el panel de chat (sidebar derecho)](#8-usar-el-panel-de-chat-sidebar-derecho)
 9. [Skills — tipos y uso avanzado](#9-skills--tipos-y-uso-avanzado)
@@ -28,6 +29,12 @@
 19. [Menú de la aplicación](#19-menú-de-la-aplicación)
 20. [Preguntas frecuentes](#20-preguntas-frecuentes)
 21. [Indexación de Código y Documentos (CodeGraph)](#21-indexación-de-código-y-documentos-codegraph)
+22. [Motor de Reportes — show_report](#22-motor-de-reportes--show_report)
+23. [Curso de IA para Harbour/FiveWin](#23-curso-de-ia-para-harbourfivewin) *(próximamente)*
+24. [Herramientas MCP para MySQL/MariaDB](#24-herramientas-mcp-para-mysqlmariadb)
+25. [Interfaces GUI de configuración](#25-interfaces-gui-de-configuración)
+26. [Dashboard — Panel de Estado en Tiempo Real](#26-dashboard--panel-de-estado-en-tiempo-real)
+27. [API REST Local Integrada](#27-api-rest-local-integrada)
 
 ---
 
@@ -40,13 +47,20 @@ Su característica principal es la **integración nativa con agentes de IA**: pu
 **Características principales:**
 
 - Editor de código Monaco (el mismo que usa VS Code) con soporte Harbour/FiveWin
+- **Dashboard** — panel de estado en tiempo real: agentes activos, Kanban, servidor, MCP tools, skills, proveedores
+- **Sistema de perfiles** (`.xdprofile`) — guarda y carga configuración de agente + carpeta de trabajo en un clic
 - Panel de chat con agentes de IA en el sidebar derecho
+- Adjuntar ficheros e imágenes al prompt del chat (soporte de visión en Claude 3+, Gemini 1.5+)
+- **`/loop`** — bucle autónomo: el agente itera sobre un objetivo hasta que lo resuelve
+- **Motor de reportes** — los agentes pueden mostrar tablas, diagramas Mermaid, diffs de código y botones de acción interactivos usando la tool MCP `show_report`
 - Múltiples terminales integradas (Git, SSH, consola del sistema)
 - Kanban para lanzar y coordinar varios agentes IA en paralelo
+- **Kanban auto-gestionado**: los propios agentes pueden crear y encolar tareas via tools MCP
 - Sistema de build completo con toolchains y gestión de proyectos
 - Servidor web embebido para acceso remoto desde el navegador
 - Skills reutilizables con múltiples tipos (acciones, contexto, plantillas, reglas)
 - Preview HTML en vivo en el sidebar izquierdo
+- CodeGraph indexa código, documentos, PDF, ficheros Office e imágenes via OCR
 - Integración con WhatsApp Web
 - Compatible con herramientas MCP (Model Context Protocol)
 
@@ -100,6 +114,19 @@ Tipos de fichero habituales en Monaco: `.prg`, `.ch`, `.prw`, `.js`, `.html`, `.
 ### Scintilla
 
 Editor nativo de Windows, más ligero. Se usa para ficheros específicos que se abren en sus propias pestañas dentro del IDE, con resaltado optimizado para Harbour y FiveWin.
+
+### Pantalla de inicio — botones de acción
+
+Al abrir XDForCode sin fichero activo se muestra la pantalla de bienvenida (XDEdit.html). Cuatro botones en la esquina superior derecha del editor permiten acceder a las funciones principales sin usar el menú:
+
+| Botón | Acción |
+|---|---|
+| **DASHBOARD** | Abre el panel de estado del IDE (ver §24) |
+| **TASK MANAGER** | Abre el tablero Kanban directamente |
+| **LOAD PROFILE** | Carga un perfil de configuración (`.xdprofile`) |
+| **SAVE PROFILE** | Guarda el perfil actual en `profiles\` |
+
+El triángulo **▲** en la barra de estado inferior recarga la configuración desde `XDForCodeUI.ini` sin necesidad de reiniciar la aplicación.
 
 ### Comportamiento al abrir un fichero
 
@@ -241,6 +268,8 @@ Establece una comunicación bidireccional vía pipes o HTTP entre XDForCode y el
 - **Modo 2 (Per-request)**: cada mensaje crea una nueva petición con el modelo seleccionado.
 - **Modo 3 (Modelo por defecto)**: usa el modelo por defecto configurado en opencode.
 
+> **Compatibilidad de sesiones entre agentes:** cada agente ACP (opencode, mimo, gemini) usa su propio formato interno de sesión. Si cambias de agente mientras hay una sesión activa, el nuevo agente puede rechazar la sesión anterior (`session/load` falla). XDForCode detecta este error automáticamente, descarta la sesión antigua y crea una nueva sin mostrar ningún aviso al usuario. La conversación continúa con normalidad.
+
 ### Modo Pi RPC
 
 Protocolo JSONL bidireccional sobre stdin/stdout propio de Pi. XDForCode lanza `pi --mode rpc` como proceso y se comunica con él enviando y recibiendo objetos JSON (un objeto por línea).
@@ -271,18 +300,85 @@ Protocolo JSONL bidireccional sobre stdin/stdout propio de Pi. XDForCode lanza `
 
 ### Modo Inference
 
-Conecta directamente con APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, Together, HuggingFace) sin necesidad de instalar agentes externos. Usa hbcurl nativo de Harbour con streaming SSE.
+Conecta directamente con APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, Together, HuggingFace, Ollama) sin necesidad de instalar agentes externos. Usa hbcurl nativo de Harbour con streaming SSE.
 
 **Configuración:** Edita el fichero `xdinference.json` junto al ejecutable para añadir providers y modelos. Cada provider necesita su endpoint y API key.
 
 **Providers preconfigurados:**
-- **NVIDIA** — modelos Nemotron, Llama, DeepSeek, Qwen
-- **GROQ** — modelos Llama, DeepSeek, Gemma, Mixtral
-- **OpenRouter** — acceso a Claude, GPT-4o, Gemini y otros
-- **Together** — Llama, DeepSeek, Qwen, Mistral
-- **HuggingFace** — amplia variedad de modelos open source
+- **NVIDIA NIM** — Nemotron, Llama, DeepSeek, Qwen, Gemma, MiniMax, GLM
+- **GROQ** — Llama, DeepSeek, Gemma, Mixtral (latencia muy baja)
+- **OpenRouter** — acceso a Claude, GPT-4o, Gemini y cientos de modelos
+- **Together AI** — Llama, DeepSeek, Qwen, Mistral
+- **HuggingFace** — amplia variedad de modelos open source (3 API keys configuradas)
+- **OLLAMA** — modelos locales + modelos cloud (requiere `ollama signin`)
+- **Cloudflare AI** / **Cloudflare Gateway** — Workers AI y gateway proxy
+
+**Autodiscovery de modelos:** los providers con `"autodiscover": true` en el JSON consultan automáticamente `/v1/models` del provider al ejecutar `/models`, mostrando la lista real de modelos disponibles en tu cuenta en ese momento. Los modelos que no soportan tool calling (embed, rerank, OCR, TTS) se filtran automáticamente.
+
+**Modelos Ollama `:cloud`:** los modelos con sufijo `:cloud` (ej. `gemma4:31b:cloud`) se ejecutan en los servidores de Ollama. Requieren haber hecho `ollama signin` previamente. XDForCode muestra un aviso la primera vez que seleccionas uno en la sesión.
+
+**Herramientas MCP sin agente externo:** el modo Inference incluye un bucle de tool calling nativo. Cuando el toggle **Agente externo (ACP) [ OFF ]** está desactivado en el menú TOOLS, XDForCode envía las herramientas MCP directamente al LLM y ejecuta el ciclo tool_use → resultado → siguiente vuelta internamente, sin necesidad de tener opencode o mimo instalados. Cualquier provider inference que soporte tool calling (GROQ, OpenRouter, NVIDIA, ollama con modelos compatibles) puede ejecutar herramientas MCP en modo completamente autónomo.
 
 > El modo Inference es ideal para usar modelos potentes sin instalar agentes CLI, solo necesitas una API key.
+
+---
+
+### Modo Puter
+
+Conecta con la plataforma **Puter.com** — más de 549 modelos de IA (Claude, Gemini, GPT-4o, Llama, Mistral y cientos más) disponibles gratuitamente sin API key propia, usando solo tu cuenta Puter.
+
+**Características:**
+- **Autenticación JWT** automática: XDForCode solicita el token al servidor Puter y lo renueva en cada sesión sin intervención manual.
+- **Streaming NDJSON**: los tokens llegan en tiempo real igual que en otros modos de streaming.
+- **Autodiscovery de modelos**: al ejecutar `/models` se consulta `/drivers/list` de Puter y se filtra la lista de modelos del driver `puter-chat-completion`.
+- **Tools MCP via inyección de contexto**: el driver de Puter no admite function calling nativo. XDForCode pre-ejecuta las tools MCP relevantes (fecha/hora, IP pública, temperatura, versión de Harbour) antes de cada mensaje e inyecta los resultados reales en el system message, evitando que el modelo los invente.
+
+**Configuración:** Crea una cuenta gratuita en **puter.com** e inicia sesión una vez desde el diálogo **TOOLS → Configurar Puter...**. XDForCode guarda el token JWT en `XDForCodeUI.ini [PUTER] token` y lo renueva automáticamente.
+
+**Activación:**
+```
+/puter
+```
+
+> El modo Puter es ideal para acceder a modelos premium sin coste adicional si ya tienes cuenta Puter. La limitación principal es que no soporta function calling nativo; las tools MCP se inyectan como contexto real antes del mensaje.
+
+---
+
+### Auto-fallback de provider
+
+Cuando un provider devuelve un error de cuota o límite de tasa (429, `rate_limit`, `quota_exceeded`, `insufficient_credits`…), XDForCode cambia automáticamente al siguiente provider de la cadena y reintenta la misma consulta sin que tengas que hacer nada.
+
+**Cadena de degradación por familia de modo:**
+
+```
+opencode* / mimo* / gemini* / claude*  →  inference  →  puter  →  ollama (local)
+inference (cualquier provider)         →  puter  →  ollama
+puter                                  →  inference  →  ollama
+ollama                                 →  (último recurso, sin fallback)
+```
+
+**Comportamiento:**
+- El error original aparece en el chat (el usuario queda informado).
+- Inmediatamente después aparece `⚡ Límite alcanzado — cambiando a **X**...` y la respuesta del nuevo provider.
+- El cambio de provider **persiste** para el siguiente mensaje (sin restaurar el original).
+- Para modos HTTP directos (`inference`, `puter`) el reintento es inmediato en el mismo hilo. Para modos de proceso (`opencode_*`, `mimo_*`, `gemini_*`, `claude_*`) el nuevo provider se activa antes de relanzar el proceso.
+- Máximo 1 reintento por turno (configurable en `xdfallback.json` → `max_retries`).
+
+**Configuración** (`xdfallback.json` junto al ejecutable):
+- `enabled` — activa o desactiva globalmente el fallback.
+- `triggers.http` — lista de palabras clave que identifican errores de cuota en la respuesta.
+- `rules[]` — cadena de fallbacks por `(mode, provider)`: cada regla tiene un `match` y un array `fallbacks` con entradas `{ mode, provider, model, label }`.
+- Regla catch-all con `"provider": "*"` que se aplica a cualquier mode/provider no cubierto explícitamente.
+
+**Comandos:**
+
+```
+/fallback          → muestra estado actual y cadena de degradación
+/fallback on       → activa el fallback automático (por defecto)
+/fallback off      → desactiva; los errores de cuota se muestran sin reintento
+```
+
+El estado actual aparece siempre en la tabla de `/mode` en la fila `fallback`.
 
 ---
 
@@ -331,6 +427,25 @@ ollama list
 
 Selecciona el provider (NVIDIA, GROQ, OpenRouter, Together, HuggingFace) y el modelo de la lista. Los modelos marcados con **[tools]** soportan llamadas a herramientas MCP.
 
+### Sistema de perfiles (`.xdprofile`)
+
+Un perfil guarda toda la configuración del agente activo y la carpeta de trabajo en un único fichero JSON, de forma que puedes cambiar de proyecto o de agente en un solo clic.
+
+**Qué se guarda en un perfil:**
+
+| Campo | Contenido |
+|---|---|
+| `ai.mode` | Modo de ejecución (`opencode_acp`, `claude_cli`, `ollama`, `inference`…) |
+| `ai.model` | Modelo activo |
+| `ai.exe` | Ruta al ejecutable del agente |
+| `ai.provider` | Proveedor (Anthropic, NVIDIA, GROQ…) |
+| `ai.stream` | Streaming activado/desactivado |
+| `work_folder` | Carpeta de trabajo del proyecto |
+
+**Guardar un perfil:** botón **SAVE PROFILE** en la pantalla de inicio. El fichero se guarda en `profiles\<modo>_<fecha>.xdprofile`.
+
+**Cargar un perfil:** botón **LOAD PROFILE** → selecciona el fichero `.xdprofile`. Al cargar un perfil con `mode = "inference"` los providers de inference se recargan automáticamente.
+
 ### Parámetros avanzados del agente
 
 | Parámetro | Descripción |
@@ -358,17 +473,117 @@ El agente recibe automáticamente el **contenido del fichero que estás editando
 
 Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos los comandos disponibles. **El primer comando que debes probar cuando empieces es `/help`**: te mostrará una explicación de todos los comandos y opciones del chat.
 
-Algunos de los comandos más habituales:
+#### Estado y configuración general
 
-| Comando | Acción |
-|---|---|
-| `/help` | Muestra la ayuda completa del chat y los comandos disponibles |
-| `/mode` | Cambiar el agente o modo activo |
-| `/ollama` | Listar y cambiar modelos de Ollama |
-| `/clear` | Limpiar el historial del chat |
-| `/skill` | Insertar una skill en el mensaje |
-| `/provider` | Cambiar el provider de inference |
-| `/model` | Cambiar el modelo activo |
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/` | — | Mostrar configuración actual (modo, modelo, endpoint, tools…) |
+| `/help` | — | Mostrar ayuda completa del chat |
+| `/mode` | — | Mostrar modo y agente activo |
+| `/savemode` | — | Guardar la configuración de modo actual |
+| `/restoremode` | — | Restaurar la configuración guardada (guarda la actual antes) |
+
+#### Selección de agente / modo
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/opencode-acp` | — | Modo OpenCode ACP (streaming + herramientas) |
+| `/mimo-acp` | — | Modo MIMO ACP (streaming + herramientas) |
+| `/gemini-acp` | — | Modo Gemini ACP |
+| `/openclaude-acp` | — | Modo OpenClaude ACP |
+| `/opencode` | — | Modo OpenCode headless (run, una sola respuesta) |
+| `/mimo` | — | Modo MIMO headless |
+| `/claude` | — | Modo Claude Code headless (`-p`) |
+| `/openclaude` | — | Modo OpenClaude headless |
+| `/gemini` | — | Modo Gemini CLI headless |
+| `/pi` | — | Modo Pi RPC (agente coding, JSONL stdin/stdout) |
+| `/ollama` | — | Modo Ollama (modelos locales) |
+| `/openai` | — | Modo OpenAI compatible (REST directo) |
+| `/inference` | — | Modo Inference HTTP directo |
+| `/puter` | — | Modo Puter (549+ modelos, sin API key propia) |
+| `/fallback` | `on\|off` | Activar/desactivar auto-fallback de provider |
+
+#### Modelo, proveedor y endpoint
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/model` | `<nombre>` | Cambiar el modelo activo |
+| `/models` | — | Elegir modelo desde un desplegable |
+| `/provider` | `<nombre>` | Establecer proveedor activo (inference) |
+| `/providers` | — | Elegir proveedor desde un desplegable |
+| `/endpoint` | `<url>` | Cambiar la URL del endpoint |
+| `/key` | `<key>` | Establecer API key |
+| `/exe` | `<nombre>` | Nombre o ruta del ejecutable CLI del agente |
+| `/acpmode` | `1\|2\|3` | Sesión ACP: 1=memoria compartida, 2=tu modelo, 3=default |
+| `/stream` | `on\|off` | Activar/desactivar streaming en agentes headless |
+
+#### Contexto del editor
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/file` | — | Adjuntar el fichero activo del editor al prompt |
+| `/sel` | — | Adjuntar la selección actual del editor al prompt |
+| `/nocontext` | — | No adjuntar contexto del editor en este prompt |
+| `/attach` | — | Adjuntar fichero externo (imagen o texto, máx. 4) |
+| `/detach` | — | Quitar todos los ficheros adjuntos |
+
+#### Skills y herramientas MCP
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/skills` | `[off <nombre>\|clear]` | Gestionar skills activos (prompt templates persistentes) |
+| `/reloadskills` | — | Recargar `xdskills.json` sin reiniciar |
+| `/context` | `[clear]` | Ver o limpiar caché de skills de contexto (docs/URLs) |
+| `/tools` | — | Gestionar filtro de tools MCP (picker visual) |
+| `/mcplist` | — | Listar todas las tools MCP disponibles |
+| `/reloadmcp` | — | Recargar la lista de tools MCP sin reiniciar |
+| `/showmcpused` | `0\|1` | Mostrar u ocultar las tools MCP usadas en cada respuesta |
+| `/showtools` | `0\|1` | Mostrar u ocultar el nombre del tool ejecutado en el chat (`› nombre_tool`) |
+
+#### Bucle autónomo (`/loop`)
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/loop` | `<objetivo>` | Iniciar bucle autónomo: el agente itera hasta escribir `[LISTO]` |
+| `/loop stop` | — | Detener el bucle en curso |
+| `/loop max` | `<n>` | Establecer número máximo de iteraciones (por defecto: 20) |
+| `/loop status` | — | Mostrar estado del bucle actual |
+
+#### Planes multi-agente
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/plan` | `<descripción>` | Generar un plan Kanban multi-agente desde lenguaje natural |
+
+#### ACP HTTP (chat remoto desde navegador)
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/http` | `1\|0` | Activar o desactivar el servidor ACP HTTP (puerto 8003) |
+| `/httpport` | `<puerto>` | Cambiar el puerto del servidor ACP HTTP |
+| `/httphost` | `<host>` | Cambiar el host del servidor ACP HTTP |
+| `/httpstatus` | — | Mostrar la configuración ACP HTTP actual |
+
+#### Historial y sesión
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/savechat` | — | Guardar historial del chat en fichero con fecha y hora |
+| `/restorechat` | — | Restaurar o elegir una sesión anterior del chat |
+| `/search` | `<texto>` | Buscar texto en el historial de todas las sesiones guardadas |
+| `/diffreview` | `on\|off` | Activar revisión de diff antes de que la IA aplique cambios (solo ACP) |
+| `/autoapprove` | `on\|off` | Auto-aprobar comandos del agente sin pedir confirmación |
+| `/clear` | — | Limpiar la pantalla (el agente **sigue recordando** el historial) |
+| `/reset` / `/new` | — | Nueva sesión: limpia pantalla e historial, olvida memoria ACP |
+| `/reload` | — | Recargar la página del chat |
+| `/refresh` | — | Recargar la página conservando el historial de prompts |
+
+#### Específicos de agente Pi
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/steer` | `<texto>` | Pi: inyectar una instrucción en mitad de una respuesta en curso |
+| `/cmd` | `<comando>` | Ejecutar un comando de shell desde el chat |
 
 ### Información de uso al terminar cada respuesta
 
@@ -390,9 +605,17 @@ La etiqueta **modo · modelo** de la barra superior se actualiza automáticament
 
 Mientras el agente responde aparece el botón **Cancelar**. Púlsalo para interrumpir.
 
-### Historial
+### Historial y límite de contexto
 
 El historial de la conversación se mantiene durante la sesión. Cada mensaje nuevo se envía junto con el contexto de los mensajes anteriores.
+
+Para evitar que sesiones muy largas superen el límite de tokens del modelo, XDForCode aplica automáticamente un **límite de historial**: solo se envían los últimos N pares de mensajes (por defecto 30). Los mensajes más antiguos se descartan del contexto enviado al modelo, pero siguen visibles en pantalla y persisten en la base de datos.
+
+El límite se configura en `XDForCodeUI.ini`:
+```
+[AI]
+maxhistory = 30    ; 0 = sin límite (envía todo el historial)
+```
 
 ### Preguntar sobre el código abierto en el editor
 
@@ -415,49 +638,201 @@ El agente puede modificar el fichero activo directamente:
 > _"Refactoriza la función `XDServerStart` para separar la lógica de login en una función propia"_
 > _"Añade al final del fichero una nueva función `GetUserCount` que devuelva el número de usuarios en `xdusers.json`"_
 
+### Adjuntar ficheros e imágenes al prompt
+
+Puedes incluir hasta **4 ficheros o imágenes** como adjunto en cualquier mensaje del chat.
+
+#### Botón 📎 (adjuntar fichero)
+
+Al pulsarlo se abre el selector de ficheros. Puedes adjuntar:
+- **Ficheros de texto** (`.prg`, `.json`, `.md`, …): su contenido se añade automáticamente al mensaje como bloque de código.
+- **Imágenes** (`.png`, `.jpg`, `.gif`, `.webp`): se envían al agente para que las describa, extraiga texto o responda preguntas sobre lo que muestran.
+
+#### Botón Paste (pegar desde portapapeles)
+
+Detecta automáticamente el contenido del portapapeles:
+- Si hay una **imagen** (captura de pantalla, imagen copiada): la adjunta como imagen al mensaje.
+- Si hay **texto**: lo pega directamente en el cuadro de mensaje.
+
+#### Barra de adjuntos
+
+Los adjuntos aparecen como chips bajo el cuadro de mensaje con el nombre del fichero y un botón **×** para eliminarlos. Se pueden combinar texto e imágenes libremente.
+
+> **Soporte de visión:** Claude 3+, Gemini 1.5+ y los modelos GPT-4V procesan imágenes nativamente. En modos ACP (`opencode_acp`, `mimo_acp`, `gemini_acp`) las imágenes se envían en formato base64 dentro del protocolo de sesión.
+
+### /loop — Bucle autónomo
+
+El comando `/loop` pone al agente en modo autónomo: itera sobre un objetivo hasta que lo considera resuelto o hasta que le indicas que pare.
+
+```
+/loop <objetivo>
+```
+
+**Cómo funciona:**
+
+1. Envías `/loop Implementa el sistema de login completo con validación y tests`.
+2. El agente trabaja, responde y en cada turno evalúa si el objetivo está cumplido.
+3. Si no lo está, XDForCode lanza automáticamente la siguiente iteración.
+4. El agente escribe `[LISTO]`, `[DONE]`, `[FIN]` o `[TERMINADO]` al final de su respuesta para indicar que ha terminado.
+
+**Comandos del bucle:**
+
+| Comando | Acción |
+|---|---|
+| `/loop <objetivo>` | Inicia el bucle con el objetivo dado |
+| `/loop stop` | Para el bucle en cuanto termine el turno actual |
+| `/loop max <n>` | Limita a *n* iteraciones máximas |
+| `/loop status` | Muestra el estado actual (activo/inactivo, iteración) |
+
+**Integración con el Build:**  
+Si el loop activa una compilación, XDForCode inyecta automáticamente la salida de la compilación (errores, warnings) en el siguiente turno del agente, de forma que puede corregir los errores detectados sin intervención manual.
+
+**Integración con el Kanban:**  
+El loop es compatible con las tareas Kanban: si hay una tarea en marcha, el loop no interfiere con la captura de resultados del Kanban.
+
+> **Tip:** Combina `/loop` con una skill `rule` para que el agente siga las convenciones de tu proyecto en cada iteración.
+
+### Diff review — revisar cambios de la IA antes de aplicarlos
+
+Cuando el diff review está activo, **cada vez que un agente ACP quiere escribir un fichero**, XDForCode interrumpe la escritura y muestra el diff en el panel de chat antes de aplicarlo:
+
+- Las líneas **eliminadas** se muestran en rojo.
+- Las líneas **añadidas** se muestran en verde.
+- Dos botones: **✓ Aplicar** (el fichero se escribe) y **✗ Rechazar** (la escritura se cancela, el fichero no cambia).
+
+El agente queda en espera hasta que el usuario responde. Si rechaza el cambio, el agente recibe un resultado vacío y puede proponer una alternativa o detenerse.
+
+**Activar / desactivar:**
+```
+/diffreview on     → activa la revisión de diff
+/diffreview off    → desactiva (los cambios se aplican directamente, como siempre)
+```
+
+El estado persiste en `XDForCodeUI.ini [AI] diffreview`.
+
+> **Limitación:** el diff review solo cubre el path ACP (`fs/write_text_file`), que es la escritura que usan opencode, mimo, gemini y similares. Las escrituras directas via MCP HTTP (tool `ide_write_file`) no pasan por este filtro. Con `/autoapprove on` o en planes Kanban con modo silencioso, el diff review se salta automáticamente para no interrumpir el flujo autónomo.
+
+---
+
+### Guardar y restaurar el modo de configuración
+
+Si trabajas con varios proyectos o cambias frecuentemente entre agentes, estos comandos te permiten guardar y recuperar la configuración completa del chat en un solo paso:
+
+| Comando | Acción |
+|---|---|
+| `/savemode` | Guarda un snapshot de la configuración actual (modo, exe, modelo, provider, ACP, http, stream) |
+| `/restoremode` | Restaura el snapshot guardado (la config actual pasa a ser el nuevo snapshot; un segundo `/restoremode` deshace el cambio) |
+| `/savechat` | Copia el historial de chat actual a `xdchat_YYYYMMDD_HH-MM-SS.json` |
+| `/restorechat` | Lista los chats guardados y permite restaurar cualquiera de ellos |
+| `/refresh` | Recarga la página del chat |
+
+### Buscar en el historial de conversaciones anteriores
+
+El historial de todas las sesiones queda persistido en `data/xdchat.db` (SQLite). Hay dos formas de buscarlo:
+
+#### Desde el chat con `/search`
+
+El comando `/search` busca directamente en todos los mensajes guardados (de todas las sesiones) y muestra los resultados en el chat. Cada resultado incluye la fecha de la sesión, el rol (usuario/asistente) y un fragmento del mensaje. Al hacer clic en un resultado, se carga esa sesión completa.
+
+```
+/search CodeGraph          → busca "CodeGraph" en todos los mensajes de usuario guardados
+/search función AdjustLayout
+/search error OrdIsUnique
+```
+
+> La búsqueda cubre los mensajes no comprimidos (todos los mensajes de usuario y los de asistente cortos). Los mensajes muy largos del asistente que se almacenan comprimidos no se incluyen en la búsqueda.
+
+#### Desde el agente con la tool MCP `chat_search`
+
+Los agentes de IA también pueden buscar en el historial directamente mediante la tool MCP `chat_search`.
+
+| Parámetro | Descripción |
+|---|---|
+| `query` | Texto a buscar (requerido) |
+| `session_id` | Limitar la búsqueda a una sesión concreta |
+| `role` | Filtrar por `"user"` (tus preguntas) o `"assistant"` (respuestas del agente) |
+| `limit` | Máximo de resultados (defecto 20) |
+| `context` | Mensajes antes/después de cada match como contexto (defecto 1) |
+
+**Ejemplos:**
+
+```
+Busca en el historial qué dijimos sobre CodeGraph
+→ chat_search({"query": "CodeGraph"})
+
+Busca solo en mis preguntas sobre el Kanban
+→ chat_search({"query": "kanban", "role": "user"})
+
+Busca la solución al error OrdIsUnique que el agente explicó antes
+→ chat_search({"query": "OrdIsUnique", "role": "assistant"})
+
+Busca en la sesión de ayer con más contexto alrededor de cada match
+→ chat_search({"query": "harbour", "session_id": "ses_0995", "context": 3})
+```
+
+El `session_id` de cada sesión se puede ver con el comando `/restorechat`.
+
 ---
 
 ## 9. Skills — tipos y uso avanzado
 
-Las **Skills** son fragmentos de texto predefinidos que puedes insertar en tus mensajes para dar contexto, instrucciones o plantillas al agente.
+Las **Skills** son fragmentos de texto predefinidos que se activan en el panel de chat para dar instrucciones permanentes, contexto o plantillas al agente.
 
-### Tipos de skills
+> **Estado inicial:** ningún skill está activo al arrancar. El estado tampoco persiste entre sesiones: si recargas el panel o reinicias el IDE, vuelve a cero. Debes activarlos de nuevo cada vez que los necesites.
 
-| Tipo | Comportamiento |
-|---|---|
-| **action** | Se inserta como prefijo del prompt con una tarea concreta |
-| **system** | Se envía como system prompt permanente para toda la conversación |
-| **context** | Carga conocimiento desde ficheros locales o URLs y lo inyecta como contexto |
-| **template** | Sustituye `{message}` con el texto del usuario. Útil para flujos guiados |
-| **modifier** | Modifica el estilo de la respuesta (tono, idioma, formato) |
-| **rule** | Regla obligatoria de codificación que el agente debe seguir |
+### Tipos de skills y dónde va su contenido
 
-### Skills predefinidas
+La diferencia clave entre tipos es **dónde llega el texto del skill al modelo**:
+
+| Tipo | Dónde llega | Uso típico |
+|---|---|---|
+| **system** | System prompt | Instrucciones globales de comportamiento que el modelo debe seguir siempre |
+| **context** | System prompt (como bloque de conocimiento) + el campo `prompt` también al system | Cargar ficheros o URLs como base de conocimiento; el modelo los recibe como contexto |
+| **template** | Reemplaza por completo el mensaje del usuario (usa `{message}` como placeholder) | Flujos guiados donde el mensaje del usuario se inserta dentro de una plantilla mayor |
+| **action** | Antepuesto al mensaje del usuario | Tarea concreta sobre el código; soporta `{code}` y `{selection}` como placeholders |
+| **modifier** | Antepuesto al mensaje del usuario | Instrucciones de estilo o tono (respuesta corta, formal, telegráfica…) |
+| **rule** | Antepuesto al mensaje del usuario | Reglas de codificación que el agente debe aplicar en su respuesta |
+
+> **Nota sobre modifier y rule:** sus instrucciones llegan como prefijo del turno del usuario, no como system prompt. Si necesitas que una regla sea más autoritativa (que el modelo la priorice frente a sus instrucciones base), cambia el tipo a `system`.
+
+### Skills disponibles
 
 | Skill | Tipo | Descripción |
 |---|---|---|
 | `explain` | action | Explica el código activo paso a paso |
 | `findbugs` | action | Busca bugs y problemas en el código |
-| `refactor` | action | Propone refactorización del código |
-| `test` | action | Genera tests unitarios |
+| `refactor` | action | Propone refactorización sin cambiar funcionalidad |
+| `test` | action | Genera tests unitarios para el código activo |
 | `docstring` | action | Genera documentación para la selección |
 | `formal` | modifier | Responde en tono técnico y formal |
 | `concise` | modifier | Responde de forma concisa y directa |
+| `caveman` | modifier | **Modo telegráfico:** sin preámbulos, sin resúmenes, sin cortesías. Ahorra 40-65% de tokens de salida. Ideal cuando ya sabes lo que quieres y solo necesitas el código |
 | `harbour` | context | Contexto del proyecto Harbour + FiveWin |
-| `harbour-locals` | rule | Reglas de declaración de variables en Harbour |
+| `harbour-locals` | rule | Obliga a declarar LOCAL al inicio de función y STATIC antes de cualquier función |
+| `kanban-orquestador` | rule | Distribuye automáticamente tareas multi-módulo entre agentes PTY disponibles |
+| `yagni` | rule | **YAGNI estricto:** solo implementa lo que se pide; sin manejo de errores imposibles, sin abstracciones prematuras, sin comentarios que expliquen qué hace el código |
 | `harbexpert` | system | Consulta el repositorio oficial de Harbour antes de responder |
 | `fivexpert` | system | Consulta la instalación de FiveWin (C:\fwh) antes de responder |
 | `XDForCode` | context | Carga el doc de referencia de XDForCode y el README como base de conocimiento |
 
 ### Cómo usarlas
 
-1. Escribe `/skills` en el cuadro de mensaje o usa el botón de Skills en el panel.
-2. Aparece la lista de skills disponibles.
-3. Activa las que quieras: permanecen activas en todos los mensajes hasta que las desactives.
+1. Escribe `/skills` en el cuadro de mensaje — aparece un panel con todos los skills disponibles.
+2. Haz clic en el skill para activarlo (aparece con ✓ y se muestra en la barra superior).
+3. El skill permanece activo en todos los mensajes hasta que lo desactives.
+4. Para desactivar uno concreto: `/skills off <nombre>`. Para desactivar todos: `/skills clear`.
+
+### Recargar skills sin reiniciar
+
+Si editas `xdskills.json` directamente o añades skills nuevas, usa:
+```
+/reloadskills
+```
+Recarga el fichero en caliente sin necesidad de reiniciar el IDE ni recompilar nada.
 
 ### Gestionar Skills (diálogo CRUD)
 
-Desde el menú puedes abrir el diálogo de gestión de Skills para añadir, modificar o eliminar skills de forma visual. Las skills se guardan en el fichero `xdskills.json`.
+Desde el menú puedes abrir el diálogo de gestión de Skills para añadir, modificar o eliminar skills de forma visual. Las skills se guardan en `xdskills.json` junto al ejecutable.
 
 ### Skills tipo context: conocimiento externo
 
@@ -466,7 +841,7 @@ Las skills de tipo `context` pueden cargar contenido desde:
 - **Ficheros locales**: rutas absolutas o relativas al directorio de la aplicación.
 - **URLs remotas**: contenido descargado vía HTTP (se eliminan los tags HTML automáticamente).
 
-El contenido se inyecta automáticamente en el **system prompt** de cada mensaje mientras el skill está activo, sin necesidad de adjuntar nada manualmente. Para forzar la recarga del contenido del disco usa `/context clear`.
+El contenido se inyecta automáticamente en el system prompt como bloques `### CONOCIMIENTO: nombre — fuente ###` mientras el skill está activo. Para forzar la recarga del disco usa `/context clear`.
 
 El skill `XDForCode` incluido carga dos fuentes en cada mensaje:
 - `docs/xdforcode.md` — arquitectura completa y referencia técnica del proyecto
@@ -640,6 +1015,35 @@ El plan generado queda guardado en disco y puede reutilizarse y editarse como cu
 
 El agente generará tres tareas: dos en paralelo (una por fichero, en agentes distintos) y una tercera que hace fan-in usando los resultados de ambas.
 
+### El agente como orquestador — auto-generación de tareas
+
+XDForCode incluye dos herramientas MCP especiales que permiten a los propios agentes de IA crear y programar tareas en el Kanban **sin intervención manual**:
+
+| Tool MCP | Para qué sirve |
+|---|---|
+| `ide_kanban_agents` | Devuelve la lista de agentes disponibles con sus IDs actuales |
+| `ide_kanban_add_task` | Añade una tarea al Kanban (staged o en cola, con dependencias opcionales) |
+
+Con estas tools, un agente (por ejemplo el XDAGENT principal) puede analizar el objetivo, dividirlo en subtareas y asignar cada una al agente más adecuado — todo de forma automática.
+
+**Ejemplo de flujo:**
+
+```
+Tú → XDAGENT: "Refactoriza todos los módulos del proyecto separando la lógica de UI"
+
+XDAGENT (usando ide_kanban_agents):
+  → descubre que hay MIMO y OPENCODE disponibles
+
+XDAGENT (usando ide_kanban_add_task):
+  → añade tarea a MIMO: "Refactoriza fev_layout.prg"
+  → añade tarea a OPENCODE: "Refactoriza fev_agent.prg"
+  → añade tarea a MIMO: "Revisa y unifica los cambios" (depends_on: las dos anteriores)
+```
+
+El Kanban ejecuta el plan automáticamente en cuanto XDAGENT termina de encolarlo.
+
+> **Nota:** Para que este flujo funcione, los agentes MIMO y OPENCODE deben estar activos (pestañas abiertas en el panel de consola).
+
 ### Casos de uso típicos
 
 - Lanzar un agente que refactoriza el código mientras otro escribe los tests.
@@ -647,6 +1051,7 @@ El agente generará tres tareas: dos en paralelo (una por fichero, en agentes di
 - Dejar tareas largas corriendo en segundo plano mientras trabajas en otra cosa.
 - Crear flujos de trabajo encadenados donde cada paso usa el resultado del anterior.
 - Repetir el mismo prompt en varias tareas para aplicar una instrucción a múltiples ficheros.
+- **Delegar la planificación al propio agente**: pídele que diseñe y encole el plan Kanban completo.
 
 ---
 
@@ -933,6 +1338,8 @@ Entre las opciones que encontrarás en el menú:
 - **Opciones del editor**: fuente, tamaño, tema de color y autoguardado.
 - **Herramientas MCP**: gestión de las tools MCP disponibles para los agentes.
 - **Terminal y aplicaciones externas**: configuración de las pestañas de terminal adicionales.
+- **Diagnóstico ACP** (`Log ACP`): toggle que activa el registro detallado del protocolo ACP en el fichero `xdacp.log` (en el directorio del exe). Útil para depurar problemas de comunicación con el agente.
+- **Agente externo (ACP) `[ ON / OFF ]`**: toggle que controla si el modo Inference requiere un agente externo (opencode, mimo) para ejecutar herramientas MCP. Con `[ OFF ]`, XDForCode ejecuta el bucle de tool calling internamente — cualquier provider inference (GROQ, NVIDIA, OLLAMA, OpenRouter...) puede usar herramientas MCP sin tener instalado ningún agente ACP. Con `[ ON ]` (valor por defecto), las herramientas en inference solo se activan si el modelo está marcado como `"tools": true` en `xdinference.json`.
 
 > Dedica unos minutos a explorar cada sección del menú: muchas funcionalidades de XDForCode solo son accesibles desde ahí.
 
@@ -950,16 +1357,22 @@ El agente recibe como contexto el contenido del fichero que tienes abierto en el
 Sí, mediante el Kanban puedes tener varios agentes activos en paralelo, cada uno en su propia pestaña.
 
 **¿El chat queda guardado?**  
-El historial de la sesión actual se mantiene mientras la aplicación está abierta. Al cerrar la aplicación, el historial no se persiste por defecto.
+Sí. Todas las sesiones se guardan automáticamente en `data/xdchat.db` (SQLite). Puedes restaurar cualquier sesión anterior con `/restorechat`, y los agentes pueden buscar en el historial completo con la tool MCP `chat_search`.
 
 **¿Puedo usar XDForCode sin conexión a internet?**  
 Sí, siempre que uses **Ollama** como agente o el modo **Inference** con un provider que no requiera autenticación. El resto de agentes requieren conexión para conectarse a sus APIs en la nube.
 
 **¿Qué ocurre si el agente tarda mucho?**  
-Puedes cancelar la respuesta en cualquier momento con el botón **Cancelar** del panel de chat. El agente se detiene y puedes volver a escribir.
+XDForCode tiene un sistema de watchdog automático: si el agente lleva **45 segundos** sin responder, aparece un aviso en el chat informando de que la espera se alargará 45 segundos más. Si tras esos segundos adicionales sigue sin responder (90s en total), el proceso se cancela automáticamente y el chat queda disponible para seguir escribiendo. También puedes cancelar en cualquier momento con el botón **Cancelar** del panel de chat. Si el agente cancela repetidamente por límite de cuota del modelo, cambia a otro modelo o proveedor con `/model`.
 
 **¿Qué es el modo Inference?**  
 Es un modo de conexión directa a APIs OpenAI-compatible (NVIDIA, GROQ, OpenRouter, etc.) sin necesidad de instalar agentes externos. Solo necesitas configurar una API key en `xdinference.json`.
+
+**¿Los datos que el agente busca en mis ficheros locales (CodeGraph, DBF) salen del equipo?**  
+Depende del modelo que uses. El agente MCP busca en la base de datos local (SQLite de CodeGraph) y obtiene los resultados — eso no sale del equipo. Sin embargo, esos resultados se envían al modelo como parte del contexto de la conversación. Si usas un **modelo en la nube** (Claude, OpenAI, GROQ, NVIDIA, HuggingFace…), los datos de la búsqueda viajan a los servidores del proveedor. Si usas un **modelo local** (Ollama, vLLM/LM Studio en `localhost`), los datos nunca salen del equipo.
+
+**¿Puede el agente buscar en mis ficheros DBF y encontrar datos de mis clientes o proveedores?**  
+Sí, siempre que esos ficheros estén indexados en CodeGraph (**TOOLS → CodeGraph Index → Index DATABASES**). Una vez indexados, el agente puede buscar datos de empresa, CIFs, importes o cualquier texto libre usando la tool MCP `project_search`. Si no encuentra nada en el índice, puede hacer una búsqueda en tiempo real con `db_open_dbf(mode="smart_search")`.
 
 **¿Cómo configuro las rutas de compilación?**  
 Desde el menú, abre la sección de **Build / Compilación** y configura las rutas de Harbour, FiveWin y el compilador C. También puedes importar perfiles desde FivEdit.
@@ -1061,13 +1474,70 @@ Cada vez que modificas un archivo de código (`.prg`, `.ch`) o un documento web/
 2. Analiza los nuevos cambios y los inyecta en la BD (incluyendo su AST o su estructura de capítulos).
 3. Todo ocurre en segundo plano, sin bloqueos ni barras de carga. Los agentes de IA siempre dispondrán de la información actualizada al segundo, incluso si son ellos mismos los que te escriben un nuevo fichero.
 
-### 21.4 ¿Cómo utilizan la IA el proyecto indexado?
+### 21.4 Indexar PDF, ficheros Office e imágenes (OCR)
+
+CodeGraph puede extraer texto de formatos binarios mediante scripts Python embebidos. Esto permite indexar manuales en PDF, hojas de cálculo Excel y capturas de pantalla junto con el código fuente.
+
+**Instalar una sola vez:**
+
+```
+pip install markitdown[all] Pillow pytesseract
+```
+
+También necesitas **Tesseract OCR** para las imágenes: descárgalo desde [UB-Mannheim/tesseract](https://github.com/UB-Mannheim/tesseract/wiki).
+
+| Formato | Motor |
+|---|---|
+| PDF (texto nativo) | `pdfminer.six` (incluido en `markitdown[all]`) |
+| PDF (escaneado) | Tesseract OCR via `pytesseract` |
+| Excel / Word / PowerPoint | `markitdown` |
+| Imágenes (PNG, JPG…) | Tesseract OCR |
+
+Tras la instalación, añade las rutas a tu `codegraph.json` con la extensión correspondiente y ejecuta **TOOLS → CodeGraph Index → Index DOCUMENTS**.
+
+### 21.5 `project_search` — búsqueda de código y datos en CodeGraph
+
+La tool MCP `project_search` es la herramienta de búsqueda universal del proyecto. Busca simultáneamente en **dos fuentes**:
+
+| Fuente | Qué contiene | Ejemplos |
+|---|---|---|
+| `nodes_fts` | Código fuente Harbour: funciones, clases, métodos, variables | `AdjustLayout`, `CreateWebView`, `KanbanScheduler` |
+| `documents_fts` | Registros de ficheros DBF indexados, documentos Markdown, PDFs, imágenes | Empresas, CIFs, importes, nombres de cliente, contenido de manuales |
+
+**Uso desde el agente:**
+```
+Busca qué tenemos sobre "Hermanos Puertas" en el proyecto
+→ project_search({"query": "Hermanos Puertas"})
+
+¿Cuánto le vendimos a Cobra Instal.?
+→ project_search({"query": "Cobra Instal"})
+
+¿Dónde está definida la función AdjustLayout?
+→ project_search({"query": "AdjustLayout"})
+```
+
+> **Importante**: para que encuentre datos de DBF, esos ficheros deben estar indexados en CodeGraph (**TOOLS → CodeGraph Index → Index DATABASES**). La búsqueda FTS5 usa coincidencias de prefijo (`"Cobra"` encuentra `"COBRA INSTAL."`).
+
+> **`codegraph_explore`** solo busca en código fuente (`nodes_fts`). No puede encontrar datos de DBF aunque estén indexados. Para datos de negocio, usa siempre `project_search`.
+
+### 21.6 `harbour_search` — búsqueda de símbolos Harbour/FiveWin
+
+La tool MCP `harbour_search` permite a los agentes buscar clases, métodos y funciones del runtime de Harbour y FiveWin directamente, sin necesidad de leer los ficheros fuente. Está implementada en Python (`tools/mcp/src/mcp_harbour_search.py`) y accede a la misma base de datos SQLite de CodeGraph.
+
+**Uso desde el agente:**
+```
+Usa harbour_search para buscar la clase TBrowse y ver sus métodos
+```
+
+> Los resultados incluyen firma, fichero y número de línea del símbolo en la instalación de FiveWin/Harbour.
+
+### 21.6 ¿Cómo utilizan la IA el proyecto indexado?
 
 Una vez que el proyecto y los documentos están indexados, los agentes integran herramientas (*tools*) que se conectan en tiempo real a esta base de datos local.
 
 - **Para tu código**: Si le pides a la IA "Busca dónde se usa la función Facturar()", la IA no intentará leer tus 500 archivos `.prg`. Consultará la base de datos y sabrá en milisegundos la línea exacta, quién la llama y a quién llama.
 - **Clasificación por Importancia (PageRank interno)**: Al buscar en el código, el sistema utiliza un algoritmo de *In-Degree Centrality*. Esto significa que cuando el agente busca código, los resultados se ordenan devolviendo primero aquellos ficheros y funciones que son más llamados por el resto del proyecto. ¡El código más crítico siempre aparece primero!
-### 21.5 Exploración Visual del Grafo
+### 21.7 Exploración Visual del Grafo
 
 Puedes explorar tu código visualmente e interrogar a la base de datos de CodeGraph de dos formas:
 - A través del menú principal: **TOOLS -> Native CodeGraph**
@@ -1093,4 +1563,336 @@ Dispones de las siguientes opciones:
 
 ---
 
-*XDForCode — XDEVFORYOU SOLUTIONS · 2025–2026*
+---
+
+## 22. Motor de Reportes — `show_report`
+
+XDForCode incluye un motor de reportes HTML que los agentes de IA pueden usar para mostrar resultados de forma visual y estructurada directamente en el IDE, sin necesidad de abrir ningún fichero externo.
+
+### Cómo lo usa el agente
+
+Los agentes acceden al motor a través de la tool MCP `show_report`. Cuando el agente llama a esta tool, XDForCode abre un diálogo emergente con el reporte renderizado. El agente puede invocarla así:
+
+```
+Usa show_report para mostrar los resultados del análisis con una tabla de errores y un diagrama de dependencias
+```
+
+### Tipos de sección disponibles
+
+| Tipo | Para qué sirve |
+|---|---|
+| `table` | Tabla con cabecera y filas de datos |
+| `markdown` | Texto formateado con Markdown |
+| `code` | Bloque de código con resaltado de sintaxis |
+| `mermaid` | Diagrama Mermaid (flowchart, sequence, gantt, etc.) |
+| `diff` | Visor de diferencias lado a lado (formato unified diff) |
+| `alert` | Mensaje de alerta con nivel de severidad (info, warning, error, success) |
+| `accordion` | Sección colapsable para contenido extenso |
+| `chart` | Gráfico de barras o líneas |
+| `buttons` | Botones de acción que interactúan con el IDE |
+
+### Botones de acción interactivos
+
+Las secciones de tipo `buttons` permiten al agente crear botones que hacen cosas reales en el IDE cuando el usuario los pulsa:
+
+| Acción del botón | Efecto |
+|---|---|
+| `open_file` | Abre el fichero indicado en el editor, opcionalmente en una línea concreta |
+| `run_cmd` | Envía un comando al terminal Console CLI |
+| `copy` | Copia texto al portapapeles (sin pasar por el bridge) |
+
+**Estilos de botón:** `primary` (azul), `secondary` (gris), `danger` (rojo), `success` (verde).
+
+### Visor de diferencias (Diff View)
+
+La sección de tipo `diff` renderiza un diff en formato unified lado a lado, con colores para líneas añadidas, eliminadas y de contexto. Útil para que el agente muestre los cambios propuestos antes de aplicarlos:
+
+```
+Agente: "Aquí están los cambios propuestos en fev_layout.prg — pulsa 'Aplicar' cuando estés listo"
+→ show_report con sección diff + botón run_cmd para aplicar el parche
+```
+
+---
+
+## 24. Herramientas MCP para MySQL/MariaDB
+
+XDForCode incluye un conjunto completo de herramientas MCP para acceder a bases de datos MySQL y MariaDB directamente desde los agentes de IA. Hay dos familias de tools, cada una con su propia implementación interna, pero ambas comparten el mismo fichero de configuración de conexiones.
+
+### Familias de tools
+
+| Familia | Prefijo | Motor interno | N.º de tools |
+|---|---|---|---|
+| TDolphin | `mysql_*` | `TDolphinSrv` (FiveWin) | 13 |
+| FWMaria | `fwmaria_*` | `FWMariaConnection` (FiveWin) | 15 |
+
+**¿Cuál usar?** Ambas hacen CRUD básico. Usa `fwmaria_*` si necesitas stored procedures, vistas, triggers, importar/exportar DBF, o pivotes de datos.
+
+### Configurar conexiones (`mysql_shared.ini`)
+
+Crea el fichero `mysql_shared.ini` en la carpeta del ejecutable (o en `tools/mcp/`). Cada sección `[nombre]` define una conexión:
+
+```ini
+[local1]
+host=127.0.0.1
+user=root
+password=mi_contraseña
+database=mi_base
+port=3306
+
+[produccion]
+host=192.168.1.100
+user=app_user
+password=app_pass
+database=prod_db
+port=3306
+```
+
+Al llamar a cualquier tool puedes indicar qué conexión usar con el parámetro `"connection"` (por defecto `"local1"`).
+
+### Tools `mysql_*` — referencia rápida
+
+| Tool | Para qué sirve |
+|---|---|
+| `mysql_list_tables` | Lista todas las tablas de la BD |
+| `mysql_table_info` | Estructura de columnas de una tabla |
+| `mysql_query` | Ejecuta un SELECT y devuelve filas |
+| `mysql_exec` | INSERT, UPDATE, DELETE, CREATE TABLE... |
+| `mysql_insert` | Inserta una fila (`values`) o varias (`rows`) |
+| `mysql_update` | Actualiza filas (requiere `where`) |
+| `mysql_delete` | Elimina filas (requiere `where` o `confirm_all`) |
+| `mysql_transaction` | Ejecuta varios SQL como una transacción |
+| `mysql_create_table` | Crea una tabla a partir de una struct Harbour |
+| `mysql_table_ops` | Acciones sobre tablas: listar, count, drop, truncate, rename... |
+| `mysql_databases` | Listar, crear o eliminar bases de datos |
+| `mysql_server_info` | Información del servidor: versión, charset, ping |
+| `mysql_backup` | Exporta tablas a un fichero SQL de volcado |
+
+### Tools `fwmaria_*` — referencia rápida
+
+| Tool | Para qué sirve |
+|---|---|
+| `fwmaria_query` | SELECT con LIMIT automático |
+| `fwmaria_exec` | DML/DDL arbitrario |
+| `fwmaria_insert` | INSERT simple o batch; con opción upsert |
+| `fwmaria_update` | UPDATE (requiere `where`) |
+| `fwmaria_delete` | DELETE (requiere `where` o `confirm_all`) |
+| `fwmaria_transaction` | Transacción multi-SQL con COMMIT/ROLLBACK automático |
+| `fwmaria_server_info` | Versión, IsMariaDB, ping, charset |
+| `fwmaria_databases` | Listar/crear/eliminar/seleccionar BD |
+| `fwmaria_table_ops` | Acciones sobre tablas: listar, count, drop, truncate, rename... |
+| `fwmaria_create_table` | Crear tabla desde struct Harbour |
+| `fwmaria_backup` | Volcado SQL de tablas seleccionadas |
+| `fwmaria_schema` | Columnas, índices, vistas y triggers de una tabla |
+| `fwmaria_procedures` | Listar y llamar stored procedures y funciones SQL |
+| `fwmaria_dbf` | Importar/exportar .dbf, copiar tablas, pivotes de datos |
+| `fwmaria_alter` | Añadir, modificar, renombrar y eliminar columnas e índices |
+
+### Ejemplos de uso desde el agente
+
+```
+Usa mysql_query para listar los 10 últimos pedidos de la tabla 'orders' en la conexion 'produccion'
+
+Con fwmaria_insert inserta un cliente nuevo en la tabla 'clientes': nombre='Acme S.A.', ciudad='Madrid'
+
+Usa fwmaria_schema action=columns table=facturas para ver la estructura de la tabla de facturas
+
+Con fwmaria_procedures action=call name=sp_calcula_totales llama al procedimiento almacenado
+```
+
+### Cómo activar/desactivar estas tools
+
+Desde el chat escribe `/tools` para abrir el selector de herramientas. Todas las tools de base de datos están en la categoría **GENERAL**. Puedes activarlas o desactivarlas individualmente sin necesidad de reiniciar.
+
+---
+
+## 25. Interfaces GUI de configuración
+
+XDForCode incluye diálogos CRUD para gestionar visualmente todos los ficheros de configuración relevantes, sin necesidad de editar ficheros a mano. Todos están accesibles desde el menú **TOOLS**.
+
+| Entrada en TOOLS | Fichero que gestiona | Función |
+|---|---|---|
+| Agente IA... | `XDForCodeUI.ini` | `AgentConfigDialog()` |
+| API Keys... | (variables de entorno) | `ApiKeysDialog()` |
+| Configure ACP... | (conexión ACP) | `ACPConfigDialog()` |
+| Log ACP (diagnóstico) | `xdacp.log` | toggle `lAcpDebug` — registra todo el tráfico ACP |
+| MCP Tools... | `mcp_tools.db` / `mcp_tools.json` | `MCPToolsDialog()` (requiere Modo Admin) |
+| Skills... | `xdskills.json` | `SkillsDialog()` |
+| MySQL Connections... | `mysql_shared.ini` | `MySQLConnectionsDialog()` |
+| Inference Providers... | `xdinference.json` | `InferenceDialog()` |
+| Folder Project Config... | `codegraph.json` | `CodeGraphConfigDialog()` |
+| Terminal Apps & Agents... | `XDTermApps.ini` | `TermAppsDialog()` |
+| Contraseña BD... | (cifrado SQLite) | `SQLCipherDialog()` |
+| Configurar Puter... | `XDForCodeUI.ini [PUTER]` | `PuterConfigDialog()` |
+
+### Agente IA (`XDForCodeUI.ini`)
+
+Diálogo de configuración rápida del agente activo: modo de ejecución, ejecutable, proveedor, modelo, API key y opciones de ACP/HTTP. Equivale a configurar el agente desde el panel del chat, pero en un formulario GUI dedicado. Útil para cambiar la configuración antes de abrir el chat.
+
+### API Keys
+
+Gestiona las claves de API de los 16 proveedores soportados (Anthropic, OpenAI, Google, NVIDIA, GROQ, OpenRouter, Together, HuggingFace, Mistral, etc.). Cada clave se almacena en la variable de entorno correspondiente del proceso. Las claves se muestran enmascaradas; el botón **Mostrar** las revela temporalmente. Desde el chat también puedes establecer la clave activa con el comando `/key <clave>`.
+
+### MySQL Connections (`mysql_shared.ini`)
+
+Lista, añade, modifica y elimina conexiones MySQL/MariaDB compartidas por las tools MCP `mysql_*` y `fwmaria_*`.
+
+- Columnas: Nombre · Host · Puerto · Base de datos · Usuario
+- **Probar >** — menú desplegable con dos opciones: *Probar con FWMariaConnection* o *Probar con TDolphin*; muestra versión del servidor si la conexión es exitosa.
+
+### Inference Providers (`xdinference.json`)
+
+Gestiona los proveedores de IA en modo inferencia directa (NVIDIA, GROQ, OpenRouter, Together, HuggingFace, OLLAMA...) y sus modelos.
+
+- **Panel superior** — proveedores: Nombre · Endpoint · Default · API Key (enmascarada)
+- **Panel inferior** — modelos del proveedor seleccionado: Nombre · Tools · Default (`*`) · **Temp**; se actualiza al cambiar de proveedor
+- **Set Default** — establece el modelo activo; al añadir el primer modelo a un proveedor nuevo queda automáticamente como default
+- **Editar modelo** — diálogo expandido con campos de parámetros: Temperature · Top-P · Max tokens (nivel payload) + Num ctx · Top-K · Repeat penalty (sección `options`, específica de OLLAMA)
+
+Cada modelo puede tener un bloque `params` opcional en `xdinference.json` con sus parámetros de inferencia:
+
+```json
+{
+  "name": "qwen3:14b",
+  "tools": true,
+  "params": {
+    "temperature": 0.6,
+    "top_p": 0.9,
+    "max_tokens": 8192,
+    "options": { "num_ctx": 32768, "top_k": 40, "repeat_penalty": 1.1 }
+  }
+}
+```
+
+Los parámetros top-level se mezclan directamente en el payload; `options` se fusiona en `payload.options` (solo OLLAMA los usa).
+
+### MCP Tools (`mcp_tools.db` / `mcp_tools.json`)
+
+El CRUD completo de tools MCP está disponible en **TOOLS → MCP Tools...** (requiere **Modo Admin** activo, ver abajo). Permite editar nombre, descripción, categoría, parámetros, tags y código fuente de cada tool, además de exportar a JSON.
+
+La fuente activa se controla desde **TOOLS → Fuente MCP tools**: `[ JSON ]` usa `mcp_tools.json`; `[ SQLite ]` usa `mcp_tools.db` (BD con FTS5 y bytecodes precompilados).
+
+### Folder Project Config (`codegraph.json`)
+
+Configura las carpetas que CodeGraph indexa: código fuente, documentos, bases de datos e imágenes.
+
+- Combobox selector de sección: **Sources · Documents · Databases · Images**
+- Columnas: Ruta · Etiqueta · Habilitado
+- **Habilitar/Des.** — activa o desactiva un ítem sin eliminarlo (útil para excluir temporalmente una carpeta del índice)
+- **Opciones...** — sub-diálogo para la ruta de la BD SQLite, `max_doc_size_kb` y `skip_dirs`
+- Sub-diálogo de ítem: botón `...` para explorar carpeta, campo Extensions (una extensión por línea, p.ej. `*.prg`), campo Excludes (rutas o ficheros a omitir)
+
+### Terminal Apps & Agents (`XDTermApps.ini`)
+
+Gestiona las pestañas PTY dinámicas del panel de consola.
+
+- Combobox selector de sección: **APPS · AGENTS · MCPSERVERS**
+- Columnas: Nombre · Comando · Modo
+- Campo **Modo**: `1`=auto al inicio · `0`=desactivado · `shell`=ShellExecute · `http://url[,1]`=WebView servidor
+
+Las tres secciones del fichero `XDTermApps.ini` tienen propósitos distintos:
+
+| Sección | Qué contiene |
+|---|---|
+| **APPS** | Aplicaciones PTY de propósito general (shells, herramientas, scripts) que se abren en el panel de consola. Ejemplos: PowerShell, Node REPL, un linter. |
+| **AGENTS** | Agentes IA que se lanzan en una terminal PTY propia (opencode, mimo, etc.). El Kanban puede enviarles tareas directamente por teclado. Pueden escribir ficheros `.done` en `kanban_done/` para señalizar al orquestador que han terminado. |
+| **MCPSERVERS** | Servidores MCP en modo stdio que XDForCode arranca automáticamente al inicio de la sesión y registra en la lista `mcpServers` de las sesiones ACP. Cada entrada es un proceso independiente que el agente puede usar como fuente de tools MCP. |
+
+> **Nota:** Este diálogo gestiona las pestañas dinámicas de `XDTermApps.ini`. Las pestañas fijas del panel de consola (GIT, SSH, Console CLI, System Console, WhatsApp) se configuran desde **VIEW → Console Folder Tabs**.
+
+### Modo Administrador
+
+**TOOLS → "Modo Admin [ OFF ]"** — toggle sin persistencia que habilita funciones de administración:
+
+| Estado | Efecto |
+|---|---|
+| **OFF** (defecto) | MCP Tools... deshabilitado en el menú |
+| **ON** | Acceso completo a CRUD de tools MCP y otras funciones admin |
+
+Al reiniciar la aplicación vuelve a OFF. No requiere contraseña (aún).
+
+### Cifrado de bases de datos — SQLCipher AES-256
+
+**TOOLS → Contraseña BD** — gestiona el cifrado AES-256 de todas las bases de datos SQLite del IDE mediante SQLCipher, sin depender de OpenSSL (usa la API BCrypt de Windows).
+
+Bases de datos protegidas:
+- `data/xdchat.db` — historial de chat
+- `.codegraph/codegraph.db` — índice CodeGraph
+- `mcp_tools.db` — herramientas MCP
+
+| Opción | Acción |
+|---|---|
+| **Establecer contraseña** | Cifra todas las BDs con AES-256; pide confirmación |
+| **Cambiar contraseña** | Recifra con la nueva contraseña sin perder datos |
+| **Quitar contraseña** | Descifra todas las BDs (vuelven a ser SQLite estándar) |
+
+Al establecer una contraseña, XDForCode la pedirá cada vez que arranque. Si la contraseña es incorrecta, el IDE inicia pero sin acceso al historial ni al índice CodeGraph.
+
+---
+
+## 26. Dashboard — Panel de Estado en Tiempo Real
+
+El Dashboard (`TOOLS → Dashboard` o botón **DASHBOARD** en la pantalla de inicio) muestra en tiempo real el estado completo del IDE en un panel de tarjetas. Se renderiza en el mismo panel del editor Monaco, sin abrir ventanas adicionales.
+
+### Tarjetas disponibles
+
+| Tarjeta | Qué muestra |
+|---|---|
+| **Web Server** | Estado del servidor (activo/inactivo) y puerto |
+| **AI Mode** | Modo activo, modelo, ejecutable y proveedor configurado |
+| **MCP Tools** | Número de tools disponibles y cuáles están activas |
+| **Skills** | Skills cargadas y cuáles están activadas en la sesión |
+| **Inference Providers** | Lista de proveedores con sus modelos y API key configurada |
+| **Remote Users** | Usuarios del chat remoto con su configuración individual |
+| **Agents** | Agentes activos (pestañas abiertas), estado y tarea actual |
+| **Kanban Plan** | Resumen del plan activo: tareas por estado |
+| **Terminal Apps** | Apps/agentes definidos en `XDTermApps.ini` y su estado |
+| **PTY** | Terminales activos y sus procesos |
+| **Project** | Carpeta de trabajo, fichero activo y nombre del proyecto |
+
+El Dashboard actualiza los datos cada vez que se abre (no hace polling continuo). Es especialmente útil para hacer un diagnóstico rápido del estado del sistema antes de lanzar un plan Kanban.
+
+---
+
+## 27. API REST Local Integrada
+
+XDForCode incorpora de forma nativa un servidor HTTP embebido (basado en CivetWeb) que, además de servir el chat remoto, provee una API REST completa en la ruta `/xd/v12/` para permitir controlar el motor de IA desde fuera del IDE (por ejemplo, desde otras aplicaciones, scripts de automatización o llamadas `curl`).
+
+### Autenticación
+Todos los endpoints requieren un **Token de Seguridad (Bearer)**. 
+- Enviar por cabecera: `Authorization: Bearer <token>`
+- En pruebas iniciales, usa el token configurado en tu IDE o base de datos.
+- A nivel del wrapper en C, CivetWeb protege adicionalmente las conexiones WebSocket exigiendo el token, y rechaza los frames de datos que no lo incluyan, ofreciendo un escudo frente a ataques masivos.
+
+### Endpoints Disponibles
+
+Todos los endpoints base están en `http://127.0.0.1:8008/xd/v12/` (el puerto puede variar según tu configuración):
+
+| Endpoint | Método | Acción | Parámetros (JSON Body) |
+|---|---|---|---|
+| `/help` | GET | Lista de rutas disponibles en el API | - |
+| `/status` | GET | Estado actual del motor (mode, provider, model) | - |
+| `/mode` | GET | Obtiene el modo activo actualmente | - |
+| `/mode/inference` | POST | Cambia el motor de IA al modo Inference | - |
+| `/mode/ollama` | POST | Cambia el motor de IA al modo Ollama | - |
+| `/mode/opencode_acp` | POST | Cambia el motor de IA al modo OpenCode ACP | - |
+| `/providers` | GET | Devuelve la lista de proveedores disponibles | - |
+| `/provider` | POST | Establece el proveedor activo para Inference | `{"provider": "NVIDIA"}` |
+| `/models` | GET | Devuelve la lista de modelos del proveedor activo | - |
+| `/model` | POST | Establece el modelo activo a usar | `{"model": "gemma4"}` |
+| `/prompt` | POST | Envía un mensaje a la IA y espera la respuesta | `{"prompt": "Escribe un hola mundo"}` |
+
+### Aislamiento de Estado
+
+Cuando haces una petición a cualquier endpoint que altera el estado (como `/model` o `/provider`), **la API realiza una copia de seguridad** del estado de tu IDE. Modifica la configuración en memoria de Harbour exclusivamente para procesar tu petición, y al finalizar la restaura (a través de las funciones `XD_ApiSaveMode()` y `XD_ApiRestoreMode()`). 
+
+De esta forma, puedes automatizar llamadas por detrás sin que afecte en absoluto a la conversación o modelo que tengas activo en el panel de chat del IDE.
+
+### Herramienta de Testing Integrada
+
+Puedes probar todos estos endpoints directamente desde dentro de XDForCode sin necesidad de usar herramientas externas como Postman:
+1. Ve al menú **TESTS** de la barra superior.
+2. Selecciona **Test API REST local**.
+3. Se abrirá un diálogo con estilo visual integrado donde podrás seleccionar el endpoint desde un desplegable (se autorellena interrogando a CivetWeb), meter tu token, especificar un JSON en el Body y ver la respuesta.
+4. Internamente este diálogo utiliza la librería `libcurl` nativa de Harbour para realizar las llamadas (GET/POST automáticos) en lugar de depender de ejecutables externos de Windows.
+
+*XDForCode — XDEVFORYOU SOLUTIONS · 2026*

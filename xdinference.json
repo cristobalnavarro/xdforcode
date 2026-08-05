@@ -73,6 +73,210 @@
         { "name": "google/gemma-4-26B-A4B-it",                "tools": false }
       ],
       "default": "Qwen/Qwen3.5-9B"
+    },
+    "OLLAMA":
+    {
+      "endpoint": "http://localhost:11434/v1/chat/completions",
+      "apikey": "",
+      "autodiscover": true,
+      "models":
+      [
+        {
+          "name": "deepseek-ocr:3b",
+          "tools": false,
+          "params":
+          {
+            "temperature": 0.05,
+            "max_tokens": 2048,
+            "options":
+            {
+              "num_ctx": 32768,
+              "repeat_penalty": 1.1
+            }
+          }
+        },
+        {
+          "name": "gemma4:e4b",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "max_tokens": 8192,
+            "options":
+            {
+              "num_ctx": 32768
+            }
+          }
+        },
+        {
+          "name": "gemma4:31b",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "max_tokens": 8192,
+            "options":
+            {
+              "num_ctx": 32768
+            }
+          }
+        },
+        {
+          "name": "kimi-k2.7-code:cloud",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 8192,
+            "options":
+            {
+              "num_ctx": 32768
+            }
+          }
+        },
+        {
+          "name": "glm-5.2:cloud",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 8192,
+            "options":
+            {
+              "num_ctx": 32768
+            }
+          }
+        },
+        {
+          "name": "minimax-m3:cloud",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 8192,
+            "options":
+            {
+              "num_ctx": 32768
+            }
+          }
+        },
+        {
+          "name": "deepseek-v4-pro:cloud",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 8192,
+            "options":
+            {
+              "num_ctx": 32768
+            }
+          }
+        },
+        {
+          "name": "deepseek-v4-flash:cloud",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 8192,
+            "options":
+            {
+              "num_ctx": 32768
+            }
+          }
+        },
+        {
+          "name": "qwen3.6:35b",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 8192,
+            "options":
+            {
+              "num_ctx": 32768,
+              "top_k": 40,
+              "repeat_penalty": 1.1
+            }
+          }
+        }
+      ],
+      "default": "kimi-k2.7-code:cloud"
+    },
+    "CF_GATEWAY":
+    {
+      "endpoint": "https://gateway.ai.cloudflare.com/v1/YOUR_ACCOUNT_ID/YOUR_GATEWAY_SLUG/openai/v1/chat/completions",
+      "apikey": "",
+      "autodiscover": false,
+      "models":
+      [
+        {
+          "name": "gpt-4o-mini",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.6,
+            "top_p": 0.95,
+            "max_tokens": 8192
+          }
+        },
+        {
+          "name": "gpt-4o",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.6,
+            "top_p": 0.95,
+            "max_tokens": 8192
+          }
+        },
+        {
+          "name": "gpt-4.1-mini",
+          "tools": true,
+          "params":
+          {
+            "temperature": 0.6,
+            "top_p": 0.95,
+            "max_tokens": 8192
+          }
+        }
+      ],
+      "default": "gpt-4o-mini",
+      "cf_type": "gateway",
+      "cf_account_id": "YOUR_ACCOUNT_ID",
+      "cf_gateway_slug": "YOUR_GATEWAY_SLUG",
+      "cf_target": "openai"
+    },
+    "OMNIROUTE":
+    {
+      "endpoint": "http://localhost:20128/v1",
+      "apikey": "",
+      "autodiscover": false,
+      "models": [],
+      "default": ""
+    },
+    "DEEPSEEK":
+    {
+      "endpoint": "https://api.deepseek.com/v1/chat/completions",
+      "apikey": "sk-",
+      "autodiscover": false,
+      "models":
+      [
+        { "name": "deepseek-v4-flash", "tools": true, "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192, "thinking": { "type": "disabled" } } },
+        { "name": "deepseek-v4-flash (thinking)", "tools": false, "params": { "model": "deepseek-v4-flash", "temperature": 0.6, "top_p": 0.9, "max_tokens": 16384, thinking": { "type": "enabled" } } },
+        { "name": "deepseek-v4-pro", "tools": true, "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192, "thinking": { "type": "disabled" } } },
+        { "name": "deepseek-v4-pro (thinking)", "tools": false, "params": { "model": "deepseek-v4-pro", "temperature": 0.6, "top_p": 0.9, "max_tokens": 16384 } }
+      ],
+      "default": "deepseek-v4-flash"
     }
   }
 }

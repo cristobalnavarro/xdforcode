@@ -1,0 +1,4 @@
+Starting XDForWeb...
+Listening: 127.0.0.1:8008
+DocRoot: C:\Users\navar\AppData\Roaming\xdforcode\assets\
+mg_start SUCCEEDED!
