@@ -2058,14 +2058,14 @@ al procedimiento almacenado</pre>
   <!-- API REST -->
   <section id="api-rest">
     <h2><span class="sec-num">27</span> API REST Local Integrada</h2>
-    <p>XDForCode incorpora de forma nativa un servidor HTTP embebido (basado en CivetWeb) que, ademas de servir el chat remoto, provee una API REST completa en la ruta <code>/xd/v12/</code> para permitir controlar el motor de IA desde fuera del IDE (por ejemplo, desde otras aplicaciones, scripts de automatizacion o llamadas <code>curl</code>).</p>
+    <p>XDForCode incorpora de forma nativa un servidor HTTP embebido que, ademas de servir el chat remoto, provee una API REST completa en la ruta <code>/xd/v12/</code> para permitir controlar el motor de IA desde fuera del IDE (por ejemplo, desde otras aplicaciones, scripts de automatizacion o llamadas <code>curl</code>).</p>
 
     <h3>Autenticacion</h3>
     <p>Todos los endpoints requieren un <strong>Token de Seguridad (Bearer)</strong>.</p>
     <ul class="steps">
       <li><span>Enviar por cabecera: <code>Authorization: Bearer &lt;token&gt;</code></span></li>
       <li><span>En pruebas iniciales, usa el token configurado en tu IDE o base de datos.</span></li>
-      <li><span>A nivel del wrapper en C, CivetWeb protege adicionalmente las conexiones WebSocket exigiendo el token, y rechaza los frames de datos que no lo incluyan, ofreciendo un escudo frente a ataques masivos.</span></li>
+      <li><span>A nivel del wrapper en C, el servidor web protege adicionalmente las conexiones WebSocket exigiendo el token, y rechaza los frames de datos que no lo incluyan, ofreciendo un escudo frente a ataques masivos.</span></li>
     </ul>
 
     <h3>Endpoints Disponibles</h3>
@@ -2094,7 +2094,7 @@ al procedimiento almacenado</pre>
     <ol class="steps">
       <li><span>Ve al menu <strong>TESTS</strong> de la barra superior.</span></li>
       <li><span>Selecciona <strong>Test API REST local</strong>.</span></li>
-      <li><span>Se abrira un dialogo con estilo visual integrado donde podras seleccionar el endpoint desde un desplegable (se autorellena interrogando a CivetWeb), meter tu token, especificar un JSON en el Body y ver la respuesta.</span></li>
+      <li><span>Se abrira un dialogo con estilo visual integrado donde podras seleccionar el endpoint desde un desplegable (se autorellena interrogando al servidor web ), meter tu token, especificar un JSON en el Body y ver la respuesta.</span></li>
       <li><span>Internamente este dialogo utiliza la libreria <code>libcurl</code> nativa de Harbour para realizar las llamadas (GET/POST automaticos) en lugar de depender de ejecutables externos de Windows.</span></li>
     </ol>
   </section>
