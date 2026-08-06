@@ -902,6 +902,7 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><code>/savechat</code></td><td>Guardar historial del chat en fichero con fecha y hora</td></tr>
       <tr><td><code>/restorechat</code></td><td>Restaurar o elegir una sesion anterior del chat</td></tr>
       <tr><td><code>/search &lt;texto&gt;</code></td><td>Buscar texto en el historial de todas las sesiones guardadas</td></tr>
+      <tr><td><code>/summarize</code></td><td>Resumir y compactar el historial: el agente sintetiza la conversacion en bullet points y el resumen reemplaza el historial completo para liberar contexto</td></tr>
       <tr><td><code>/diffreview on|off</code></td><td>Activar revision de diff antes de que la IA aplique cambios de ficheros (solo ACP)</td></tr>
       <tr><td><code>/autoapprove on|off</code></td><td>Auto-aprobar comandos del agente sin pedir confirmacion</td></tr>
       <tr><td><code>/clear</code></td><td>Limpiar la pantalla (el agente <strong>sigue recordando</strong> el historial)</td></tr>
@@ -1177,8 +1178,30 @@ maxhistory = 30    ; 0 = sin limite (envia todo el historial)</pre>
     <h3>Reordenar tareas</h3>
     <p>Desde el dialogo <strong>VER PLAN</strong> puedes cambiar el orden de ejecucion de cualquier tarea pendiente. Si alguna otra tarea referenciaba a la que has movido, su referencia se actualiza automaticamente para seguir apuntando a la misma tarea en su nueva posicion. El resto de tareas que tambien hayan cambiado de posicion se actualizan de la misma manera.</p>
 
+    <h3>XD Agent-2 — segundo canal paralelo de XDAGENT</h3>
+    <p>Ademas de los agentes PTY externos (MIMO, OPENCODE), el Kanban puede asignar tareas a <strong>XD Agent-2</strong>, un segundo canal interno del propio XDAGENT que funciona en paralelo sin necesidad de abrir ninguna pestana extra.</p>
+    <ul>
+      <li><strong>XD Agent</strong> (canal 1) — el agente de chat principal, siempre disponible.</li>
+      <li><strong>XD Agent-2</strong> (canal 2) — canal independiente que usa el mismo modo activo (Inference u Ollama). Permite que XDAGENT ejecute dos tareas simultaneamente sin interferir con el chat normal.</li>
+    </ul>
+    <p>Las tareas de ambos canales aparecen en el mismo panel de chat: primero el bloque de XD Agent y a continuacion el de XD Agent-2, con sus chunks streameados en tiempo real. La sintesis auto-context entre oleadas funciona igual que con cualquier otro agente.</p>
+    <p class="note"><strong>Cuando usarlo:</strong> cuando quieras paralelismo pero no tengas MIMO u OPENCODE instalados, o para anadir una segunda tarea XDAGENT a un plan sin consumir una pestana PTY.</p>
+
     <h3>Modo silencioso y auto-aprobacion</h3>
     <p>Las tareas pueden ejecutarse en <strong>modo silencioso</strong>: trabajan en segundo plano sin mostrar los mensajes en el panel de chat. En este modo, si el agente solicita confirmacion para realizar alguna accion, el sistema la aprueba automaticamente para no interrumpir el flujo.</p>
+
+    <h3>Auto-context — sintesis automatica entre oleadas</h3>
+    <p>Cuando hay <strong>grupos de tareas paralelas</strong> (oleadas) en un plan, XDForCode puede hacer que XDAGENT <strong>sintetice automaticamente</strong> los resultados de cada oleada antes de lanzar la siguiente. Este patron, inspirado en el modelo GroupChat de AutoGen, permite que los agentes de la fase siguiente reciban un resumen coherente de lo que han hecho sus companeros.</p>
+    <p><strong>Como activarlo:</strong> en el dialogo <strong>VER PLAN</strong> hay un checkbox <strong>Auto-context</strong> (marcado por defecto).</p>
+    <ol>
+      <li>La primera oleada de tareas paralelas se ejecuta normalmente.</li>
+      <li>Al terminar, XDAGENT recibe un prompt con los resultados de todas las tareas completadas.</li>
+      <li>XDAGENT genera un parrafo de sintesis: avances, archivos modificados, decisiones tomadas.</li>
+      <li>Ese parrafo se inyecta automaticamente al inicio del prompt de cada tarea de la siguiente oleada.</li>
+      <li>Se repite entre cada par de oleadas hasta que el plan termina.</li>
+    </ol>
+    <p>La sintesis es siempre <strong>visible en el chat</strong> (nunca silenciosa). El estado del checkbox se persiste en <code>XDForCodeUI.ini [KANBAN] autocontext</code>.</p>
+    <p class="note"><strong>Cuando es util:</strong> en planes donde las tareas de una fase dependen conceptualmente del trabajo de la fase anterior pero no necesitan el resultado literal de una tarea concreta (para eso usa <code>{{task.X.result}}</code>). El auto-context es especialmente valioso cuando los agentes PTY (MIMO, OPENCODE) no pueden ver el historial de chat de XDAGENT.</p>
 
     <h3>Editar el prompt de una tarea</h3>
     <p>Cada tarjeta tiene un boton <strong>&#9999;</strong> que abre un editor directamente sobre la tarjeta. Puedes modificar el prompt antes de que la tarea empiece, sin necesidad de abrir ningun dialogo aparte.</p>
@@ -1201,6 +1224,7 @@ maxhistory = 30    ; 0 = sin limite (envia todo el historial)</pre>
       <li><span>Pulsa <strong>&#128190; Guardar plan</strong> e introduce un nombre.</span></li>
       <li><span>El plan se guarda en <code>tools/plans/&lt;nombre&gt;.json</code> junto al ejecutable.</span></li>
       <li><span>Para cargarlo, pulsa <strong>&#128194; Planes guardados</strong>, selecciona el plan y pulsa <strong>Cargar</strong>.</span></li>
+      <li><span>Si necesitas modificar el plan (por ejemplo, cambiar el agente asignado), pulsa el boton <strong>&#9999;</strong> junto al plan: se abre un editor de JSON en el dialogo. Edita, pulsa <strong>Guardar</strong> y la lista se actualiza.</span></li>
     </ol>
     <p>El plan guarda por cada tarea: el agente, el prompt y el <code>idtask</code> (identificador interno). Esto permite reparar automaticamente las referencias entre tareas si los IDs cambian.</p>
 
@@ -2058,14 +2082,14 @@ al procedimiento almacenado</pre>
   <!-- API REST -->
   <section id="api-rest">
     <h2><span class="sec-num">27</span> API REST Local Integrada</h2>
-    <p>XDForCode incorpora de forma nativa un servidor HTTP embebido que, ademas de servir el chat remoto, provee una API REST completa en la ruta <code>/xd/v12/</code> para permitir controlar el motor de IA desde fuera del IDE (por ejemplo, desde otras aplicaciones, scripts de automatizacion o llamadas <code>curl</code>).</p>
+    <p>XDForCode incorpora de forma nativa un servidor HTTP embebido (basado en CivetWeb) que, ademas de servir el chat remoto, provee una API REST completa en la ruta <code>/xd/v12/</code> para permitir controlar el motor de IA desde fuera del IDE (por ejemplo, desde otras aplicaciones, scripts de automatizacion o llamadas <code>curl</code>).</p>
 
     <h3>Autenticacion</h3>
     <p>Todos los endpoints requieren un <strong>Token de Seguridad (Bearer)</strong>.</p>
     <ul class="steps">
       <li><span>Enviar por cabecera: <code>Authorization: Bearer &lt;token&gt;</code></span></li>
       <li><span>En pruebas iniciales, usa el token configurado en tu IDE o base de datos.</span></li>
-      <li><span>A nivel del wrapper en C, el servidor web protege adicionalmente las conexiones WebSocket exigiendo el token, y rechaza los frames de datos que no lo incluyan, ofreciendo un escudo frente a ataques masivos.</span></li>
+      <li><span>A nivel del wrapper en C, CivetWeb protege adicionalmente las conexiones WebSocket exigiendo el token, y rechaza los frames de datos que no lo incluyan, ofreciendo un escudo frente a ataques masivos.</span></li>
     </ul>
 
     <h3>Endpoints Disponibles</h3>
@@ -2094,7 +2118,7 @@ al procedimiento almacenado</pre>
     <ol class="steps">
       <li><span>Ve al menu <strong>TESTS</strong> de la barra superior.</span></li>
       <li><span>Selecciona <strong>Test API REST local</strong>.</span></li>
-      <li><span>Se abrira un dialogo con estilo visual integrado donde podras seleccionar el endpoint desde un desplegable (se autorellena interrogando al servidor web ), meter tu token, especificar un JSON en el Body y ver la respuesta.</span></li>
+      <li><span>Se abrira un dialogo con estilo visual integrado donde podras seleccionar el endpoint desde un desplegable (se autorellena interrogando a CivetWeb), meter tu token, especificar un JSON en el Body y ver la respuesta.</span></li>
       <li><span>Internamente este dialogo utiliza la libreria <code>libcurl</code> nativa de Harbour para realizar las llamadas (GET/POST automaticos) en lugar de depender de ejecutables externos de Windows.</span></li>
     </ol>
   </section>
