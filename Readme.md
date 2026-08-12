@@ -82,7 +82,7 @@ Su característica principal es la **integración nativa con agentes de IA**: pu
 
 | Zona | Función |
 |---|---|
-| **Barra lateral de iconos** | Acceso a explorador, servidor web, Kanban, preview HTML y configuración |
+| **Barra lateral de iconos** | Acceso a explorador, servidor web, Kanban, preview HTML, Visual Builder y configuración |
 | **Explorador de archivos** | Árbol de directorios; clic en un fichero lo abre en el editor |
 | **Editor de código** | Edición con Monaco o Scintilla según el tipo de fichero |
 | **Consolas inferiores** | Pestañas Results, GIT, SSH, Sistema, Terminal IA, WhatsApp |
@@ -107,17 +107,19 @@ XDForCode dispone de dos motores de edición que se usan según el tipo de fiche
 
 ### Monaco Editor
 
-El mismo motor que utiliza VS Code internamente. Se usa para la mayoría de los ficheros de código y texto. Ofrece resaltado de sintaxis moderno, autocompletado inteligente y vista previa de ficheros web (HTML, CSS, JS).
+El mismo motor que utiliza VS Code internamente. Se emplea para ficheros web y de scripting. Ofrece resaltado de sintaxis moderno, autocompletado y vista previa de ficheros web.
 
-Tipos de fichero habituales en Monaco: `.prg`, `.ch`, `.prw`, `.js`, `.html`, `.css`, `.json`, `.md`, `.ini`, `.txt`, ...
+Tipos de fichero: `.js`, `.ts`, `.html`, `.css`, `.json`, `.md`, `.yaml`, `.xml`, `.svg`, `.py`...
 
 ### Scintilla
 
-Editor nativo de Windows, más ligero. Se usa para ficheros específicos que se abren en sus propias pestañas dentro del IDE, con resaltado optimizado para Harbour y FiveWin.
+Editor nativo de Windows, más ligero. Se usa para ficheros Harbour y de configuración, con resaltado optimizado para Harbour y FiveWin.
+
+Tipos de fichero: `.prg`, `.ch`, `.prw`, `.ini`, `.txt` y cualquier extensión no reconocida por Monaco.
 
 ### Pantalla de inicio — botones de acción
 
-Al abrir XDForCode sin fichero activo se muestra la pantalla de bienvenida (XDEdit.html). Cuatro botones en la esquina superior derecha del editor permiten acceder a las funciones principales sin usar el menú:
+Al abrir XDForCode sin fichero activo se muestra la pantalla de bienvenida (XDEdit.html). Cinco botones en la esquina superior derecha del editor permiten acceder a las funciones principales sin usar el menú:
 
 | Botón | Acción |
 |---|---|
@@ -125,6 +127,7 @@ Al abrir XDForCode sin fichero activo se muestra la pantalla de bienvenida (XDEd
 | **TASK MANAGER** | Abre el tablero Kanban directamente |
 | **LOAD PROFILE** | Carga un perfil de configuración (`.xdprofile`) |
 | **SAVE PROFILE** | Guarda el perfil actual en `profiles\` |
+| **APPLICATIONS** | Abre el catálogo de aplicaciones instaladas |
 
 El triángulo **▲** en la barra de estado inferior recarga la configuración desde `XDForCodeUI.ini` sin necesidad de reiniciar la aplicación.
 
@@ -346,34 +349,38 @@ Conecta con la plataforma **Puter.com** — más de 549 modelos de IA (Claude, G
 
 ### Auto-fallback de provider
 
-Cuando un provider devuelve un error de cuota o límite de tasa (429, `rate_limit`, `quota_exceeded`, `insufficient_credits`…), XDForCode cambia automáticamente al siguiente provider de la cadena y reintenta la misma consulta sin que tengas que hacer nada.
+Cuando un provider devuelve un error de cuota o límite de tasa (429, `rate_limit`, `quota_exceeded`, `insufficient_credits`…), XDForCode cambia automáticamente al siguiente provider de la **lista de prioridad** y reintenta la misma consulta sin que tengas que hacer nada.
 
-**Cadena de degradación por familia de modo:**
+**Lista de prioridad jerárquica** (3 niveles):
 
 ```
-opencode* / mimo* / gemini* / claude*  →  inference  →  puter  →  ollama (local)
-inference (cualquier provider)         →  puter  →  ollama
-puter                                  →  inference  →  ollama
-ollama                                 →  (último recurso, sin fallback)
+Nivel 1 — Modos      : orden en que se prueban los modos/procesos
+Nivel 2 — Providers  : dentro de cada modo, orden de providers
+Nivel 3 — Modelos    : dentro de cada provider (solo en modos que aceptan --model)
 ```
+
+La lista se recorre en orden hasta obtener respuesta. Si se agotan todos los slots aparece `[Fallback] ES IMPOSIBLE CONTESTAR` y se restaura la configuración original.
+
+**Slot fijo — OpenCode (Free Zen):**
+El primer slot de la lista está siempre reservado para OpenCode con su tier gratuito (sin API key). No puede eliminarse ni reordenarse; sirve como último recurso gratuito antes de declarar imposible.
 
 **Comportamiento:**
-- El error original aparece en el chat (el usuario queda informado).
-- Inmediatamente después aparece `⚡ Límite alcanzado — cambiando a **X**...` y la respuesta del nuevo provider.
-- El cambio de provider **persiste** para el siguiente mensaje (sin restaurar el original).
-- Para modos HTTP directos (`inference`, `puter`) el reintento es inmediato en el mismo hilo. Para modos de proceso (`opencode_*`, `mimo_*`, `gemini_*`, `claude_*`) el nuevo provider se activa antes de relanzar el proceso.
-- Máximo 1 reintento por turno (configurable en `xdfallback.json` → `max_retries`).
+- Cuando un provider falla, aparece `[Fallback] Cambiando a **X**...` y se reintenta automáticamente.
+- Si `restore_on_success` está activo, al obtener respuesta correcta el sistema vuelve al modo original.
+- Para modos ACP (`opencode_acp`, `mimo_acp`) el cambio de provider reinicia el proceso con la nueva API key. Para `inference`/`ollama` el cambio es por petición sin reiniciar nada.
+- Modos `opencode_acp` y `mimo_acp` no aceptan `--model` externamente; su fallback llega hasta el nivel provider.
 
-**Configuración** (`xdfallback.json` junto al ejecutable):
+**Configuración** (`xdfallback.json` junto al ejecutable, editable con `/fallback`):
 - `enabled` — activa o desactiva globalmente el fallback.
-- `triggers.http` — lista de palabras clave que identifican errores de cuota en la respuesta.
-- `rules[]` — cadena de fallbacks por `(mode, provider)`: cada regla tiene un `match` y un array `fallbacks` con entradas `{ mode, provider, model, label }`.
-- Regla catch-all con `"provider": "*"` que se aplica a cualquier mode/provider no cubierto explícitamente.
+- `restore_on_success` — si `true`, restaura el modo original tras una respuesta exitosa en fallback.
+- `triggers.http` — palabras clave que identifican errores de cuota en la respuesta.
+- `priority[]` — lista ordenada de slots; cada slot: `{ label, mode, provider, models[], pinned }`.
 
 **Comandos:**
 
 ```
-/fallback          → muestra estado actual y cadena de degradación
+/fallback          → abre el editor visual de prioridad de fallback
+/fallback edit     → ídem (alias explícito)
 /fallback on       → activa el fallback automático (por defecto)
 /fallback off      → desactiva; los errores de cuota se muestran sin reintento
 ```
@@ -386,22 +393,31 @@ El estado actual aparece siempre en la tabla de `/mode` en la fila `fallback`.
 
 ### Seleccionar el agente activo
 
-1. Haz clic en el **selector de agente** en la parte superior del panel de chat (sidebar derecho).
-2. Selecciona el agente de la lista (OpenCode, MIMO, Claude CLI, OpenClaude, Gemini CLI, Ollama, Inference...).
-3. El panel de chat cambia al agente seleccionado y queda listo para recibir mensajes.
+El agente se cambia escribiendo un comando en el chat. Escribe `/` para ver la lista completa. Los comandos principales son:
+
+| Comando | Agente |
+|---|---|
+| `/opencode` | OpenCode (modo run, sin herramientas) |
+| `/opencode-acp` | OpenCode (modo ACP, con herramientas MCP) |
+| `/mimo` | MIMO (modo run) |
+| `/mimo-acp` | MIMO (modo ACP, con herramientas MCP) |
+| `/claude` | Claude Code (headless -p) |
+| `/openclaude` | OpenClaude (headless -p) |
+| `/gemini` | Gemini CLI (headless) |
+| `/ollama` | Ollama (modelos locales) |
+| `/inference` | Inference (HTTP directo: NVIDIA, GROQ, OpenRouter...) |
+
+El modo activo se muestra siempre en la cabecera del chat junto al nombre del modelo.
 
 Puedes tener **varios agentes activos simultáneamente** usando el sistema Kanban (ver sección 11).
 
 ### Configurar proveedor y modelo
 
-Cada agente permite seleccionar el proveedor (empresa que ofrece el modelo) y el modelo concreto a usar. El cambio se aplica en la siguiente consulta.
+Cada agente permite seleccionar el proveedor y el modelo concreto. El cambio se aplica en la siguiente consulta.
 
 #### OpenCode / MIMO
 
-Dentro de XDForCode, en el panel del agente:
-
-- **Proveedor**: Anthropic, OpenAI, Google, Mistral, etc.
-- **Modelo**: `claude-sonnet-4-5`, `gpt-4o`, `gemini-2.0-flash`, etc.
+Usa el comando `/model <nombre>` para cambiar el modelo, o `/providers` y `/models` para elegir desde un desplegable interactivo en el chat.
 
 #### Claude Code / OpenClaude
 
@@ -501,7 +517,7 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | `/openai` | — | Modo OpenAI compatible (REST directo) |
 | `/inference` | — | Modo Inference HTTP directo |
 | `/puter` | — | Modo Puter (549+ modelos, sin API key propia) |
-| `/fallback` | `on\|off` | Activar/desactivar auto-fallback de provider |
+| `/fallback` | `[on\|off\|edit]` | Editor visual de prioridad de fallback; on/off para activar/desactivar |
 
 #### Modelo, proveedor y endpoint
 
@@ -779,7 +795,7 @@ El `session_id` de cada sesión se puede ver con el comando `/restorechat`.
 
 Las **Skills** son fragmentos de texto predefinidos que se activan en el panel de chat para dar instrucciones permanentes, contexto o plantillas al agente.
 
-> **Estado inicial:** ningún skill está activo al arrancar. El estado tampoco persiste entre sesiones: si recargas el panel o reinicias el IDE, vuelve a cero. Debes activarlos de nuevo cada vez que los necesites.
+> **Estado inicial:** ningún skill está activo al arrancar. Los skills activados **se recuerdan entre sesiones** (localStorage): si recargas el panel o reinicias el IDE, los que tenías activos vuelven automáticamente. Si un skill ya no existe en `xdskills.json`, se descarta silenciosamente.
 
 ### Tipos de skills y dónde va su contenido
 
@@ -823,6 +839,16 @@ La diferencia clave entre tipos es **dónde llega el texto del skill al modelo**
 3. El skill permanece activo en todos los mensajes hasta que lo desactives.
 4. Para desactivar uno concreto: `/skills off <nombre>`. Para desactivar todos: `/skills clear`.
 
+**Navegación por teclado en el panel `/skills`:**
+
+| Tecla | Acción |
+|---|---|
+| ↑ / ↓ | Mover selección arriba/abajo |
+| Enter / Espacio | Activar o desactivar el skill seleccionado |
+| Escape | Cerrar el panel |
+
+El panel recuerda la posición al activar/desactivar un skill (el foco no salta al inicio).
+
 ### Recargar skills sin reiniciar
 
 Si editas `xdskills.json` directamente o añades skills nuevas, usa:
@@ -843,9 +869,31 @@ El sistema de skills está diseñado para evolucionar: además de las skills man
 |---|---|
 | Tipo `memory` | Skill auto-generada desde `xdchat.db`: extrae patrones, correcciones y convenciones de sesiones anteriores sin escritura manual |
 | `/refine` | Al final de sesión, el agente propone amendments a skills existentes o nuevas entradas basándose en lo que ocurrió. El usuario aprueba o rechaza cada cambio |
-| `xdharness.json` | Fichero por proyecto (junto a `codegraph.json`) que acumula convenciones de código, preferencias de agente y decisiones arquitectónicas entre sesiones. Se inyecta automáticamente como system context sin necesidad de activar ningún skill |
+| `xdharness.md` | Fichero Markdown en la raíz del proyecto de trabajo. Si existe, su contenido se inyecta automáticamente al inicio de cada prompt (≤ 8 KB). Sin toggle — la presencia del fichero es el activador |
 
 El usuario siempre aprueba explícitamente cada cambio — el harness no se auto-modifica sin confirmación.
+
+#### xdharness.md — instrucciones permanentes por proyecto
+
+Crea el fichero `xdharness.md` en el directorio de trabajo (el mismo donde está `codegraph.json`) para que sus instrucciones se incluyan en cada prompt automáticamente:
+
+```markdown
+# Harness — Mi Proyecto
+
+## Convenciones
+- Usar siempre tipo `LOCAL` al inicio de las funciones Harbour
+- Los comentarios del código van en castellano
+
+## Preferencias del agente
+- Respuestas concisas, sin resúmenes al final
+- No crear ficheros de documentación a menos que se pida explícitamente
+
+## Contexto del proyecto
+- Es una app 32-bit compilada con FiveWin para Harbour
+- El ejecutable resultante es fevscode.exe
+```
+
+El harness se inyecta con prioridad sobre el contexto del editor y el autocontext de CodeGraph. Si el fichero supera 8 KB se trunca con aviso.
 
 ### Skills tipo context: conocimiento externo
 
@@ -937,6 +985,12 @@ Además de los agentes PTY externos (MIMO, OPENCODE), el Kanban puede asignar ta
 Las tareas de ambos canales aparecen en el mismo panel de chat del agente: primero el bloque de XD Agent y a continuación el de XD Agent-2, con sus chunks streameados en tiempo real. La síntesis auto-context entre oleadas funciona igual que con cualquier otro agente.
 
 > **Cuándo usarlo:** cuando quieras paralelismo pero no tengas MIMO u OPENCODE instalados, o para añadir una segunda tarea XDAGENT a un plan sin consumir una pestaña PTY.
+
+**Asignar tareas a Ch1 / Ch2 desde el tablero:**
+
+En el formulario de añadir tarea de la columna **XD Agent**, cuando el modo activo es Inference, Ollama o cualquier modo CLI (opencode_run, mimo_run, claude_cli, gemini_cli), aparece automáticamente un toggle **Ch1 / Ch2**. Selecciona Ch2 antes de pulsar *Add* o *Run* para enrutar esa tarea al canal paralelo en lugar del canal principal.
+
+Los modos ACP (opencode_acp, mimo_acp, etc.) no soportan canales paralelos porque mantienen una sesión HTTP persistente única; si intentas usar Ch2 en modo ACP verás un mensaje de error en el chat.
 
 ### Modo silencioso y auto-aprobación
 
@@ -1085,6 +1139,17 @@ XDAGENT (usando ide_kanban_add_task):
 El Kanban ejecuta el plan automáticamente en cuanto XDAGENT termina de encolarlo.
 
 > **Nota:** Para que este flujo funcione, los agentes MIMO y OPENCODE deben estar activos (pestañas abiertas en el panel de consola).
+
+### Recuperación de plan tras cierre inesperado
+
+Si la aplicación se cierra mientras hay un plan en ejecución (corte de luz, reinicio del sistema, cierre accidental), XDForCode guarda automáticamente el estado del Kanban en disco en cada transición de tarea. Al volver a abrir la aplicación aparece un diálogo:
+
+> **"Se ha detectado un plan de Kanban interrumpido. ¿Deseas restaurar las tareas pendientes?"**
+
+- **Sí** — las tareas que estaban en ejecución vuelven a estado *staged* (pendientes de lanzar); las tareas ya completadas conservan su resultado. El tablero se repopula listo para pulsar **Run** y reanudar.
+- **No** — el estado guardado se descarta y el tablero queda vacío.
+
+El fichero de estado se elimina automáticamente cuando el plan termina normalmente o se pulsa **Stop**.
 
 ### Casos de uso típicos
 
@@ -1246,9 +1311,16 @@ En la parte inferior encontrarás varias pestañas de terminal. Las pestañas di
 | **Console CLI** | Terminal interactiva; dropdown AGENTS para lanzar agentes |
 | **WhatsApp** | WhatsApp Web embebido (si está habilitado) |
 
-La pestaña **Console CLI** incluye dos botones flotantes que aparecen al iniciar un proceso:
+Todas las pestañas PTY incluyen tres botones flotantes que aparecen mientras el proceso está en ejecución:
 - **Home** — vuelve a la pantalla inicial manteniendo el proceso activo en segundo plano
 - **Repintar** — fuerza un redibujado del terminal
+- **📋 Ctx** — captura las últimas N líneas del terminal y las envía como contexto al chat de XDAGENT
+
+#### Botón 📋 Ctx — captura de contexto PTY
+
+Al pulsar **📋 Ctx** se abre un pequeño popup donde puedes indicar cuántas líneas capturar (por defecto 50). Al confirmar, el texto de esas líneas se inyecta automáticamente en el área de escritura del chat de XDAGENT, con el prefijo `[Contexto PTY]`, listo para que lo incluyas en tu siguiente mensaje.
+
+Esto es útil cuando un proceso PTY (MIMO, OPENCODE, shell, SSH) produce una salida importante que quieres comentar o analizar con el agente de chat sin tener que copiar y pegar manualmente.
 
 El dropdown **AGENTS** de Console CLI se abre automáticamente hacia arriba o hacia abajo según el espacio disponible, y tiene scroll si hay muchos agentes.
 
@@ -1362,7 +1434,29 @@ El agente IA puede enviar mensajes de WhatsApp mediante la tool MCP `mcp_whatsap
 
 ---
 
-## 19. Menú de la aplicación — opciones de configuración
+## 19. Visual Builder
+
+El **Visual Builder** es una herramienta de diseño visual incluida en XDForCode que permite construir interfaces HTML mediante arrastrar y soltar componentes.
+
+### Cómo abrirlo
+
+Pulsa el botón **Design** (icono de diseño) en la barra lateral de iconos — posición 7, entre Preview HTML y XDevOs. Si el servidor embebido no está activo, se arranca automáticamente antes de abrir la app.
+
+### Funcionalidades principales
+
+- **Arrastrar componentes** desde el panel lateral (buttons, inputs, forms, containers, etc.) al lienzo de diseño
+- **Editar propiedades** en tiempo real (texto, estilos, clases CSS) desde el panel de propiedades
+- **Guardar y cargar** proyectos en el servidor embebido (puerto 8003)
+- **Exportar** el diseño como HTML listo para usar
+- **Vista previa** del resultado final
+
+### Requisitos
+
+El Visual Builder usa el servidor embebido de XDForCode (puerto 8003) para guardar y cargar proyectos. El servidor se arranca automáticamente al pulsar el botón si no estaba activo.
+
+---
+
+## 20. Menú de la aplicación — opciones de configuración
 
 El menú principal de XDForCode cubre la **gran mayoría de opciones de configuración** de la aplicación. Se recomienda revisarlo detenidamente antes de empezar a trabajar.
 
