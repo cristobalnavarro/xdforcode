@@ -272,7 +272,7 @@
       "models":
       [
         { "name": "deepseek-v4-flash", "tools": true, "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192, "thinking": { "type": "disabled" } } },
-        { "name": "deepseek-v4-flash (thinking)", "tools": false, "params": { "model": "deepseek-v4-flash", "temperature": 0.6, "top_p": 0.9, "max_tokens": 16384, thinking": { "type": "enabled" } } },
+        { "name": "deepseek-v4-flash (thinking)", "tools": false, "params": { "model": "deepseek-v4-flash", "temperature": 0.6, "top_p": 0.9, "max_tokens": 16384, "thinking": { "type": "enabled" } } },
         { "name": "deepseek-v4-pro", "tools": true, "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192, "thinking": { "type": "disabled" } } },
         { "name": "deepseek-v4-pro (thinking)", "tools": false, "params": { "model": "deepseek-v4-pro", "temperature": 0.6, "top_p": 0.9, "max_tokens": 16384 } }
       ],
