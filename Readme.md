@@ -361,8 +361,8 @@ Nivel 3 — Modelos    : dentro de cada provider (solo en modos que aceptan --mo
 
 La lista se recorre en orden hasta obtener respuesta. Si se agotan todos los slots aparece `[Fallback] ES IMPOSIBLE CONTESTAR` y se restaura la configuración original.
 
-**Slot fijo — OpenCode (Free Zen):**
-El primer slot de la lista está siempre reservado para OpenCode con su tier gratuito (sin API key). No puede eliminarse ni reordenarse; sirve como último recurso gratuito antes de declarar imposible.
+**Provider anclado — Free Zen:**
+Dentro del slot **OpenCode**, el provider `Free Zen` lleva el símbolo 🔒 y no puede eliminarse: sirve como último recurso gratuito (sin API key). Los **slots** sí son completamente reordenables entre sí mediante arrastrar y soltar en el editor visual.
 
 **Comportamiento:**
 - Cuando un provider falla, aparece `[Fallback] Cambiando a **X**...` y se reintenta automáticamente.
@@ -374,7 +374,13 @@ El primer slot de la lista está siempre reservado para OpenCode con su tier gra
 - `enabled` — activa o desactiva globalmente el fallback.
 - `restore_on_success` — si `true`, restaura el modo original tras una respuesta exitosa en fallback.
 - `triggers.http` — palabras clave que identifican errores de cuota en la respuesta.
-- `priority[]` — lista ordenada de slots; cada slot: `{ label, mode, provider, models[], pinned }`.
+- `priority[]` — lista ordenada de slots; cada slot: `{ label, mode, providers[{ name, models[], pinned }] }`.
+
+**Editor visual** (`/fallback`):
+- Panel izquierdo — lista de slots arrastrables; botón `+` para añadir, `×` para eliminar.
+- Panel derecho — configura modo, providers (con detección automática de providers disponibles) y modelos por provider (con detección automática según el modo).
+- Botón **VIEW** — abre un modal con el árbol completo de la estructura configurada (slots → providers → modelos) para validar la organización de un vistazo.
+- Barra inferior — preview en tiempo real de la secuencia de intento aplanada.
 
 **Comandos:**
 

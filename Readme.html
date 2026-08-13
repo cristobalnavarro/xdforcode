@@ -710,8 +710,8 @@ ollama pull qwen2.5-coder</pre>
     </table>
     <p>Si se agotan todos los slots aparece <code>[Fallback] ES IMPOSIBLE CONTESTAR</code> y se restaura la configuracion original.</p>
 
-    <h4>Slot fijo &mdash; OpenCode (Free Zen)</h4>
-    <p>El primer slot esta reservado para OpenCode con su tier gratuito (sin API key). No puede eliminarse ni reordenarse; actua como ultimo recurso gratuito antes de declarar imposible.</p>
+    <h4>Provider anclado &mdash; Free Zen</h4>
+    <p>Dentro del slot <strong>OpenCode</strong>, el provider <code>Free Zen</code> lleva el simbolo &#128274; y no puede eliminarse: actua como ultimo recurso gratuito sin API key. Los <strong>slots</strong> son completamente reordenables entre si mediante arrastrar y soltar en el editor visual.</p>
 
     <h4>Comportamiento</h4>
     <table>
@@ -730,9 +730,17 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><code>enabled</code></td><td>Activa o desactiva el fallback globalmente</td></tr>
       <tr><td><code>restore_on_success</code></td><td>Si <code>true</code>, restaura el modo original tras respuesta exitosa en fallback</td></tr>
       <tr><td><code>triggers.http</code></td><td>Palabras clave que identifican errores de cuota en la respuesta del provider</td></tr>
-      <tr><td><code>priority[]</code></td><td>Lista ordenada de slots: <code>{ label, mode, provider, models[], pinned }</code></td></tr>
+      <tr><td><code>priority[]</code></td><td>Lista ordenada de slots: <code>{ label, mode, providers[{ name, models[], pinned }] }</code></td></tr>
     </table>
 
+    <h4>Editor visual</h4>
+    <table>
+      <tr><th>Elemento</th><th>Funcion</th></tr>
+      <tr><td>Panel izquierdo</td><td>Lista de slots arrastrables; <code>+</code> anade, <code>&times;</code> elimina</td></tr>
+      <tr><td>Panel derecho</td><td>Modo, providers (con deteccion automatica) y modelos por provider</td></tr>
+      <tr><td>Boton <strong>VIEW</strong></td><td>Modal con arbol completo slots&rarr;providers&rarr;modelos para validar la organizacion</td></tr>
+      <tr><td>Barra inferior</td><td>Preview en tiempo real de la secuencia de intento aplanada</td></tr>
+    </table>
     <h4>Comandos</h4>
     <table>
       <tr><th>Comando</th><th>Accion</th></tr>
