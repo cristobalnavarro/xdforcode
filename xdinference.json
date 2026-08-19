@@ -277,6 +277,97 @@
         { "name": "deepseek-v4-pro (thinking)", "tools": false, "params": { "model": "deepseek-v4-pro", "temperature": 0.6, "top_p": 0.9, "max_tokens": 16384 } }
       ],
       "default": "deepseek-v4-flash"
+    },
+    "OPENCODE":
+    {
+      "endpoint": "https://opencode.ai/zen/v1/chat/completions",
+      "apikey": "public",
+      "autodiscover": true,
+      "models":
+      [
+        {
+          "name": "big-pickle-free",
+          "tools": true,
+          "params": { "temperature": 0.3, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "deepseek-v4-flash-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "mimo-v2.5-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "hy3-free",
+          "tools": true,
+          "params": { "temperature": 0.3, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "nemotron-3-ultra-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "nemotron-3.5-lightning-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "laguna-s-2.1-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        }
+      ],
+      "default": "deepseek-v4-flash-free"
+    },
+    "OPENCODE_FREE":
+    {
+      "endpoint": "https://opencode.ai/zen/v1/chat/completions",
+      "apikey": "public",
+      "autodiscover": true,
+      "discover_filter": "-free",
+      "models":
+      [
+        {
+          "name": "big-pickle-free",
+          "tools": true,
+          "params": { "temperature": 0.3, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "deepseek-v4-flash-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "mimo-v2.5-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "hy3-free",
+          "tools": true,
+          "params": { "temperature": 0.3, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "nemotron-3-ultra-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "nemotron-3.5-lightning-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        },
+        {
+          "name": "laguna-s-2.1-free",
+          "tools": true,
+          "params": { "temperature": 0.1, "top_p": 0.9, "max_tokens": 8192 }
+        }
+      ],
+      "default": "deepseek-v4-flash-free"
     }
   }
 }

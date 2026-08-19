@@ -341,6 +341,7 @@
   <a href="#modos">Modos de ejecucion</a>
   <a href="#puter">Modo Puter</a>
   <a href="#fallback">Auto-fallback</a>
+  <a href="#automodel">Orquestador /automodel</a>
   <a href="#activar">Activar y configurar agente</a>
   <a href="#chat">Panel de chat</a>
 
@@ -363,6 +364,8 @@
   <a href="#config-gui">Config GUI</a>
   <a href="#dashboard">Dashboard</a>
   <a href="#api-rest">API REST Local</a>
+  <a href="#mcp-web">MCP para Web</a>
+  <a href="#voz">Entrada de voz</a>
 
   <div class="nav-section">Ayuda</div>
   <a href="#faq">Preguntas frecuentes</a>
@@ -459,6 +462,11 @@
         <div class="fc-icon">&#9889;</div>
         <strong>Auto-fallback</strong>
         <span>Cambio automatico de provider al agotar cuota; lista de prioridad jerarquica editable con editor visual</span>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">&#127919;</div>
+        <strong>Orquestador /automodel</strong>
+        <span>Router barato elige el mejor modelo del pool antes de cada mensaje; editor visual con dropdowns y drag &amp; drop</span>
       </div>
       <div class="feature-card">
         <div class="fc-icon">&#128274;</div>
@@ -752,6 +760,65 @@ ollama pull qwen2.5-coder</pre>
     <p>El estado aparece siempre en la tabla de <code>/mode</code> en la fila <strong>fallback</strong>.</p>
   </section>
 
+  <section id="automodel">
+    <h3>&#127919; Orquestador de modelos (/automodel)</h3>
+    <p>El orquestador permite que XDForCode <strong>elija automaticamente el mejor modelo</strong> para cada mensaje, usando un modelo rapido y barato que actua como arbitro («router») antes de enviar la consulta al modelo definitivo.</p>
+
+    <h4>Como funciona</h4>
+    <ol>
+      <li>Tienes un <strong>pool</strong> de modelos disponibles (cada uno con modo, provider, modelo, tags y notas).</li>
+      <li>Al enviar un mensaje, el <strong>router</strong> (por defecto GROQ llama-3.1-8b-instant, max. 100 tokens) lee la descripcion del pool y la pregunta, y devuelve el ID del mejor candidato.</li>
+      <li>XDForCode cambia el modo activo a ese candidato y reenvía el mensaje de forma transparente.</li>
+      <li>El icono <strong>&#127919;</strong> en la barra del chat indica que la seleccion automatica esta activa.</li>
+    </ol>
+
+    <h4>Campos de cada entrada del pool</h4>
+    <table>
+      <tr><th>Campo</th><th>Descripcion</th></tr>
+      <tr><td><strong>ID</strong></td><td>Clave interna unica; el router la devuelve para identificar la eleccion</td></tr>
+      <tr><td><strong>Label</strong></td><td>Nombre legible en la UI</td></tr>
+      <tr><td><strong>Mode</strong></td><td>Como conecta XDForCode con este modelo (<code>inference</code>, <code>opencode_acp</code>, <code>ollama</code>...)</td></tr>
+      <tr><td><strong>Provider / Model</strong></td><td>Proveedor y nombre exacto del modelo</td></tr>
+      <tr><td><strong>Tags</strong></td><td>Palabras clave leidas por el router (ej. <code>fast</code>, <code>coding</code>, <code>analysis</code>)</td></tr>
+      <tr><td><strong>Cost</strong></td><td><code>cheap</code> / <code>medium</code> / <code>expensive</code>: el router puede preferir el mas barato si la tarea es simple</td></tr>
+      <tr><td><strong>Notes</strong></td><td>Texto libre que el router lee para decidir (ej. «Best for code generation»)</td></tr>
+      <tr><td><strong>Enabled</strong></td><td>Si esta desactivado, el router no puede elegirlo</td></tr>
+    </table>
+    <p>El <strong>orden</strong> de las entradas determina el orden en que el router las lee. Reordenalas por <strong>drag &amp; drop</strong> en el editor para influir en el bias de posicion (los modelos al inicio o al final reciben mas atencion cuando la consulta es ambigua).</p>
+
+    <h4>El router</h4>
+    <p>Un modelo barato y rapido configurado en la pestana <strong>Router</strong> del editor. Solo produce el ID del modelo mas adecuado, no la respuesta final. Si no responde antes del timeout, el mensaje se envia con el modo activo sin cambio.</p>
+
+    <h4>Configuracion (<code>xdorchestrator.json</code>)</h4>
+    <table>
+      <tr><th>Campo</th><th>Descripcion</th></tr>
+      <tr><td><code>enabled</code></td><td>Activa o desactiva el orquestador globalmente</td></tr>
+      <tr><td><code>router</code></td><td>Modelo arbitro: mode, provider, model, max_tokens, timeout</td></tr>
+      <tr><td><code>prompt_template</code></td><td>Plantilla del prompt; usa <code>{{pool}}</code> y <code>{{query}}</code> como placeholders</td></tr>
+      <tr><td><code>pool[]</code></td><td>Lista de entradas disponibles; el orden influye en el bias de posicion del router</td></tr>
+    </table>
+
+    <h4>Editor visual (/automodel edit)</h4>
+    <table>
+      <tr><th>Elemento</th><th>Funcion</th></tr>
+      <tr><td>Panel izquierdo</td><td>Lista de entradas numeradas en naranja, reordenables por drag &amp; drop</td></tr>
+      <tr><td>Pestana <strong>Pool Entry</strong></td><td>ID, label, modo, provider y model (dropdowns con deteccion automatica; al elegir provider se carga la lista de modelos), tags (chips), ctx, cost y notes</td></tr>
+      <tr><td>Pestana <strong>Router</strong></td><td>Modelo arbitro con sus propios dropdowns de provider y model</td></tr>
+      <tr><td>Pestana <strong>Prompt Template</strong></td><td>Plantilla editable + boton Reset to default</td></tr>
+      <tr><td>Boton <strong>VIEW</strong></td><td>Modal con el JSON completo de la configuracion</td></tr>
+    </table>
+
+    <h4>Comandos</h4>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/automodel</code></td><td>Muestra el estado actual (on/off)</td></tr>
+      <tr><td><code>/automodel on</code></td><td>Activa la seleccion automatica de modelo</td></tr>
+      <tr><td><code>/automodel off</code></td><td>Desactiva; el modo activo se usa sin routing previo</td></tr>
+      <tr><td><code>/automodel edit</code></td><td>Abre el editor visual del orquestador</td></tr>
+    </table>
+    <p>El estado aparece en la tabla de <code>/mode</code> en la fila <strong>automodel</strong>. Con <code>/savemode</code> y <code>/restoremode</code> el estado se guarda y restaura junto al resto de la configuracion.</p>
+  </section>
+
   <!-- 7 - ACTIVAR -->
   <section id="activar">
     <h2><span class="sec-num">7</span> Activar y configurar un agente</h2>
@@ -836,7 +903,7 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><code>/help</code></td><td>—</td><td>Mostrar ayuda completa del chat</td></tr>
       <tr><td><code>/mode</code></td><td>—</td><td>Mostrar modo y agente activo</td></tr>
       <tr><td><code>/savemode</code></td><td>—</td><td>Guardar snapshot de la configuracion actual</td></tr>
-      <tr><td><code>/restoremode</code></td><td>—</td><td>Restaurar configuracion guardada (guarda la actual antes)</td></tr>
+      <tr><td><code>/restoremode</code></td><td>—</td><td>Restaurar configuracion guardada; el snapshot permanece hasta el siguiente <code>/savemode</code></td></tr>
     </table>
 
     <h4>Seleccion de agente / modo</h4>
@@ -927,6 +994,7 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><code>/restorechat</code></td><td>Restaurar o elegir una sesion anterior del chat</td></tr>
       <tr><td><code>/search &lt;texto&gt;</code></td><td>Buscar texto en el historial de todas las sesiones guardadas</td></tr>
       <tr><td><code>/summarize</code></td><td>Resumir y compactar el historial: el agente sintetiza la conversacion en bullet points y el resumen reemplaza el historial completo para liberar contexto</td></tr>
+      <tr><td><code>/refine</code></td><td>Extraer memorias de la sesion: el agente analiza el historial y guarda hechos, decisiones, reglas y patrones en <code>xdmemory.db</code> mediante la tool <code>mem_save</code> (requiere soporte MCP de memoria activo)</td></tr>
       <tr><td><code>/diffreview on|off</code></td><td>Activar revision de diff antes de que la IA aplique cambios de ficheros (solo ACP)</td></tr>
       <tr><td><code>/autoapprove on|off</code></td><td>Auto-aprobar comandos del agente sin pedir confirmacion</td></tr>
       <tr><td><code>/clear</code></td><td>Limpiar la pantalla (el agente <strong>sigue recordando</strong> el historial)</td></tr>
@@ -1011,6 +1079,12 @@ maxhistory = 30    ; 0 = sin limite (envia todo el historial)</pre>
     <h3>Cancelar</h3>
     <p>Mientras el agente responde aparece el boton <strong>Cancelar</strong>. Pulsalo para interrumpir la respuesta en cualquier momento.</p>
 
+    <h3>Copiar mensajes del sistema</h3>
+    <p>Los mensajes de informacion generados por el propio IDE (respuestas a comandos como <code>/mode</code>, <code>/model</code>, <code>/status</code>…) muestran un boton <strong>⎘</strong> en la esquina superior derecha del bloque. Al pulsarlo, el contenido del mensaje se copia al portapapeles. Los mensajes del agente ya disponian de este boton desde versiones anteriores; ahora tambien esta disponible en los mensajes del sistema.</p>
+
+    <h3>Entrada de voz</h3>
+    <p>El panel de chat incluye un boton 🎤 para dictar mensajes por voz y un selector de idioma. Consulta la seccion <a href="#voz">29. Entrada de voz</a> para todos los detalles.</p>
+
     <h3>Preguntar sobre el codigo abierto en el editor</h3>
     <p>El agente tiene acceso al contenido del <strong>fichero activo</strong> (el que esta en primer plano). Puedes preguntarle sin copiar nada:</p>
     <div class="layout-box" style="font-family:inherit; font-size:0.88rem; line-height:1.8;">
@@ -1066,7 +1140,7 @@ maxhistory = 30    ; 0 = sin limite (envia todo el historial)</pre>
     <table>
       <tr><th>Comando</th><th>Accion</th></tr>
       <tr><td><code>/savemode</code></td><td>Guarda un snapshot de la configuracion actual (modo, exe, modelo, provider, ACP, http, stream)</td></tr>
-      <tr><td><code>/restoremode</code></td><td>Restaura el snapshot (la config actual pasa a ser el nuevo snapshot; un segundo <code>/restoremode</code> deshace el cambio)</td></tr>
+      <tr><td><code>/restoremode</code></td><td>Restaura el snapshot guardado; el snapshot no cambia hasta el siguiente <code>/savemode</code></td></tr>
       <tr><td><code>/savechat</code></td><td>Copia el historial de chat a <code>xdchat_YYYYMMDD_HH-MM-SS.json</code></td></tr>
       <tr><td><code>/restorechat</code></td><td>Lista los chats guardados y permite restaurar cualquiera</td></tr>
       <tr><td><code>/search &lt;texto&gt;</code></td><td>Busca texto en el historial de todas las sesiones (resultados con click-to-load)</td></tr>
@@ -2205,6 +2279,231 @@ al procedimiento almacenado</pre>
       <li><span>Se abrira un dialogo con estilo visual integrado donde podras seleccionar el endpoint desde un desplegable (se autorellena interrogando al servidor web), meter tu token, especificar un JSON en el Body y ver la respuesta.</span></li>
       <li><span>Internamente este dialogo utiliza la libreria <code>libcurl</code> nativa de Harbour para realizar las llamadas (GET/POST automaticos) en lugar de depender de ejecutables externos de Windows.</span></li>
     </ol>
+  </section>
+
+
+  <!-- MCP para Web -->
+  <section id="mcp-web">
+    <h2><span class="sec-num">28</span> Herramientas MCP para Web</h2>
+    <p>XDForCode incluye dos herramientas MCP de proposito general para que los agentes puedan obtener contenido de internet directamente durante una conversacion. No requieren API key ni configuracion adicional.</p>
+
+    <h3><code>web_read</code> — Leer cualquier URL como Markdown</h3>
+    <p>Convierte cualquier pagina web en texto Markdown limpio, sin HTML, CSS ni JavaScript. Los agentes la usan para consultar documentacion, articulos, issues de GitHub o cualquier recurso publico.</p>
+    <table>
+      <tr><th>Parametro</th><th>Tipo</th><th>Descripcion</th></tr>
+      <tr><td><code>url</code></td><td>string</td><td>URL completa de la pagina a leer</td></tr>
+    </table>
+    <p>Internamente usa el servicio <strong>Jina Reader</strong> (<code>r.jina.ai</code>), que extrae el contenido principal de la pagina ignorando menus, anuncios y elementos de navegacion.</p>
+    <p><strong>Ejemplo de uso en el chat:</strong></p>
+    <pre>Consulta la documentacion de Scintilla en https://www.scintilla.org/ScintillaDoc.html
+y dime como funciona el evento SCN_MODIFIED</pre>
+    <p>El agente invocara <code>web_read</code> automaticamente, obtendra el Markdown de la pagina y respondera con la informacion solicitada.</p>
+
+    <h3><code>youtube_transcript</code> — Subtitulos de YouTube sin API key</h3>
+    <p>Extrae el transcript completo de cualquier video de YouTube que tenga subtitulos disponibles (automaticos o manuales), sin necesidad de API key ni autenticacion.</p>
+    <table>
+      <tr><th>Parametro</th><th>Tipo</th><th>Descripcion</th></tr>
+      <tr><td><code>url</code></td><td>string</td><td>URL del video (<code>watch?v=</code>, <code>youtu.be/</code>, <code>shorts/</code>, <code>embed/</code>)</td></tr>
+      <tr><td><code>lang</code></td><td>string</td><td>Idioma preferido (codigo ISO, por defecto <code>"es"</code>). Si no existe, prueba ingles y luego el primer disponible.</td></tr>
+    </table>
+    <p><strong>Ejemplo de uso en el chat:</strong></p>
+    <pre>Resume el contenido del video https://www.youtube.com/watch?v=dQw4w9WgXcQ</pre>
+    <p>El agente invocara <code>youtube_transcript</code>, obtendra el texto y podra resumirlo, traducirlo o analizarlo. La respuesta incluye el idioma encontrado, el identificador del video y la longitud del transcript.</p>
+    <div class="callout">Solo funciona con videos que tengan subtitulos habilitados. Los videos sin subtitulos devuelven un error informativo con el ID del video.</div>
+  </section>
+
+  <!-- Entrada de voz -->
+  <section id="voz">
+    <h2><span class="sec-num">29</span> Entrada de voz en el chat</h2>
+    <p>El panel de chat incluye un sistema de <strong>reconocimiento de voz</strong> integrado que permite dictar mensajes sin usar el teclado y ejecutar comandos de voz configurables. Esta disponible tanto en el chat local (XDAgent) como en el chat remoto desde navegador.</p>
+
+    <h3>Activar el microfono</h3>
+    <p>En la barra de herramientas del chat hay un boton 🎤 junto a un selector de idioma:</p>
+    <ul class="steps">
+      <li><span><strong>Pulsar una vez</strong> — activa el microfono; el boton muestra una animacion de pulso en rojo para indicar que esta escuchando.</span></li>
+      <li><span><strong>Pulsar de nuevo</strong> — desactiva el microfono.</span></li>
+    </ul>
+    <p>Tambien puedes activarlo y pararlo con el atajo <kbd>Ctrl</kbd>+<kbd>M</kbd>, pero <strong>solo cuando el foco esta en el cuadro de texto del prompt</strong>. Fuera de el la combinacion no tiene efecto.</p>
+    <p>Mientras el microfono esta activo, el texto que dictas aparece en tiempo real en el cuadro de prompt. El texto ya escrito antes de activar el microfono <strong>se conserva</strong>: el dictado se anade a continuacion.</p>
+
+    <h3>Selector de idioma</h3>
+    <p>El desplegable junto al boton 🎤 permite elegir el idioma de reconocimiento:</p>
+    <table>
+      <tr><th>Codigo</th><th>Idioma</th></tr>
+      <tr><td>ES</td><td>Espanol</td></tr>
+      <tr><td>EN</td><td>Ingles</td></tr>
+      <tr><td>PT</td><td>Portugues</td></tr>
+      <tr><td>FR</td><td>Frances</td></tr>
+      <tr><td>DE</td><td>Aleman</td></tr>
+    </table>
+
+    <h3>Comandos de voz</h3>
+    <p>Los comandos de voz se definen en <code>assets/xdvoice.json</code>. El sistema usa <strong>comparacion exacta</strong> de toda la utterance (lo que dices entre pausas), lo que evita disparos accidentales cuando la palabra aparece dentro de una frase mas larga.</p>
+
+    <h4>Comandos predefinidos</h4>
+    <table>
+      <tr><th>Lo que dices</th><th>Accion</th><th>Idiomas</th></tr>
+      <tr><td>"enviar" / "envia" / "send" / "senden"...</td><td>Envia el prompt</td><td>ES/EN/PT/FR/DE</td></tr>
+      <tr><td>"limpiar" / "borrar" / "clear" / "effacer"...</td><td>Limpia el chat</td><td>ES/EN/FR/DE</td></tr>
+      <tr><td>"comando ayuda" / "command help"...</td><td><code>/help</code></td><td>ES/EN/FR/DE</td></tr>
+      <tr><td>"comando modo" / "command mode"...</td><td><code>/mode</code></td><td>ES/EN/FR/DE</td></tr>
+      <tr><td>"comando modelos" / "command models"...</td><td><code>/models</code></td><td>ES/EN/FR/DE</td></tr>
+      <tr><td>"comando proveedores" / "command providers"...</td><td><code>/providers</code></td><td>ES/EN/FR/DE</td></tr>
+      <tr><td>"comando inferencia" / "command inference"</td><td><code>/inference</code></td><td>ES/EN</td></tr>
+      <tr><td>"comando ollama" / "command ollama"</td><td><code>/ollama</code></td><td>ES/EN</td></tr>
+      <tr><td>"comando recargar" / "command reload"...</td><td><code>/reload</code></td><td>ES/EN/FR/DE</td></tr>
+      <tr><td>"comando refrescar" / "command refresh"...</td><td><code>/refresh</code></td><td>ES/EN/FR/DE</td></tr>
+    </table>
+    <p>Los comandos de slash requieren el prefijo "comando" / "command" para evitar que palabras como "modelos" o "proveedores" en un prompt normal activen el comando accidentalmente.</p>
+
+    <h4>Estructura de assets/xdvoice.json</h4>
+    <pre>{
+  "command_prefix": "",
+  "commands": [
+    {
+      "words": ["enviar", "envia", "envía", "send", "senden", "envoyer"],
+      "action": "send",
+      "desc": "Envia el prompt (ES/EN/PT/FR/DE)"
+    },
+    {
+      "words": ["comando modelos", "command models"],
+      "action": "command:/models",
+      "desc": "Lista de modelos disponibles"
+    }
+  ]
+}</pre>
+    <table>
+      <tr><th>Campo</th><th>Descripcion</th></tr>
+      <tr><td><code>command_prefix</code></td><td>Prefijo global obligatorio antes de cualquier comando (vacio = sin prefijo global).</td></tr>
+      <tr><td><code>words</code></td><td>Variantes foneticas exactas que activan el comando.</td></tr>
+      <tr><td><code>action</code></td><td><code>"send"</code>, <code>"clear"</code> o <code>"command:/&lt;slash-command&gt;"</code>.</td></tr>
+    </table>
+
+    <h3>Flujo tipico</h3>
+    <ol class="steps">
+      <li><span>Escribe (opcionalmente) parte del prompt con el teclado.</span></li>
+      <li><span>Pulsa 🎤 o <kbd>Ctrl</kbd>+<kbd>M</kbd> para activar el microfono.</span></li>
+      <li><span>Dicta el mensaje.</span></li>
+      <li><span>Di <strong>"enviar"</strong> (con una pausa antes) — el microfono se detiene y el mensaje se envia.</span></li>
+    </ol>
+    <div class="callout"><strong>Requisito tecnico:</strong> el reconocimiento de voz usa la <strong>Web Speech API</strong> del motor Chromium integrado (WebView2). No requiere software adicional ni conexion a un servidor externo. El microfono debe estar permitido en la configuracion de privacidad de Windows (Configuracion → Privacidad → Microfono).</div>
+  </section>
+
+  <section id="agent-profiles">
+    <h2>36. Perfiles de agente con identidad propia</h2>
+    <p>Por defecto XDForCode tiene un único agente de chat genérico. Con los <strong>perfiles de agente</strong> puedes definir varias identidades especializadas, cada una con su propio nombre, rol, instrucciones de sistema, modelo preferido y color. Cambiar de agente en el chat es inmediato.</p>
+
+    <h3>¿Qué es un perfil de agente?</h3>
+    <p>Un perfil es una entrada en <code>xdagents.json</code> que agrupa:</p>
+    <table>
+      <tr><th>Campo</th><th>Descripción</th></tr>
+      <tr><td><code>name</code></td><td>Identificador único y nombre visible en el chat</td></tr>
+      <tr><td><code>description</code></td><td>Descripción breve que aparece en el selector</td></tr>
+      <tr><td><code>system</code></td><td>System prompt que define la personalidad y especialización del agente</td></tr>
+      <tr><td><code>model</code></td><td>Modelo a activar automáticamente al seleccionar este perfil (vacío = no cambia)</td></tr>
+      <tr><td><code>color</code></td><td>Color del badge y avatar en la UI (<code>#rrggbb</code>)</td></tr>
+    </table>
+
+    <h3>Ejemplo de <code>xdagents.json</code></h3>
+    <pre><code>[
+  {
+    "name": "GeneralAssistant",
+    "description": "Asistente general de programacion Harbour/FWH",
+    "system": "Eres un asistente experto en Harbour, FiveWin y desarrollo Windows. Responde en castellano.",
+    "model": "",
+    "color": "#3b82f6"
+  },
+  {
+    "name": "CodeReviewer",
+    "description": "Revisor de codigo: busca bugs, code smells y malas practicas",
+    "system": "Eres un revisor de codigo senior. Analiza el codigo buscando:\n- Bugs y casos limite\n- Problemas de rendimiento\n- Variables no inicializadas\n- Instrucciones LOCAL mal posicionadas en Harbour\nSe directo y especifico. Responde en castellano.",
+    "model": "deepseek-v4-flash-free",
+    "color": "#22c55e"
+  },
+  {
+    "name": "DocWriter",
+    "description": "Redacta documentacion tecnica clara y con ejemplos",
+    "system": "Eres un escritor tecnico especializado. Cuando documentes:\n1. Describe el proposito antes de los detalles\n2. Incluye siempre un ejemplo real\n3. Indica limitaciones y casos de error\nEscribe en castellano con estilo claro y conciso.",
+    "model": "",
+    "color": "#f59e0b"
+  },
+  {
+    "name": "SQLExpert",
+    "description": "Especialista en consultas MariaDB/MySQL y optimizacion",
+    "system": "Eres un DBA experto en MariaDB. Cuando analices consultas o esquemas:\n- Sugiere indices apropiados\n- Detecta N+1 queries\n- Usa sintaxis MariaDB correcta\n- Advierte sobre operaciones peligrosas en produccion\nRespuesta en castellano.",
+    "model": "nemotron-3-ultra-free",
+    "color": "#a855f7"
+  }
+]</code></pre>
+
+    <h3>Comandos</h3>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/agents</code></td><td>Abre el selector visual de perfiles</td></tr>
+      <tr><td><code>/agents &lt;nombre&gt;</code></td><td>Activa directamente el perfil indicado</td></tr>
+      <tr><td><code>/agents list</code></td><td>Lista los perfiles disponibles en el chat</td></tr>
+      <tr><td><code>/agents reset</code></td><td>Vuelve al agente generico (sin perfil activo)</td></tr>
+    </table>
+
+    <h3>Historial por perfil</h3>
+    <p>Cada perfil mantiene su propio historial de conversacion. Al cambiar de perfil, el historial anterior se guarda y se restaura el del nuevo perfil. Puedes tener una conversacion larga con <strong>CodeReviewer</strong>, cambiar a <strong>DocWriter</strong> para redactar documentacion, y volver a CodeReviewer exactamente donde lo dejaste.</p>
+    <p>El historial se persiste en <code>localStorage</code> bajo la clave <code>xdAgentHistory_&lt;nombre&gt;</code>.</p>
+
+    <h3>Qué ganamos con los perfiles</h3>
+    <table>
+      <tr><th>Sin perfiles (situacion actual)</th><th>Con perfiles</th></tr>
+      <tr>
+        <td>Un unico agente generico para todo</td>
+        <td>Multiples identidades especializadas</td>
+      </tr>
+      <tr>
+        <td>El system prompt hay que escribirlo manualmente cada sesion</td>
+        <td>El system prompt del perfil se activa en un comando</td>
+      </tr>
+      <tr>
+        <td>El modelo hay que cambiarlo siempre con <code>/model</code></td>
+        <td>El modelo preferido del perfil se selecciona automaticamente</td>
+      </tr>
+      <tr>
+        <td>Al hacer <code>/reset</code> se pierde toda la conversacion</td>
+        <td>El historial de cada perfil sobrevive entre sesiones</td>
+      </tr>
+      <tr>
+        <td>No sabes visualmente "con quien estas hablando"</td>
+        <td>La UI muestra el nombre y color del perfil activo</td>
+      </tr>
+    </table>
+
+    <h3>Flujo de trabajo real</h3>
+    <pre><code>&gt; /agents CodeReviewer
+✓ Perfil activo: CodeReviewer [deepseek-v4-flash-free]
+
+&gt; /file
+[adjunta fev_agent.prg]
+
+&gt; Revisa la funcion AICallInference, especialmente el manejo de errores
+
+[CodeReviewer analiza buscando bugs y malas practicas]
+
+&gt; /agents DocWriter
+✓ Perfil activo: DocWriter
+Historial de CodeReviewer guardado (23 mensajes).
+Historial de DocWriter restaurado (5 mensajes).
+
+&gt; Redacta la documentacion de InferenceFollowUpTools en Markdown con ejemplos
+
+[DocWriter genera documentacion con su estilo tecnico especializado]
+
+&gt; /agents CodeReviewer
+✓ Perfil activo: CodeReviewer [deepseek-v4-flash-free]
+Historial de DocWriter guardado (8 mensajes).
+Historial de CodeReviewer restaurado (23 mensajes). ← la revision continua donde se dejo</code></pre>
+
+    <h3>Relacion con Skills</h3>
+    <p>Los perfiles son <strong>complementarios</strong> a las skills (<code>xdskills.json</code>). Un perfil define <em>quien es el agente</em> (identidad, rol, modelo preferido). Las skills definen <em>que herramientas o instrucciones adicionales tiene</em> (contexto de proyecto, reglas de formato, etc.). Puedes combinarlos: activar el perfil <strong>CodeReviewer</strong> y ademas tener activa la skill de contexto <code>HarbourConventions</code>.</p>
+
+    <h3>Fichero <code>xdagents.json</code></h3>
+    <p>Se crea manualmente en el mismo directorio que <code>fevscode.exe</code>. Se recarga automaticamente al reiniciar el chat o al hacer <code>/agents</code>. No requiere recompilar la aplicacion.</p>
   </section>
 
 </div><!-- /content -->

@@ -14,6 +14,7 @@
 5. [Agentes de IA — instalación recomendada](#5-agentes-de-ia--instalación-recomendada)
 6. [Modos de ejecución: Run, ACP e Inference](#6-modos-de-ejecución-run-acp-e-inference)
    - [Auto-fallback de provider](#auto-fallback-de-provider)
+   - [Orquestador de modelos (/automodel)](#orquestador-de-modelos-automodel)
 7. [Activar y configurar un agente](#7-activar-y-configurar-un-agente)
 8. [Usar el panel de chat (sidebar derecho)](#8-usar-el-panel-de-chat-sidebar-derecho)
 9. [Skills — tipos y uso avanzado](#9-skills--tipos-y-uso-avanzado)
@@ -35,6 +36,8 @@
 25. [Interfaces GUI de configuración](#25-interfaces-gui-de-configuración)
 26. [Dashboard — Panel de Estado en Tiempo Real](#26-dashboard--panel-de-estado-en-tiempo-real)
 27. [API REST Local Integrada](#27-api-rest-local-integrada)
+28. [Herramientas MCP para Web](#28-herramientas-mcp-para-web)
+29. [Entrada de voz en el chat](#29-entrada-de-voz-en-el-chat)
 
 ---
 
@@ -63,6 +66,8 @@ Su característica principal es la **integración nativa con agentes de IA**: pu
 - CodeGraph indexa código, documentos, PDF, ficheros Office e imágenes via OCR
 - Integración con WhatsApp Web
 - Compatible con herramientas MCP (Model Context Protocol)
+- **Entrada de voz** — dicta mensajes al chat con el micrófono y ejecuta comandos de voz configurables
+- Herramientas MCP para web: `web_read` (cualquier URL como Markdown) y `youtube_transcript` (subtítulos de YouTube sin API key)
 
 ---
 
@@ -395,6 +400,62 @@ El estado actual aparece siempre en la tabla de `/mode` en la fila `fallback`.
 
 ---
 
+### Orquestador de modelos (/automodel)
+
+El orquestador permite que XDForCode **elija automáticamente el mejor modelo** para cada mensaje, usando un modelo rápido y barato que actúa como árbitro («router») antes de enviar la consulta al modelo definitivo.
+
+**Cómo funciona:**
+
+1. Tienes un **pool** de modelos disponibles (cada uno con modo, provider, modelo, tags y notas).
+2. Al enviar un mensaje, el **router** (por defecto GROQ llama-3.1-8b-instant, máx. 100 tokens) lee la descripción del pool y la pregunta, y devuelve el ID del mejor candidato.
+3. XDForCode cambia el modo activo a ese candidato y reenvía el mensaje, de forma transparente.
+4. El icono **🎯** en la barra del chat indica que la selección automática está activa.
+
+**Campos de cada entrada del pool:**
+
+| Campo | Descripción |
+|---|---|
+| **ID** | Clave interna única; el router la devuelve para identificar la elección |
+| **Label** | Nombre legible en la UI |
+| **Mode** | Cómo conecta XDForCode con este modelo (`inference`, `opencode_acp`, `ollama`…) |
+| **Provider / Model** | Proveedor y nombre exacto del modelo |
+| **Tags** | Palabras clave leídas por el router (ej. `fast`, `coding`, `analysis`) |
+| **Cost** | `cheap` / `medium` / `expensive` — el router puede preferir el más barato si la tarea es simple |
+| **Notes** | Texto libre que el router lee para decidir (ej. «Best for code generation») |
+| **Enabled** | Si está desactivado, el router no puede elegirlo |
+
+El **orden** de las entradas en el panel izquierdo del editor determina el orden en que el router las lee. Reordénalas por **drag & drop** para influir en el bias de posición del router (los modelos al inicio o al final de la lista reciben más atención cuando la consulta es ambigua).
+
+**El router:**
+
+Un modelo barato y rápido configurado en la pestaña **Router** del editor. Solo produce el ID del modelo más adecuado, no la respuesta final. Si no responde antes del timeout, el mensaje se envía con el modo activo sin cambio.
+
+**Configuración** (`xdorchestrator.json` junto al ejecutable, editable con `/automodel edit`):
+- `enabled` — activa o desactiva el orquestador.
+- `router` — modelo árbitro: mode, provider, model, max_tokens, timeout.
+- `prompt_template` — plantilla del prompt del router; usa `{{pool}}` y `{{query}}` como placeholders.
+- `pool[]` — lista de entradas disponibles.
+
+**Editor visual** (`/automodel edit`):
+- **Panel izquierdo** — lista de entradas numeradas en naranja, reordenables por drag & drop.
+- **Pestaña Pool Entry** — configura id, label, modo, provider (dropdown con detección automática) y model (dropdown poblado según el provider elegido), tags (chips, Enter para añadir), ctx, cost y notes.
+- **Pestaña Router** — configura el modelo árbitro con sus propios dropdowns de provider y model.
+- **Pestaña Prompt Template** — edita la plantilla del prompt; botón «Reset to default».
+- **Botón VIEW** — modal con el JSON completo de la configuración actual.
+
+**Comandos:**
+
+```
+/automodel          → muestra el estado actual (on/off)
+/automodel on       → activa la selección automática de modelo
+/automodel off      → desactiva; el modo activo se usa sin routing previo
+/automodel edit     → abre el editor visual del orquestador
+```
+
+El estado aparece en la tabla de `/mode` en la fila `automodel`. Con `/savemode` y `/restoremode` el estado del orquestador se guarda y restaura junto al resto de la configuración.
+
+---
+
 ## 7. Activar y configurar un agente
 
 ### Seleccionar el agente activo
@@ -503,7 +564,7 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | `/help` | — | Mostrar ayuda completa del chat |
 | `/mode` | — | Mostrar modo y agente activo |
 | `/savemode` | — | Guardar la configuración de modo actual |
-| `/restoremode` | — | Restaurar la configuración guardada (guarda la actual antes) |
+| `/restoremode` | — | Restaurar la configuración guardada; el snapshot permanece hasta el siguiente `/savemode` |
 
 #### Selección de agente / modo
 
@@ -524,6 +585,7 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | `/inference` | — | Modo Inference HTTP directo |
 | `/puter` | — | Modo Puter (549+ modelos, sin API key propia) |
 | `/fallback` | `[on\|off\|edit]` | Editor visual de prioridad de fallback; on/off para activar/desactivar |
+| `/automodel` | `[on\|off\|edit]` | Orquestador: selección automática de modelo antes de cada mensaje; `edit` abre el editor visual |
 
 #### Modelo, proveedor y endpoint
 
@@ -594,6 +656,7 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | `/restorechat` | — | Restaurar o elegir una sesión anterior del chat |
 | `/search` | `<texto>` | Buscar texto en el historial de todas las sesiones guardadas |
 | `/summarize` | — | Resumir y compactar el historial: el agente sintetiza toda la conversación en bullet points y el resumen reemplaza el historial completo para liberar contexto |
+| `/refine` | — | Extraer memorias de la sesión: el agente analiza el historial y guarda hechos, decisiones, reglas y patrones en `xdmemory.db` mediante la tool `mem_save` (requiere soporte MCP de memoria activo) |
 | `/diffreview` | `on\|off` | Activar revisión de diff antes de que la IA aplique cambios (solo ACP) |
 | `/autoapprove` | `on\|off` | Auto-aprobar comandos del agente sin pedir confirmación |
 | `/clear` | — | Limpiar la pantalla (el agente **sigue recordando** el historial) |
@@ -627,6 +690,14 @@ La etiqueta **modo · modelo** de la barra superior se actualiza automáticament
 ### Cancelar una respuesta en curso
 
 Mientras el agente responde aparece el botón **Cancelar**. Púlsalo para interrumpir.
+
+### Copiar mensajes del sistema
+
+Los mensajes de información que genera el propio IDE (respuestas a comandos como `/mode`, `/model`, `/status`…) muestran un botón **⎘** en la esquina superior derecha del bloque. Al pulsarlo, el contenido del mensaje se copia al portapapeles. Los mensajes del agente ya disponían de este botón desde versiones anteriores; ahora también está disponible en los mensajes del sistema.
+
+### Entrada de voz
+
+El panel de chat incluye un botón 🎤 para dictar mensajes por voz. Consulta la sección [29. Entrada de voz en el chat](#29-entrada-de-voz-en-el-chat) para todos los detalles.
 
 ### Historial y límite de contexto
 
@@ -744,7 +815,7 @@ Si trabajas con varios proyectos o cambias frecuentemente entre agentes, estos c
 | Comando | Acción |
 |---|---|
 | `/savemode` | Guarda un snapshot de la configuración actual (modo, exe, modelo, provider, ACP, http, stream) |
-| `/restoremode` | Restaura el snapshot guardado (la config actual pasa a ser el nuevo snapshot; un segundo `/restoremode` deshace el cambio) |
+| `/restoremode` | Restaura el snapshot guardado; el snapshot no cambia hasta el siguiente `/savemode` |
 | `/savechat` | Copia el historial de chat actual a `xdchat_YYYYMMDD_HH-MM-SS.json` |
 | `/restorechat` | Lista los chats guardados y permite restaurar cualquiera de ellos |
 | `/refresh` | Recarga la página del chat |
@@ -2036,5 +2107,302 @@ Puedes probar todos estos endpoints directamente desde dentro de XDForCode sin n
 2. Selecciona **Test API REST local**.
 3. Se abrirá un diálogo con estilo visual integrado donde podrás seleccionar el endpoint desde un desplegable (se autorellena interrogando al servidor web), meter tu token, especificar un JSON en el Body y ver la respuesta.
 4. Internamente este diálogo utiliza la librería `libcurl` nativa de Harbour para realizar las llamadas (GET/POST automáticos) en lugar de depender de ejecutables externos de Windows.
+
+---
+
+## 28. Herramientas MCP para Web
+
+XDForCode incluye dos herramientas MCP de propósito general para que los agentes puedan obtener contenido de internet directamente durante una conversación. No requieren API key ni configuración adicional.
+
+### `web_read` — Leer cualquier URL como Markdown
+
+Convierte cualquier página web en texto Markdown limpio, sin HTML, CSS ni JavaScript. Los agentes la usan para consultar documentación, artículos, issues de GitHub o cualquier recurso público.
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `url` | string | URL completa de la página a leer |
+
+Internamente usa el servicio **Jina Reader** (`r.jina.ai`), que extrae el contenido principal de la página ignorando menús, anuncios y elementos de navegación.
+
+**Ejemplo de uso en el chat:**
+
+```
+Consulta la documentación de Scintilla en https://www.scintilla.org/ScintillaDoc.html
+y dime cómo funciona el evento SCN_MODIFIED
+```
+
+El agente invocará `web_read` automáticamente, obtendrá el Markdown de la página y responderá con la información solicitada.
+
+### `youtube_transcript` — Subtítulos de YouTube sin API key
+
+Extrae el transcript completo de cualquier vídeo de YouTube que tenga subtítulos disponibles (automáticos o manuales), sin necesidad de API key ni autenticación.
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `url` | string | URL del vídeo (formatos: `watch?v=`, `youtu.be/`, `shorts/`, `embed/`) |
+| `lang` | string | Idioma preferido (código ISO, por defecto `"es"`). Si no existe, prueba inglés y luego el primer disponible. |
+
+**Ejemplo de uso en el chat:**
+
+```
+Resume el contenido del vídeo https://www.youtube.com/watch?v=dQw4w9WgXcQ
+```
+
+El agente invocará `youtube_transcript`, obtendrá el texto y podrá resumirlo, traducirlo o analizarlo. La respuesta incluye el idioma encontrado, el identificador del vídeo y la longitud del transcript.
+
+> **Nota:** Solo funciona con vídeos que tengan subtítulos habilitados. Los vídeos sin subtítulos devuelven un error informativo indicando el ID del vídeo.
+
+---
+
+## 29B. Herramientas MCP de Memoria del agente
+
+XDForCode incluye cuatro herramientas MCP que permiten a los agentes de IA mantener una **memoria persistente entre sesiones**. Los datos se guardan en `xdmemory.db` (SQLite), accesible incluso entre reinicios.
+
+### Tools disponibles
+
+| Tool | Descripción |
+|---|---|
+| `mem_save` | Guarda una nueva memoria con tipo, título, cuerpo, etiquetas y nivel de confianza (0–100) |
+| `mem_search` | Busca memorias por texto libre, tipo y/o proyecto; devuelve las N más relevantes |
+| `mem_update` | Actualiza el título, cuerpo o confianza de una memoria existente (por `id`) |
+| `mem_conflict` | Marca una memoria como conflictiva: reduce su confianza en 20 puntos y añade una nota |
+
+### Tipos de memoria
+
+`rule` — `decision` — `fact` — `pattern`
+
+### Flujo típico
+
+El agente busca memorias relevantes con `mem_search` antes de responder, y al detectar información reutilizable la persiste con `mem_save`. Si detecta una contradicción con una memoria anterior, usa `mem_conflict` para degradar su fiabilidad.
+
+### Habilidad `tool-honest`
+
+Existe una skill de tipo `rule` llamada `tool-honest` que prohíbe a los modelos fabricar resultados de herramientas: el agente debe reportar exactamente lo que devuelve cada tool, sin añadir filas ni datos inventados. Actívala con `/skills` → `tool-honest` cuando uses modelos locales (Ollama) que tienden a alucinar resultados.
+
+---
+
+## 29. Entrada de voz en el chat
+
+El panel de chat incluye un sistema de **reconocimiento de voz** integrado que permite dictar mensajes sin usar el teclado y ejecutar comandos de voz configurables. Está disponible tanto en el chat local (XDAgent) como en el chat remoto desde navegador (xdchat.html).
+
+### Activar el micrófono
+
+En la barra de herramientas del chat hay un botón 🎤 junto a un selector de idioma:
+
+- **Pulsar una vez** — activa el micrófono; el botón muestra una animación de pulso en rojo para indicar que está escuchando.
+- **Pulsar de nuevo** — desactiva el micrófono.
+
+También puedes activarlo y pararlo con el atajo de teclado **Ctrl+M**, pero **solo cuando el foco está en el cuadro de texto del prompt**. Fuera de él la combinación no tiene efecto.
+
+Mientras el micrófono está activo, el texto que dictas aparece en tiempo real en el cuadro de prompt. El texto ya escrito antes de activar el micrófono **se conserva**: el dictado se añade a continuación.
+
+### Selector de idioma
+
+El desplegable junto al botón 🎤 permite elegir el idioma de reconocimiento:
+
+| Código | Idioma |
+|---|---|
+| ES | Español |
+| EN | Inglés |
+| PT | Portugués |
+| FR | Francés |
+| DE | Alemán |
+
+### Comandos de voz
+
+Los comandos de voz se definen en `assets/xdvoice.json`. El sistema usa **comparación exacta** de toda la utterance (lo que dices entre pausas), lo que evita disparos accidentales cuando la palabra aparece dentro de una frase más larga.
+
+#### Comandos predefinidos
+
+| Lo que dices | Acción | Idiomas |
+|---|---|---|
+| "enviar" / "envia" / "send" / "senden"… | Envía el prompt | ES/EN/PT/FR/DE |
+| "limpiar" / "borrar" / "clear" / "effacer"… | Limpia el chat | ES/EN/FR/DE |
+| "comando ayuda" / "command help"… | Ejecuta `/help` | ES/EN/FR/DE |
+| "comando modo" / "command mode"… | Ejecuta `/mode` | ES/EN/FR/DE |
+| "comando modelos" / "command models"… | Ejecuta `/models` | ES/EN/FR/DE |
+| "comando proveedores" / "command providers"… | Ejecuta `/providers` | ES/EN/FR/DE |
+| "comando inferencia" / "command inference" | Ejecuta `/inference` | ES/EN |
+| "comando ollama" / "command ollama" | Ejecuta `/ollama` | ES/EN |
+| "comando recargar" / "command reload"… | Ejecuta `/reload` | ES/EN/FR/DE |
+| "comando refrescar" / "command refresh"… | Ejecuta `/refresh` | ES/EN/FR/DE |
+
+Los comandos de slash ("comando X") requieren pronunciar el prefijo "comando" / "command" para evitar que nombres como "modelos" o "proveedores" en un prompt normal activen el comando accidentalmente.
+
+#### Estructura de `xdvoice.json`
+
+```json
+{
+  "command_prefix": "",
+  "commands": [
+    {
+      "words": ["enviar", "envia", "envía", "send", "senden", "envoyer"],
+      "action": "send",
+      "desc": "Envía el prompt (ES/EN/PT/FR/DE)"
+    },
+    {
+      "words": ["comando modelos", "command models"],
+      "action": "command:/models",
+      "desc": "Lista de modelos disponibles"
+    }
+  ]
+}
+```
+
+| Campo | Descripción |
+|---|---|
+| `command_prefix` | Prefijo global obligatorio antes de cualquier comando (vacío = sin prefijo global). |
+| `words` | Variantes fonéticas exactas que activan el comando. |
+| `action` | `"send"`, `"clear"` o `"command:/<slash-command>"`. |
+
+#### Añadir comandos propios
+
+Edita `assets/xdvoice.json` y añade entradas con las palabras que quieras. Los cambios se aplican la próxima vez que XDForCode cargue la configuración del agente (al cambiar modo o modelo, o al reiniciar).
+
+### Flujo típico
+
+1. Escribe (opcionalmente) parte del prompt con el teclado.
+2. Pulsa 🎤 o **Ctrl+M** para activar el micrófono.
+3. Dicta el mensaje.
+4. Di **"enviar"** (con una pausa antes para que sea una utterance sola) — el micrófono se detiene y el mensaje se envía.
+
+> **Requisito técnico:** el reconocimiento de voz usa la **Web Speech API** del motor Chromium integrado (WebView2). No requiere software adicional ni conexión a un servidor externo — funciona localmente con el motor de voz de Windows del idioma seleccionado. El micrófono debe estar permitido en la configuración de privacidad de Windows (Configuración → Privacidad → Micrófono).
+
+## 36. Perfiles de agente con identidad propia
+
+Por defecto XDForCode tiene un único agente de chat genérico. Con los **perfiles de agente** puedes definir varias identidades especializadas, cada una con su propio nombre, rol, instrucciones de sistema, modelo preferido y color distintivo. Cambiar de agente en el chat es inmediato: el nuevo perfil toma el control del system prompt y, opcionalmente, del modelo activo.
+
+---
+
+### ¿Qué es un perfil de agente?
+
+Un perfil es un fichero JSON (`xdagents.json`) que agrupa:
+
+| Campo | Descripción |
+|---|---|
+| `name` | Identificador único y nombre visible en el chat |
+| `description` | Descripción breve que aparece en el selector |
+| `system` | Instrucción de sistema (system prompt) que define la personalidad y especialización |
+| `model` | Modelo a activar automáticamente al seleccionar este perfil (vacío = no cambia) |
+| `color` | Color del badge y avatar en la UI (`#rrggbb`) |
+
+---
+
+### Ejemplo de `xdagents.json`
+
+```json
+[
+  {
+    "name": "GeneralAssistant",
+    "description": "Asistente general de programación Harbour/FWH",
+    "system": "Eres un asistente experto en Harbour, FiveWin y desarrollo de aplicaciones Windows. Responde siempre en castellano.",
+    "model": "",
+    "color": "#3b82f6"
+  },
+  {
+    "name": "CodeReviewer",
+    "description": "Revisor de código: busca bugs, code smells y malas prácticas",
+    "system": "Eres un revisor de código senior. Analiza el código que te presenten buscando:\n- Bugs potenciales y casos límite\n- Problemas de rendimiento\n- Variables no inicializadas o fuera de scope\n- Instrucciones LOCAL mal posicionadas (Harbour: deben ir antes de cualquier ejecutable)\nSé directo y específico. Responde en castellano.",
+    "model": "deepseek-v4-flash-free",
+    "color": "#22c55e"
+  },
+  {
+    "name": "DocWriter",
+    "description": "Redacta documentación técnica clara y con ejemplos",
+    "system": "Eres un escritor técnico especializado en software. Cuando te pidan documentar código o funcionalidades:\n1. Describe el propósito antes de los detalles\n2. Incluye siempre un ejemplo de uso real\n3. Señala los casos de error o limitaciones\nEscribe en castellano con estilo claro y conciso.",
+    "model": "",
+    "color": "#f59e0b"
+  },
+  {
+    "name": "SQLExpert",
+    "description": "Especialista en consultas MariaDB/MySQL y optimización",
+    "system": "Eres un DBA experto en MariaDB y MySQL. Cuando te muestren consultas o esquemas:\n- Sugiere índices apropiados\n- Detecta N+1 queries y propone soluciones\n- Usa la sintaxis correcta de MariaDB (no Oracle, no SQL Server)\n- Indica si una operación puede ser peligrosa en producción\nRespuesta en castellano.",
+    "model": "nemotron-3-ultra-free",
+    "color": "#a855f7"
+  }
+]
+```
+
+---
+
+### Comandos de agente
+
+| Comando | Acción |
+|---|---|
+| `/agents` | Abre el selector de perfiles (lista con nombre, descripción y color) |
+| `/agents <nombre>` | Activa directamente el perfil indicado sin abrir el selector |
+| `/agents list` | Lista los perfiles disponibles en el chat |
+| `/agents reset` | Vuelve al agente genérico (sin perfil, sin system prompt de perfil) |
+
+---
+
+### Historial por perfil
+
+Cada perfil mantiene su propio historial de conversación. Al cambiar de perfil, el historial anterior se guarda y se restaura el del nuevo perfil. Así puedes tener:
+
+- Una conversación larga con **CodeReviewer** revisando varios ficheros
+- Cambiar a **DocWriter** para redactar la documentación correspondiente
+- Volver a **CodeReviewer** y encontrar la conversación exactamente donde la dejaste
+
+El historial se persiste en `localStorage` bajo la clave `xdAgentHistory_<nombre>`.
+
+---
+
+### Qué ganamos con los perfiles
+
+**Sin perfiles (situación actual):**
+- Un único agente genérico
+- Para cambiar de rol hay que escribir el system prompt manualmente en cada sesión
+- Al hacer `/reset` se pierde toda la conversación
+- El modelo hay que cambiarlo siempre a mano con `/model`
+
+**Con perfiles:**
+- Cambias de rol en un comando: `/agents CodeReviewer`
+- El system prompt correcto se activa automáticamente
+- El modelo preferido del perfil se selecciona solo
+- El historial de cada perfil sobrevive entre sesiones
+- La UI muestra el nombre del perfil activo con su color — siempre sabes con quién estás hablando
+
+---
+
+### Ejemplo de flujo de trabajo real
+
+```
+> /agents CodeReviewer
+✓ Perfil activo: CodeReviewer [deepseek-v4-flash-free]
+
+> /file
+[adjunta fev_agent.prg]
+
+> Revisa la función AICallInference, especialmente el manejo de errores
+
+[CodeReviewer analiza en profundidad buscando bugs y malas prácticas]
+
+> /agents DocWriter
+✓ Perfil activo: DocWriter
+Historial de CodeReviewer guardado (23 mensajes).
+Historial de DocWriter restaurado (5 mensajes).
+
+> Redacta la documentación de InferenceFollowUpTools en formato Markdown con ejemplos
+
+[DocWriter genera la documentación con el estilo técnico configurado]
+
+> /agents CodeReviewer
+✓ Perfil activo: CodeReviewer [deepseek-v4-flash-free]
+Historial de DocWriter guardado (8 mensajes).
+Historial de CodeReviewer restaurado (23 mensajes).
+
+[La revisión continúa exactamente donde se dejó]
+```
+
+---
+
+### Fichero `xdagents.json`
+
+Se crea manualmente en el mismo directorio que `fevscode.exe`. Se recarga automáticamente al reiniciar el chat o al hacer `/agents`. No requiere recompilar la aplicación.
+
+> **Tip:** Los perfiles son complementarios a las **skills** (`xdskills.json`). Un perfil define *quién es el agente* (identidad, rol, modelo); las skills definen *qué herramientas o instrucciones adicionales tiene* (contexto de proyecto, reglas de formato, etc.). Puedes combinarlos: activar el perfil **CodeReviewer** y además tener activa la skill de contexto `HarbourConventions`.
+
+---
 
 *XDForCode — XDEVFORYOU SOLUTIONS · 2026*
