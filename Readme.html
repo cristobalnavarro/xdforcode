@@ -366,6 +366,12 @@
   <a href="#api-rest">API REST Local</a>
   <a href="#mcp-web">MCP para Web</a>
   <a href="#voz">Entrada de voz</a>
+  <a href="#cdp-screenshot">Vision del IDE (CDP)</a>
+  <a href="#ia-extensible">Bots PTY / run_exe / save_script</a>
+  <a href="#kanban-extras">Kanban — mejoras</a>
+  <a href="#excalidraw">Excalidraw</a>
+  <a href="#google-drive">Google Drive / Docs</a>
+  <a href="#deepwiki">DeepWiki Skill</a>
 
   <div class="nav-section">Ayuda</div>
   <a href="#faq">Preguntas frecuentes</a>
@@ -689,6 +695,25 @@ ollama pull qwen2.5-coder</pre>
     </div>
     <p><strong>Herramientas MCP sin agente externo:</strong> el modo Inference incluye un bucle de tool calling nativo. Cuando el toggle <strong>Agente externo (ACP) [ OFF ]</strong> esta desactivado en el menu TOOLS, XDForCode envía las herramientas MCP directamente al LLM y ejecuta el ciclo <em>tool_use → resultado → siguiente vuelta</em> internamente — sin necesidad de tener opencode o mimo instalados. Cualquier provider que soporte tool calling (GROQ, OpenRouter, NVIDIA, OLLAMA con modelos compatibles) puede ejecutar herramientas MCP en modo completamente autonomo.</p>
 
+    <h3 id="llamacpp">Modo llama.cpp (servidor GGUF local)</h3>
+    <p>Ejecuta modelos GGUF directamente en tu maquina usando <strong>llama-server.exe</strong>, sin necesidad de Ollama ni de ninguna plataforma externa. XDForCode lanza y detiene el servidor automaticamente al seleccionar un modelo.</p>
+    <table>
+      <tr><th>Caracteristica</th><th>Detalle</th></tr>
+      <tr><td><strong>Arranque automatico</strong></td><td>Al seleccionar un modelo .gguf con <code>/models</code>, XDForCode inicia llama-server.exe y conecta en <code>http://localhost:8080</code></td></tr>
+      <tr><td><strong>Parada automatica</strong></td><td>Al cambiar de modo (/ollama, /inference, etc.) llama-server.exe se detiene automaticamente</td></tr>
+      <tr><td><strong>API OpenAI-compatible</strong></td><td>Misma interfaz que Inference; soporta streaming SSE y parametros estandar</td></tr>
+      <tr><td><strong>Sin internet</strong></td><td>Funciona completamente offline; solo necesitas el .gguf y llama-server.exe</td></tr>
+      <tr><td><strong>Tools OFF por defecto</strong></td><td>Al activar llamacpp el boton Tools se desactiva automaticamente; reactiva manualmente si tu modelo lo soporta</td></tr>
+    </table>
+    <p><strong>Configuracion:</strong> Ruta a llama-server.exe y carpeta de modelos en <strong>TOOLS &rarr; Configurar llama.cpp...</strong></p>
+    <p><strong>Activacion:</strong></p>
+    <pre><code>/llamacpp          &rarr; activa el modo y muestra los modelos disponibles
+/llamacpp off      &rarr; detiene llama-server.exe
+/models            &rarr; lista los ficheros .gguf en la carpeta configurada</code></pre>
+    <div class="callout yellow">
+      <strong>Recomendacion:</strong> usa modelos con cuantizacion <code>Q4_K_M</code> o <code>Q5_K_M</code> (equilibrio calidad/tamano/velocidad). Descargalos de <a href="https://huggingface.co" target="_blank">huggingface.co</a> buscando &quot;GGUF&quot;.
+    </div>
+
     <h3 id="puter">Modo Puter</h3>
     <p>Conecta con la plataforma <strong>Puter.com</strong> — mas de 549 modelos de IA (Claude, Gemini, GPT-4o, Llama, Mistral y cientos mas) disponibles gratuitamente sin API key propia, usando solo tu cuenta Puter.</p>
     <table>
@@ -920,6 +945,7 @@ ollama pull qwen2.5-coder</pre>
       <tr><td><code>/gemini</code></td><td>Modo Gemini CLI headless</td></tr>
       <tr><td><code>/pi</code></td><td>Modo Pi RPC (agente coding, JSONL stdin/stdout)</td></tr>
       <tr><td><code>/ollama</code></td><td>Modo Ollama (modelos locales)</td></tr>
+      <tr><td><code>/llamacpp [off]</code></td><td>Modo llama.cpp: lanza llama-server.exe con un modelo GGUF local; <code>off</code> detiene el servidor</td></tr>
       <tr><td><code>/openai</code></td><td>Modo OpenAI compatible (REST directo)</td></tr>
       <tr><td><code>/inference</code></td><td>Modo Inference HTTP directo</td></tr>
       <tr><td><code>/puter</code></td><td>Modo Puter (549+ modelos, sin API key propia)</td></tr>
@@ -1076,6 +1102,31 @@ maxhistory = 30    ; 0 = sin limite (envia todo el historial)</pre>
     </table>
     <p>La etiqueta <strong>modo · modelo</strong> de la barra superior del chat se actualiza automaticamente cada vez que cambias de agente o modelo con un comando <code>/</code>.</p>
 
+    <h3 id="tools-toggle">Boton Tools [ON/OFF] — control de herramientas MCP</h3>
+    <p>El boton <strong>🔧 Tools [ON]</strong> / <strong>🔧 Tools [OFF]</strong> en la barra del chat controla si las herramientas MCP se envian al modelo en los modos Inference y Ollama.</p>
+    <table>
+      <tr><th>Estado</th><th>Color</th><th>Efecto</th></tr>
+      <tr><td><strong>Tools [ON]</strong></td><td>Naranja</td><td>Se envian todas las tools MCP al modelo (comportamiento normal)</td></tr>
+      <tr><td><strong>Tools [OFF]</strong></td><td>Rojo</td><td>Sin tools; el modelo responde solo con su conocimiento base (payload ~98% mas pequeno)</td></tr>
+    </table>
+    <p><strong>Cuando usar Tools OFF:</strong> preguntas de conocimiento general, modelos locales que no soporten function calling, o cuando quieras respuestas mas rapidas sin acceso a datos del sistema.</p>
+    <p><strong>Comportamiento automatico por modo:</strong></p>
+    <table>
+      <tr><th>Modo activado</th><th>Estado automatico de Tools</th></tr>
+      <tr><td><code>/ollama</code></td><td><strong>OFF</strong> (automatico)</td></tr>
+      <tr><td><code>/llamacpp</code></td><td><strong>OFF</strong> (automatico)</td></tr>
+      <tr><td>Cualquier otro modo (inference, ACP, claude…)</td><td><strong>ON</strong> (automatico)</td></tr>
+    </table>
+    <p><strong>Deteccion de keywords:</strong> si Tools esta OFF pero el mensaje contiene <code>tool</code>, <code>tools</code>, <code>herramienta</code>, <code>mcp</code> o <code>mcps</code>, XDForCode activa las tools solo para ese mensaje y las desactiva al terminar.</p>
+    <p><strong>Boton &laquo;🔧 Retry with Tools&raquo;:</strong> cuando Tools esta OFF y el modelo no puede responder, aparece este boton debajo de la respuesta. Al pulsarlo se muestra el <strong>selector de herramientas MCP</strong>:</p>
+    <ul>
+      <li><strong>🤖 Let AI choose</strong> (por defecto) — el modelo usa todas las tools disponibles</li>
+      <li><strong>Botones de servidor MCP</strong> — agrupados por prefijo (GET, IDE, FWMARIA, XD…); el tooltip muestra las tools individuales de cada grupo</li>
+      <li>Selecciona uno o varios servidores para limitar las tools del reintento; pulsa <strong>Retry</strong> para reenviar el mensaje</li>
+      <li>Al terminar la respuesta, Tools vuelve automaticamente a OFF</li>
+    </ul>
+    <p>El estado del boton se guarda en <code>XDForCodeUI.ini [AI] aitools</code>.</p>
+
     <h3>Cancelar</h3>
     <p>Mientras el agente responde aparece el boton <strong>Cancelar</strong>. Pulsalo para interrumpir la respuesta en cualquier momento.</p>
 
@@ -1207,6 +1258,22 @@ maxhistory = 30    ; 0 = sin limite (envia todo el historial)</pre>
       <tr><td>Escape</td><td>Cerrar el panel</td></tr>
     </table>
     <p>El panel recuerda la posicion al activar/desactivar un skill (el foco no salta al inicio).</p>
+
+    <h3>Auto-activacion por triggers (regex)</h3>
+    <p>Cada skill puede tener un campo <strong><code>triggers</code></strong>: una lista de expresiones regulares separadas por comas. Si el texto del chat coincide con alguna, la skill se activa automaticamente para ese mensaje, sin necesidad de activarla manualmente.</p>
+    <pre>{
+  "name": "findbugs",
+  "type": "action",
+  "prompt": "...",
+  "triggers": "bug,bugs,error,fallo,crash,problema"
+}</pre>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2; margin-bottom:12px;">
+      <li>Las regex se evaluan con la flag <code>i</code> (sin distincion de mayusculas).</li>
+      <li>Solo se auto-activan skills que no estan ya activas manualmente.</li>
+      <li>La activacion es <strong>temporal</strong>: solo aplica al mensaje actual; <code>activeSkills</code> no cambia.</li>
+      <li>Cuando se auto-activan aparece el aviso: <code>&#9889; Skills auto-activados: findbugs</code>.</li>
+    </ul>
+    <p>El campo <em>Triggers</em> esta disponible en el dialogo de gestion de Skills (Anadir / Editar).</p>
 
     <h3>Recargar skills sin reiniciar</h3>
     <p>Si editas <code>xdskills.json</code> directamente o anades skills nuevas, usa <code>/reloadskills</code> para recargar el fichero en caliente sin necesidad de reiniciar el IDE ni recompilar nada.</p>
@@ -1527,6 +1594,15 @@ XDAGENT (usando ide_kanban_add_task):
     <pre>http://localhost:8003</pre>
     <p>Veras la interfaz de chat identica al panel de XDForCode. Las respuestas llegan en tiempo real.</p>
 
+    <h3>Panel de estado del servidor</h3>
+    <p>Al pulsar el boton del servidor en la Activity Bar (cuando esta activo), el IDE carga <code>index.html</code> con <strong>dos pestanas</strong>:</p>
+    <table>
+      <tr><th>Pestana</th><th>Contenido</th></tr>
+      <tr><td><strong>Server Info</strong></td><td>Estado de conexion, puerto, version de Harbour y rutas del compilador</td></tr>
+      <tr><td><strong>Status</strong></td><td>Dashboard en tiempo real: servidor web, motor IA, agentes, Kanban, sistema, MCP</td></tr>
+    </table>
+    <p>El tab <strong>Status</strong> muestra 6 tarjetas: <em>Web Server</em> (estado + uptime en vivo), <em>AI Engine</em> (modo, modelo, provider, IDLE/PROCESSING), <em>Agents</em> (agentes abiertos con badge), <em>Kanban Plan</em> (tareas pendientes, PTY slots), <em>System</em> (Harbour, MCP tools, workspace) y <em>MCP Server</em> (puerto 8008, AutoContext). El boton <strong>Refresh</strong> actualiza los datos. Los datos son accesibles via <code>http://localhost:8003/server_status.json</code>.</p>
+
     <h3>Configuracion del servidor</h3>
     <p>Desde el menu puedes configurar:</p>
     <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
@@ -1595,11 +1671,12 @@ XDAGENT (usando ide_kanban_add_task):
       <tr><td><strong>WhatsApp</strong></td><td>WhatsApp Web embebido (si esta habilitado)</td></tr>
     </table>
 
-    <p>Todas las pestanas PTY incluyen tres botones flotantes que aparecen mientras el proceso esta en ejecucion:</p>
+    <p>Todas las pestanas PTY incluyen cuatro botones flotantes que aparecen mientras el proceso esta en ejecucion:</p>
     <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
       <li><strong>Home</strong> — vuelve a la pantalla inicial manteniendo el proceso activo en segundo plano</li>
       <li><strong>Repintar</strong> — fuerza un redibujado del terminal</li>
       <li><strong>&#128203; Ctx</strong> — captura las ultimas N lineas del terminal y las envia como contexto al chat de XDAGENT</li>
+      <li><strong>&#9632; STOP</strong> — termina el proceso PTY en ejecucion (visible solo mientras hay un proceso activo)</li>
     </ul>
     <h4 style="color:var(--accent); font-weight:600; font-size:0.95rem; margin:14px 0 6px;">Boton &#128203; Ctx &mdash; captura de contexto PTY</h4>
     <p>Al pulsar <strong>&#128203; Ctx</strong> se abre un pequeno popup donde puedes indicar cuantas lineas capturar (por defecto 50). Al confirmar, el texto de esas lineas se inyecta automaticamente en el area de escritura del chat de XDAGENT, con el prefijo <code>[Contexto PTY]</code>, listo para que lo incluyas en tu siguiente mensaje.</p>
@@ -2093,7 +2170,7 @@ al procedimiento almacenado</pre>
     <h3>Tipos de seccion disponibles</h3>
     <table>
       <tr><th>Tipo</th><th>Para que sirve</th></tr>
-      <tr><td><code>table</code></td><td>Tabla con cabecera y filas de datos</td></tr>
+      <tr><td><code>table</code></td><td>Tabla con cabecera y filas de datos. Tambien acepta una cadena Markdown tipo pipe-table en <code>content</code> cuando el agente no genera <code>headers</code>/<code>data</code> estructurados</td></tr>
       <tr><td><code>markdown</code></td><td>Texto formateado con Markdown</td></tr>
       <tr><td><code>code</code></td><td>Bloque de codigo con resaltado de sintaxis</td></tr>
       <tr><td><code>mermaid</code></td><td>Diagrama Mermaid (flowchart, sequence, gantt…)</td></tr>
@@ -2389,6 +2466,87 @@ y dime como funciona el evento SCN_MODIFIED</pre>
     <div class="callout"><strong>Requisito tecnico:</strong> el reconocimiento de voz usa la <strong>Web Speech API</strong> del motor Chromium integrado (WebView2). No requiere software adicional ni conexion a un servidor externo. El microfono debe estar permitido en la configuracion de privacidad de Windows (Configuracion → Privacidad → Microfono).</div>
   </section>
 
+  <!-- Visión del IDE — cdp_screenshot -->
+  <section id="cdp-screenshot">
+    <h2><span class="sec-num">30</span> Visión del IDE — <code>cdp_screenshot</code></h2>
+    <p>XDForCode puede capturar una imagen de cualquiera de sus paneles WebView y entregarsela a la IA, permitiendo que el agente <strong>"vea"</strong> el estado actual de la interfaz. Esta funcionalidad usa el protocolo <strong>Chrome DevTools Protocol (CDP)</strong> sobre WebView2 y no requiere software adicional.</p>
+
+    <h3>¿Para qué sirve?</h3>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>El agente puede ver el contenido actual del panel de chat, del editor Monaco o del panel de previsualización.</li>
+      <li>Permite flujos de depuración visual: "mira cómo queda el componente" → el agente ve la captura → propone correcciones.</li>
+      <li>Util en tareas Kanban donde se quiere verificar visualmente el resultado de un paso antes de continuar.</li>
+    </ul>
+
+    <h3>Tool MCP <code>cdp_screenshot</code></h3>
+    <table>
+      <tr><th>Parámetro</th><th>Tipo</th><th>Valores</th><th>Default</th></tr>
+      <tr><td><code>target</code></td><td>string</td><td><code>agent</code> · <code>main</code> · <code>preview</code> · <code>term</code></td><td><code>agent</code></td></tr>
+    </table>
+    <table style="margin-top:8px;">
+      <tr><th>Target</th><th>Panel capturado</th></tr>
+      <tr><td><code>agent</code></td><td>Panel del chat XDAGENT</td></tr>
+      <tr><td><code>main</code></td><td>Editor Monaco (pestaña activa)</td></tr>
+      <tr><td><code>preview</code></td><td>Previsualización HTML del sidebar izquierdo</td></tr>
+      <tr><td><code>term</code></td><td>Terminal Console CLI</td></tr>
+    </table>
+    <p style="margin-top:10px;">La herramienta devuelve la ruta absoluta del PNG generado en el directorio temporal del sistema.</p>
+    <div class="callout"><strong>Técnico:</strong> Internamente usa <code>CallDevToolsProtocolMethod</code> de la API COM de WebView2 con el metodo <code>Page.captureScreenshot</code>. La imagen se devuelve como base64, se decodifica y se escribe a disco. No se envia a ningun servidor externo.</div>
+  </section>
+
+  <!-- IA auto-extensible -->
+  <section id="ia-extensible">
+    <h2><span class="sec-num">31</span> IA auto-extensible — Bots PTY, <code>run_exe</code> y <code>save_script</code></h2>
+    <p>XDForCode incluye herramientas MCP que permiten a los agentes extenderse a si mismos: lanzar nuevas pestanas de terminal, arrancar ejecutables y guardar código generado como nuevas tools permanentes.</p>
+
+    <h3>Lanzar como Bot PTY</h3>
+    <p>El chat XDAGENT incluye un boton <strong>"Lanzar como Bot PTY"</strong> en las opciones post-ejecucion de un script. Al pulsarlo, el script se registra automaticamente como nueva entrada en <code>XDTermApps.ini</code> y se lanza en una pestana PTY dedicada, convirtiéndolo en un agente autónomo reutilizable sin necesidad de recompilar.</p>
+
+    <h3>Tool MCP <code>run_exe</code></h3>
+    <p>Lanza cualquier ejecutable en una nueva pestaña PTY del panel de consola.</p>
+    <table>
+      <tr><th>Parámetro</th><th>Tipo</th><th>Descripción</th></tr>
+      <tr><td><code>exe</code></td><td>string</td><td>Ruta completa al ejecutable o nombre si está en el PATH</td></tr>
+      <tr><td><code>args</code></td><td>string</td><td>Argumentos de línea de comandos (opcional)</td></tr>
+      <tr><td><code>title</code></td><td>string</td><td>Título de la pestaña en el panel (opcional)</td></tr>
+    </table>
+
+    <h3>Tool MCP <code>save_script</code></h3>
+    <p>Guarda código generado por la IA como una nueva tool MCP permanente, disponible en sesiones futuras sin necesidad de reiniciar.</p>
+    <table>
+      <tr><th>Parámetro</th><th>Tipo</th><th>Descripción</th></tr>
+      <tr><td><code>name</code></td><td>string</td><td>Nombre de la nueva tool (identificador único)</td></tr>
+      <tr><td><code>code</code></td><td>string</td><td>Código fuente Harbour (<code>.prg</code>)</td></tr>
+      <tr><td><code>description</code></td><td>string</td><td>Descripción de la tool para los agentes</td></tr>
+      <tr><td><code>params</code></td><td>array</td><td>Parámetros en JSON Schema (opcional)</td></tr>
+    </table>
+    <p style="margin-top:8px;">El código se compila en tiempo real con el motor Harbour embebido y queda disponible de inmediato. No requiere recompilar <code>fevscode.exe</code>.</p>
+  </section>
+
+  <!-- Kanban — mejoras -->
+  <section id="kanban-extras">
+    <h2><span class="sec-num">32</span> Mejoras del tablero Kanban</h2>
+
+    <h3>Barra de adición rápida</h3>
+    <p>El tablero Kanban incluye una barra de adición rápida en la parte superior que permite crear tareas sin abrir ningún diálogo:</p>
+    <ol style="padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Escribe el prompt de la tarea en el campo de texto.</li>
+      <li>Selecciona el agente destino en el desplegable.</li>
+      <li>Pulsa <strong>+ Staged</strong> para añadir la tarea a la cola, o <strong>▶ Run</strong> para lanzarla directamente.</li>
+    </ol>
+    <p>La barra acepta el marcador <code>{{task.N.result}}</code> para crear dependencias implícitas: si la tarea N no está completada, la nueva tarea espera automaticamente aunque no se declare <code>depends_on</code>.</p>
+
+    <h3>Historial automático de tareas</h3>
+    <p>Cada vez que el Kanban marca una tarea como completada, se añade automáticamente una entrada al fichero <code>tools/agent-workspace/task_history.md</code>. Cada entrada incluye:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Timestamp de inicio y fin de la tarea</li>
+      <li>Agente que la ejecutó</li>
+      <li>Prompt completo enviado al agente</li>
+      <li>Estado final (<code>done</code> / <code>cancelled</code>)</li>
+    </ul>
+    <p>El historial es acumulativo y persiste entre sesiones. Los agentes pueden consultarlo con <code>project_search</code> o leyendo el fichero directamente.</p>
+  </section>
+
   <section id="agent-profiles">
     <h2>36. Perfiles de agente con identidad propia</h2>
     <p>Por defecto XDForCode tiene un único agente de chat genérico. Con los <strong>perfiles de agente</strong> puedes definir varias identidades especializadas, cada una con su propio nombre, rol, instrucciones de sistema, modelo preferido y color. Cambiar de agente en el chat es inmediato.</p>
@@ -2504,6 +2662,143 @@ Historial de CodeReviewer restaurado (23 mensajes). ← la revision continua don
 
     <h3>Fichero <code>xdagents.json</code></h3>
     <p>Se crea manualmente en el mismo directorio que <code>fevscode.exe</code>. Se recarga automaticamente al reiniciar el chat o al hacer <code>/agents</code>. No requiere recompilar la aplicacion.</p>
+  </section>
+
+  <section id="excalidraw">
+    <h2>37. Excalidraw — Pizarra de diagramas integrada</h2>
+    <p>XDForCode integra <strong>Excalidraw</strong>, una pizarra de diagramas de mano alzada, con acceso directo desde la barra lateral de iconos y soporte completo de IA via tools MCP.</p>
+
+    <h3>Como abrirlo</h3>
+    <p>Haz clic en el boton de la barra lateral de iconos con el tooltip <strong>Excalidraw</strong>. El panel principal navega directamente a <code>https://excalidraw.com</code> — sin servidor local, sin instalacion.</p>
+
+    <h3>Funcionalidades</h3>
+    <table>
+      <tr><th>Caracteristica</th><th>Detalle</th></tr>
+      <tr><td>Diagramas de mano alzada</td><td>Formas, flechas, texto, imagenes, conectores, frames</td></tr>
+      <tr><td>Exportar</td><td>Boton integrado para exportar como <code>.excalidraw</code>, PNG o SVG</td></tr>
+      <tr><td>Sin instalacion</td><td>No requiere Node.js, npm ni ningun build</td></tr>
+      <tr><td>Requiere internet</td><td>Navega a excalidraw.com; los diagramas se guardan en su propio localStorage</td></tr>
+    </table>
+
+    <h3>Integracion con IA — tools MCP</h3>
+    <p>Los agentes pueden crear y leer diagramas Excalidraw directamente desde el chat:</p>
+    <table>
+      <tr><th>Tool</th><th>Descripcion</th></tr>
+      <tr><td><code>excalidraw_save</code></td><td>Guarda un diagrama como fichero <code>.excalidraw</code> en el workspace y lo auto-indexa en CodeGraph</td></tr>
+      <tr><td><code>excalidraw_load</code></td><td>Lee un fichero <code>.excalidraw</code> y devuelve su JSON completo (<code>elements</code>, <code>appState</code>)</td></tr>
+    </table>
+    <p><strong>Ejemplo:</strong></p>
+    <pre><code>&gt; Crea un diagrama de la arquitectura del sistema PTY con sus slots y conexiones
+
+[el agente genera el JSON y llama excalidraw_save("pty_arch.excalidraw", {...})]
+✓ Diagrama guardado: pty_arch.excalidraw — abrelo en Excalidraw con File &gt; Open</code></pre>
+
+    <h3>Indexacion en CodeGraph</h3>
+    <p>Los ficheros <code>.excalidraw</code> del workspace se indexan automaticamente como documentos. CodeGraph extrae los <strong>frames</strong> como secciones y el <strong>texto</strong> de cada elemento (labels, cajas de texto), permitiendo a los agentes consultar diagramas existentes como contexto de arquitectura.</p>
+  </section>
+
+  <!-- 38 - GOOGLE DRIVE -->
+  <section id="google-drive">
+    <h2><span class="sec-num">38</span> Integracion con Google Drive y Google Docs</h2>
+    <p>XDForCode puede abrir ficheros de Google Drive directamente en el panel correcto del IDE gracias a dos herramientas MCP internas que detectan el tipo de fichero y eligen automaticamente el panel mas adecuado.</p>
+
+    <h3>Tools MCP disponibles</h3>
+    <table>
+      <tr><th>Tool</th><th>Descripcion</th></tr>
+      <tr><td><code>ide_open_url</code></td><td>Abre cualquier URL en el WebView principal del IDE</td></tr>
+      <tr><td><code>ide_open_drive_file</code></td><td>Abre un fichero de Google Drive en el panel mas adecuado segun su tipo</td></tr>
+    </table>
+
+    <h3><code>ide_open_url</code></h3>
+    <p>Navega el panel central del editor a cualquier URL. Util cuando el agente ya tiene la URL completa y quiere mostrarla en el IDE sin abrir el navegador del sistema.</p>
+    <pre><code>Abre https://docs.google.com/spreadsheets/d/ID/edit en el panel del editor
+→ ide_open_url({"url": "https://..."})</code></pre>
+
+    <h3><code>ide_open_drive_file</code></h3>
+    <p>Analiza el tipo MIME del fichero de Drive y lo abre en el panel mas adecuado:</p>
+    <table>
+      <tr><th>Tipo de fichero</th><th>Panel de apertura</th></tr>
+      <tr><td>Google Docs</td><td>WebView — editor nativo de Google Docs</td></tr>
+      <tr><td>Google Sheets</td><td>WebView — editor nativo de Google Sheets</td></tr>
+      <tr><td>Google Slides</td><td>WebView — editor nativo de Google Slides</td></tr>
+      <tr><td>Google Forms</td><td>WebView — editor nativo de Google Forms</td></tr>
+      <tr><td>Google Drawings</td><td>WebView — editor nativo de Google Drawings</td></tr>
+      <tr><td>Texto / codigo (<code>.prg</code>, <code>.txt</code>, <code>.json</code>, <code>.md</code>…)</td><td>Monaco — el contenido se descarga y se abre en el editor</td></tr>
+      <tr><td>PDF / imagen / video / binario</td><td>WebView — visor de Drive (<code>drive.google.com/file/d/ID/view</code>)</td></tr>
+    </table>
+    <table>
+      <tr><th>Parametro</th><th>Tipo</th><th>Descripcion</th></tr>
+      <tr><td><code>file_id</code></td><td>string</td><td>ID del fichero en Google Drive (obligatorio)</td></tr>
+      <tr><td><code>mime_type</code></td><td>string</td><td>Tipo MIME del fichero (opcional)</td></tr>
+      <tr><td><code>file_name</code></td><td>string</td><td>Nombre del fichero con extension (opcional; ayuda a detectar el tipo)</td></tr>
+    </table>
+
+    <div class="callout green">
+      <strong>Ejemplo:</strong><br>
+      El agente lista Drive con <code>ide_drive_list</code>, detecta una hoja de calculo y la abre:<br>
+      <code>ide_open_drive_file({"file_id": "1E9j...", "mime_type": "application/vnd.google-apps.spreadsheet"})</code><br>
+      ✓ Abierto en el WebView: Google Sheets editor
+    </div>
+
+    <h3>Requisitos</h3>
+    <p>Autenticacion Google OAuth2 activa (menu TOOLS → Google). El token se lee de <code>xdgoogle_tokens.json</code> y se renueva automaticamente. Para texto/codigo, el contenido se descarga vía Google Drive API y se abre en Monaco sin guardarse en disco.</p>
+
+    <h3>Funcionamiento interno</h3>
+    <p>Las tools usan IPC por fichero (<code>xdide_pending_open.json</code>): la tool escribe la accion y el timer <code>KanbanCheckDoneFiles</code> (siempre activo, 1 segundo) la consume en el hilo principal de la GUI. Esto garantiza que WebView2 nunca se toca desde un hilo de fondo.</p>
+  </section>
+
+  <!-- 39 - DEEPWIKI SKILL -->
+  <section id="deepwiki">
+    <h2><span class="sec-num">39</span> DeepWiki Skill — Analisis exhaustivo del repositorio</h2>
+    <p>La skill <strong>deepwiki</strong> convierte el agente de IA en un analizador experto de repositorios capaz de generar documentacion tecnica completa al estilo de DeepWiki — con diagramas de arquitectura, jerarquias de clases y paginas wiki navegables.</p>
+
+    <h3>Activar la skill</h3>
+    <ol class="steps">
+      <li><span>Escribe <code>/skills</code> o pulsa el boton <strong>Skills</strong> en la barra de herramientas del chat.</span></li>
+      <li><span>Activa la skill <strong>deepwiki</strong> de la lista.</span></li>
+      <li><span>El agente adopta el modo de analisis de repositorio.</span></li>
+    </ol>
+
+    <h3>Modos de operacion</h3>
+    <table>
+      <tr><th>Modo</th><th>Cuando usarlo</th></tr>
+      <tr><td><strong>RAG</strong></td><td>Preguntas concretas sobre el proyecto ("donde se define AdjustLayout?")</td></tr>
+      <tr><td><strong>Deep Research</strong></td><td>Analisis iterativo en profundidad — el agente planifica y construye sobre hallazgos anteriores</td></tr>
+      <tr><td><strong>Simple Chat</strong></td><td>Respuestas tecnicas directas sin preambulo</td></tr>
+    </table>
+
+    <h3>Paginas de analisis que genera</h3>
+    <table>
+      <tr><th>Pagina</th><th>Contenido</th></tr>
+      <tr><td><strong>Overview</strong></td><td>Proposito del proyecto, tecnologias usadas, estructura de directorios</td></tr>
+      <tr><td><strong>Getting Started</strong></td><td>Instalacion, compilacion, primeros pasos</td></tr>
+      <tr><td><strong>Core Architecture</strong></td><td>Capas arquitectonicas, modulos principales, flujo de datos global</td></tr>
+      <tr><td><strong>UI/Window System</strong></td><td>Paneles, controles, layout, ciclo de vida de la ventana</td></tr>
+      <tr><td><strong>Data Access Layer</strong></td><td>Persistencia, bases de datos, ficheros de configuracion</td></tr>
+      <tr><td><strong>Major Controls</strong></td><td>Componentes reutilizables mas importantes</td></tr>
+      <tr><td><strong>AI/Modern Features</strong></td><td>Integraciones IA, protocolos, agentes</td></tr>
+      <tr><td><strong>Build/Platform Support</strong></td><td>Toolchains, compilacion, dependencias de plataforma</td></tr>
+    </table>
+
+    <h3>Formato de salida</h3>
+    <p>Markdown estructurado con headings <code>##</code>, tablas y referencias inline de codigo (<code>fichero.prg#L45-60</code>). Al menos un diagrama Mermaid por pagina (jerarquias, arquitectura en capas, flujos de datos, pipelines de build). Sin fences Markdown: el agente empieza directamente con el contenido.</p>
+
+    <h3>Exportar como HTML</h3>
+    <p>Pide al agente que convierta el analisis a HTML y generara un fichero standalone con dark theme, layout 3 columnas (sidebar nav, contenido, TOC), Highlight.js, Mermaid.js y navegacion multi-pagina.</p>
+
+    <pre><code>&gt; /skills → activa deepwiki
+
+&gt; Analiza la arquitectura del proyecto y genera el analisis completo
+
+[el agente genera Overview, Core Architecture, etc. con diagramas Mermaid]
+
+&gt; Convierte el analisis a HTML standalone
+
+[el agente genera un fichero HTML listo para abrir en el navegador]</code></pre>
+
+    <div class="callout">
+      <strong>Origen:</strong> Skill adaptada del proyecto <a href="https://github.com/FiveTechSoft/deepwiki_skill" style="color:var(--accent2)">FiveTechSoft/deepwiki_skill</a>, inspirado en <a href="https://docs.devin.ai/work-with-devin/deepwiki" style="color:var(--accent2)">DeepWiki de Devin/Cognition</a>.
+    </div>
   </section>
 
 </div><!-- /content -->
