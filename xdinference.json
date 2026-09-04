@@ -368,6 +368,13 @@
         }
       ],
       "default": "deepseek-v4-flash-free"
+    },
+    "OMNIROUTE": {
+      "endpoint": "http://localhost:20128/v1/chat/completions",
+      "apikey": "",
+      "autodiscover": true,
+      "description": "OmniRoute local proxy — 351 providers, RTK token compression (up to 89% savings)"
     }
+
   }
 }

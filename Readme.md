@@ -16,6 +16,7 @@
    - [Modo llama.cpp (servidor GGUF local)](#modo-llamacpp-servidor-gguf-local)
    - [Auto-fallback de provider](#auto-fallback-de-provider)
    - [Orquestador de modelos (/automodel)](#orquestador-de-modelos-automodel)
+   - [OmniRoute — proxy local con compresión RTK (/omniroute)](#omniRoute--proxy-local-con-compresión-rtk-omnirouter)
 7. [Activar y configurar un agente](#7-activar-y-configurar-un-agente)
 8. [Usar el panel de chat (sidebar derecho)](#8-usar-el-panel-de-chat-sidebar-derecho)
    - [Botón Tools ON/OFF — control de herramientas MCP](#botón-tools-onoff--control-de-herramientas-mcp)
@@ -407,8 +408,9 @@ Dentro del slot **OpenCode**, el provider `Free Zen` lleva el símbolo 🔒 y no
 **Comportamiento:**
 - Cuando un provider falla, aparece `[Fallback] Cambiando a **X**...` y se reintenta automáticamente.
 - Si `restore_on_success` está activo, al obtener respuesta correcta el sistema vuelve al modo original.
-- Para modos ACP (`opencode_acp`, `mimo_acp`) el cambio de provider reinicia el proceso con la nueva API key. Para `inference`/`ollama` el cambio es por petición sin reiniciar nada.
-- Modos `opencode_acp` y `mimo_acp` no aceptan `--model` externamente; su fallback llega hasta el nivel provider.
+- Para `inference`/`ollama` el cambio es por petición sin reiniciar nada — son los únicos modos que se reintentan dentro de la misma consulta.
+- Modos no-HTTP (`puter`, `opencode_acp`, `mimo_acp`, `opencode_run`, `claude_cli`…) se aplican como **cambio de modo para la siguiente consulta**: la consulta actual termina con error, pero la siguiente ya usa el modo degradado.
+- El mensaje `[Fallback] ES IMPOSIBLE CONTESTAR` aparece cuando se agotan todos los slots de `inference`/`ollama`; en ese punto el modo puede haber quedado cambiado a un modo no-HTTP si hay uno configurado al final de la lista.
 
 **Configuración** (`xdfallback.json` junto al ejecutable, editable con `/fallback`):
 - `enabled` — activa o desactiva globalmente el fallback.
@@ -432,6 +434,36 @@ Dentro del slot **OpenCode**, el provider `Free Zen` lleva el símbolo 🔒 y no
 ```
 
 El estado actual aparece siempre en la tabla de `/mode` en la fila `fallback`.
+
+---
+
+### OmniRoute — proxy local con compresión RTK (/omniroute)
+
+[OmniRoute](https://github.com/diegosouzapw/OmniRoute) es un proxy local OpenAI-compatible que actúa como intermediario entre XDForCode y cualquier proveedor de IA. Sus características principales:
+
+- **RTK token compression** — reduce el tamaño del contexto entre un 15 % y un 95 % (media del 89 % combinando RTK + Caveman), con protección de código, URLs y JSON.
+- **351 proveedores** con acceso unificado en `http://localhost:20128/v1`.
+- **~1.500 millones de tokens/mes gratuitos** a través de 90+ proveedores con tier free.
+- **Fallback automático** entre providers si uno falla o agota cuota.
+
+**Instalación y arranque:**
+```
+npm install -g omniroute
+omniroute
+```
+*(abre automáticamente http://localhost:20128/home y se queda corriendo hasta CTRL+C)*
+
+**Uso desde XDForCode** (requiere modo `/inference` activo):
+
+```
+/omniroute          → muestra estado actual (ON/OFF)
+/omniroute on       → activa OmniRoute como proxy (comprueba que esté corriendo)
+/omniroute off      → desactiva y restaura el provider anterior
+```
+
+Al activar OmniRoute, XDForCode cambia automáticamente al provider `OMNIROUTE` (endpoint `localhost:20128`). Usa `/models` para elegir entre los modelos disponibles (autodescubiertos desde OmniRoute). El estado aparece en la tabla de `/mode` en la fila `omnirouter`.
+
+Si OmniRoute no está corriendo al intentar activarlo, XDForCode muestra el mensaje de instalación correspondiente.
 
 ---
 
@@ -467,7 +499,7 @@ Un modelo barato y rápido configurado en la pestaña **Router** del editor. Sol
 
 **Configuración** (`xdorchestrator.json` junto al ejecutable, editable con `/automodel edit`):
 - `enabled` — activa o desactiva el orquestador.
-- `router` — modelo árbitro: mode, provider, model, max_tokens, timeout.
+- `routers[]` — array de modelos árbitro en cascada: si el primero no devuelve un id válido del pool (timeout, id desconocido) se prueba el siguiente. Campo legacy `"router":{}` también soportado.
 - `prompt_template` — plantilla del prompt del router; usa `{{pool}}` y `{{query}}` como placeholders.
 - `pool[]` — lista de entradas disponibles.
 
@@ -628,7 +660,7 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | Comando | Argumentos | Acción |
 |---|---|---|
 | `/model` | `<nombre>` | Cambiar el modelo activo |
-| `/models` | — | Elegir modelo desde un desplegable |
+| `/models` | `[local\|cloud]` | Elegir modelo desde un desplegable (en ollama: todos por defecto; `local` solo ollama, `cloud` solo cloud) |
 | `/provider` | `<nombre>` | Establecer proveedor activo (inference) |
 | `/providers` | — | Elegir proveedor desde un desplegable |
 | `/endpoint` | `<url>` | Cambiar la URL del endpoint |
@@ -2802,6 +2834,75 @@ Pide al agente que convierta el análisis a HTML y generará un fichero standalo
 ```
 
 La skill **deepwiki** fue adaptada del proyecto [FiveTechSoft/deepwiki_skill](https://github.com/FiveTechSoft/deepwiki_skill), que a su vez está inspirado en [DeepWiki de Devin/Cognition](https://docs.devin.ai/work-with-devin/deepwiki).
+
+---
+
+## 42. Sistema de Plugins / Extensiones
+
+XDForCode incluye un sistema de plugins que permite añadir nuevas funcionalidades **sin recompilar el ejecutable**. Los plugins viven en subcarpetas de `plugins/` y se activan automáticamente al arrancar.
+
+### Tipos de plugin soportados
+
+| Tipo | Extensión | Motor |
+|---|---|---|
+| `hrb` | `.hrb` | `hb_hrbLoad` — carga directa de bytecode Harbour |
+| `prg` | `.prg` | Auto-compilado a `.hrb` si el fuente es más nuevo |
+| `python` | `.py` | `harbour_py` (Python 3.12 embebido) |
+| `js` | `.js` | `harbour_js` (QuickJS embebido) |
+| `webapp` | — | Arranca servidor local y abre pestaña WebView |
+
+### Estructura de un plugin
+
+```
+plugins/
+  mi-plugin/
+    plugin.json      ← manifiesto
+    mi-plugin.prg    ← código fuente (o .hrb)
+    hook.js          ← script JS inyectado en XDAgent al arrancar (opcional)
+    ui.html          ← UI propia en pestaña nueva (opcional)
+```
+
+**plugin.json:**
+```json
+{
+  "name":        "mi-plugin",
+  "version":     "1.0",
+  "description": "Descripción del plugin",
+  "enabled":     true,
+  "type":        "prg",
+  "entry":       "mi-plugin.prg",
+  "commands":    ["/micomando"],
+  "mcp_tools":   [],
+  "ui":          "",
+  "script":      "",
+  "port":        0,
+  "start":       ""
+}
+```
+
+### Entry points del plugin (hrb/prg)
+
+```harbour
+Function PluginInit( hRegistry )
+   hRegistry["ok"] := .T.   // indica que el plugin se registró bien
+Return nil
+
+Function PluginCommand( cCmd, cArgs )
+   // cCmd = "/micomando", cArgs = texto tras el comando
+   Return "Resultado del plugin"
+```
+
+### Gestión de plugins
+
+Escribe `/plugins` en el chat para abrir el **Plugin Manager** visual, que permite:
+- Ver todos los plugins instalados con su tipo, comandos y estado
+- **Activar / Desactivar** sin reiniciar (modifica `plugin.json`)
+- **Instalar** desde cualquier carpeta del disco
+- **Crear** un plugin nuevo desde plantilla
+- **Abrir carpeta** del plugin en el explorador
+- **Desinstalar** (borra la carpeta del plugin)
+
+Los comandos `/` que registra cada plugin aparecen automáticamente en el autocompletado del chat.
 
 ---
 
