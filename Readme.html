@@ -343,6 +343,7 @@
   <a href="#fallback">Auto-fallback</a>
   <a href="#omnirouter">OmniRoute RTK</a>
   <a href="#automodel">Orquestador /automodel</a>
+  <a href="#benchmark">Benchmark /benchmark</a>
   <a href="#activar">Activar y configurar agente</a>
   <a href="#chat">Panel de chat</a>
 
@@ -711,9 +712,68 @@ ollama pull qwen2.5-coder</pre>
     <p><strong>Activacion:</strong></p>
     <pre><code>/llamacpp          &rarr; activa el modo y muestra los modelos disponibles
 /llamacpp off      &rarr; detiene llama-server.exe
+/llamacpp alias    &rarr; cambia de modo Y arranca llama-server.exe directamente con ese modelo
 /models            &rarr; lista los ficheros .gguf en la carpeta configurada</code></pre>
     <div class="callout yellow">
       <strong>Recomendacion:</strong> usa modelos con cuantizacion <code>Q4_K_M</code> o <code>Q5_K_M</code> (equilibrio calidad/tamano/velocidad). Descargalos de <a href="https://huggingface.co" target="_blank">huggingface.co</a> buscando &quot;GGUF&quot;.
+    </div>
+
+    <h4>Inspeccionar un modelo antes de arrancarlo</h4>
+    <pre><code>/llamacpp info alias</code></pre>
+    <p>Lee la cabecera del fichero <code>.gguf</code> directamente (sin arrancar ningun servidor) y muestra en el chat su arquitectura, numero de capas y si es un modelo <strong>MoE</strong> (Mixture of Experts) &mdash; con el numero de expertos totales y activos por token. Si es MoE, sugiere un valor de partida para <code>moe_cpu_layers</code> (ver siguiente apartado).</p>
+
+    <h4>Offload de expertos MoE a CPU (moe_cpu_layers / moe_cpu_all)</h4>
+    <p>Algunos modelos GGUF son de tipo <strong>MoE</strong>: de todos sus "expertos" (sub-redes), cada token solo activa un subconjunto pequeno &mdash; por ejemplo, un modelo con 256 expertos totales puede activar solo 8 por token. Esto permite dejar la mayoria de los expertos en <strong>RAM/CPU</strong> y solo la parte siempre-activa del modelo en <strong>GPU</strong>, reduciendo mucho el consumo de VRAM sin perder demasiada velocidad. Añade en <code>XDForCodeUI.ini</code>:</p>
+    <pre><code>[LLAMACPP]
+moe_cpu_layers=20   ; expertos de las primeras N capas en CPU, resto en GPU (0 = desactivado)
+moe_cpu_all=0        ; 1 = TODOS los expertos en CPU (maximo ahorro de VRAM, el mas lento de los dos)</code></pre>
+    <p>Si arrancas un modelo con pinta de MoE y no tienes ninguno de estos dos ajustes configurado (ni en el INI global ni en el <code>llama.args</code> propio del modelo), XDForCode te avisa en el chat con una sugerencia de valor de partida. Estos ajustes <strong>no tienen ningun efecto en modelos densos</strong> (no-MoE), ni estan disponibles en modo Ollama &mdash; Ollama no expone ningun control equivalente sobre donde colocar los expertos.</p>
+    <div class="callout blue">
+      Analisis tecnico completo (por que funciona, benchmarks reales, comparacion con Ollama y con proyectos como Colibri/PowerInfer) en <code>docs/analisis_ejecucion_modelos_y_moe.md</code>.
+    </div>
+
+    <h4>Encontrar el mejor --n-cpu-moe automaticamente (/llamacpp moetune)</h4>
+    <pre><code>/llamacpp moetune alias [N1,N2,...]</code></pre>
+    <p>En vez de probar valores de <code>moe_cpu_layers</code> a mano, este comando arranca <code>llama-server.exe</code> una vez por cada configuracion a probar (la actual, tal cual esta en <code>llama.args</code>, mas los valores de <code>--n-cpu-moe</code> indicados &mdash; o <code>block_count/2</code> y <code>block_count/4</code> si no das ninguno), lanza los mismos 3 prompts fijos del benchmark contra cada una, y al terminar te da la conclusion directamente en el chat: que config fue mas rapida, sus tokens/s y su VRAM, comparada con la que tenias. Solo tiene efecto sobre modelos MoE (si el modelo es denso, avisa y no hace nada). Genera ademas un informe en <code>docs/benchmarks/moetune_alias_*.html</code> con el detalle de cada config probada. Igual que el resto de <code>/benchmark</code>, interrumpe cualquier sesion <code>/llamacpp</code> activa y tarda varios minutos (un arranque completo de servidor por config).</p>
+
+    <h4>Ajustes avanzados de rendimiento y memoria</h4>
+    <p>Ninguno de estos es obligatorio &mdash; si no los pones en el INI, XDForCode no manda el flag y <code>llama-server.exe</code> usa su propio valor por defecto. Igual que <code>ngl</code>/<code>ctx</code>/etc., se pueden sobrescribir por modelo concreto con un fichero <code>llama.args</code> en su carpeta (tiene precedencia sobre el INI global).</p>
+    <pre><code>[LLAMACPP]
+batch=2048            ; -b, tamano de lote logico para el procesado del prompt (defecto llama.cpp: 2048)
+ubatch=512            ; -ub, tamano de lote fisico (defecto llama.cpp: 512) -- bajalo si un modelo casi no cabe en VRAM
+threads_batch=-1      ; -tb, hilos para el procesado de batch/prompt (-1 = igual que threads)
+mlock=0               ; 1 = --mlock, fija el modelo en RAM (evita que Windows lo pagine a disco)
+no_mmap=0             ; 1 = --no-mmap, carga el modelo entero en RAM en vez de memory-map
+override_tensor=      ; -ot, colocacion de tensores por regex (CPU/GPU) -- ver mas abajo</code></pre>
+    <p><code>override_tensor</code> es la alternativa moderna y mas fina a <code>moe_cpu_layers</code>: en vez de "las primeras N capas de expertos a CPU", decides tensor a tensor con una expresion regular, por ejemplo:</p>
+    <pre><code>override_tensor=\.ffn_.*_exps\.=CPU   ; todos los tensores de expertos (de cualquier capa) a CPU</code></pre>
+    <p><code>/llamacpp info alias</code> sugiere tambien este ajuste cuando detecta un modelo MoE.</p>
+
+    <h4>Sugerencia (no integrada, no oficial): descomposicion automatica de tareas con atomic_ai</h4>
+    <p><a href="https://github.com/Nichonauta/atomic_ai" target="_blank">atomic_ai</a> es un proxy HTTP externo (Python/FastAPI, MIT, proyecto de terceros) compatible con la API de OpenAI que se coloca delante de un modelo y descompone cada peticion en un arbol de subtareas atomicas, las resuelve una a una y sintetiza la respuesta final &mdash; pensado para que modelos pequenos/debiles rindan mejor en tareas compuestas. No forma parte de XDForCode ni requiere cambios de codigo: al ser compatible con OpenAI, basta con apuntar el <code>endpoint</code> del modo Inference a su URL.</p>
+    <p>Cadena resultante: <code>XDForCode (modo inference) &rarr; atomic_ai (proxy) &rarr; llama-server.exe (tu modelo real)</code>.</p>
+    <p>Pasos, con <code>atomic_ai</code> ya instalado y corriendo aparte:</p>
+    <ol>
+      <li><strong><code>.env</code> de atomic_ai</strong> (copiado de <code>.env.example</code>):
+        <pre><code>UPSTREAM_BASE_URL=http://127.0.0.1:8001   ; puerto de llama-server -- SIN /v1/chat/completions, lo anade el propio codigo
+UPSTREAM_API_KEY=
+UPSTREAM_MODEL=Qwen3.5-2B
+PROXY_HOST=127.0.0.1
+PROXY_PORT=8010                            ; NUNCA 8000 -- ya lo usa el acpport de XDForCode (ver XDForCodeUI.ini)</code></pre>
+      </li>
+      <li>Arranca primero el modelo real con <code>/llamacpp alias</code> (deja <code>llama-server.exe</code> vivo en su puerto), y <strong>despues</strong> arranca atomic_ai aparte (<code>run.bat</code>).</li>
+      <li><code>/llamacpp alias</code> siempre apunta el endpoint directo a <code>llama-server</code>, sin pasar por el proxy &mdash; hay que redirigir XDForCode manualmente hacia atomic_ai:
+        <ul>
+          <li>Rapido pero no persistente: <code>/endpoint http://127.0.0.1:8010/v1/chat/completions</code></li>
+          <li>Persistente: anadir un provider nuevo en <code>xdinference.json</code> apuntando a esa misma URL, y usar <code>/provider nombre</code> + <code>/model alias</code> en modo <code>inference</code> en vez de <code>/llamacpp</code>.</li>
+        </ul>
+      </li>
+    </ol>
+    <div class="callout yellow">
+      <strong>Coste real a tener en cuenta:</strong> una peticion moderadamente compleja puede convertirse en 8-10+ llamadas al modelo (descomposicion + cada subtarea + sintesis) &mdash; multiplica la latencia en local en la misma proporcion. XDForCode ya cubre el mismo problema (modelo debil + tarea compleja) con mecanismos propios mas flexibles y sin ese coste: <code>/plan</code> + Kanban (descomposicion multi-agente, visible y editable) y <code>/automodel</code> (enrutar a un modelo mas capaz en vez de forzar uno pequeno). El bucle de tools MCP propio de XDForCode deberia convivir con el pause/resume de tool-calls de atomic_ai al ser ambos compatibles con el protocolo estandar de OpenAI, pero esa combinacion concreta no esta verificada &mdash; probarla con una tool sencilla antes de darla por buena.
+    </div>
+    <div class="callout blue">
+      <strong>Solo tiene sentido con modelos pequenos/debiles.</strong> El objetivo de atomic_ai es compensar una carencia de capacidad descomponiendo la tarea; un modelo que ya razona bien de por si (los MoE de 26B/35B de este mismo proyecto, por ejemplo) no tiene esa carencia, asi que ponerlo delante solo anadiria el coste de las 8-10+ llamadas sin ninguna ganancia de calidad a cambio. Y si ya se dispone de un modelo grande capaz en local, ante una tarea compleja casi siempre compensa mas <code>/automodel</code> enrutando a ese modelo grande directamente que forzar a uno pequeno a traves de atomic_ai &mdash; se gana en calidad y, a menudo, tambien en tiempo total (una pasada del modelo grande frente a 8-10 del pequeno).
     </div>
 
     <h3 id="puter">Modo Puter</h3>
@@ -870,6 +930,24 @@ omniroute start</code></pre>
     <p>El estado aparece en la tabla de <code>/mode</code> en la fila <strong>automodel</strong>. Con <code>/savemode</code> y <code>/restoremode</code> el estado se guarda y restaura junto al resto de la configuracion.</p>
   </section>
 
+  <section id="benchmark">
+    <h3>&#128202; Benchmark comparativo de modelos locales (/benchmark)</h3>
+    <p>Mide y compara la velocidad real de los modelos que tienes instalados localmente &mdash; util para decidir cual usar en cada tarea sin ir probando uno a uno a mano. Genera un informe (Markdown + HTML, en <code>docs/benchmarks/</code>) que se abre automaticamente al terminar.</p>
+    <p><strong>Metodologia:</strong> 3 prompts fijos (corta, explicativa, larga) contra cada modelo, con generacion limitada a 200 tokens para que la comparacion sea justa. Mide tokens/s de generacion y de prefill, y el consumo de RAM/VRAM de cada modelo.</p>
+    <table>
+      <tr><th>Comando</th><th>Accion</th></tr>
+      <tr><td><code>/benchmark</code></td><td>Mide todos los modelos Ollama locales instalados (excluye los ":cloud")</td></tr>
+      <tr><td><code>/benchmark &lt;filtro&gt;</code></td><td>Limita la medicion a los modelos cuyo nombre contenga &lt;filtro&gt;</td></tr>
+      <tr><td><code>/benchmark stop</code></td><td>Cancela el benchmark en curso (los modelos ya medidos se guardan igual)</td></tr>
+      <tr><td><code>/benchmark llamacpp [filtro]</code></td><td>Mide los modelos GGUF locales de /llamacpp en vez de Ollama</td></tr>
+      <tr><td><code>/benchmark all [filtro]</code></td><td>Mide AMBOS motores (Ollama + llama.cpp) y genera un unico informe combinado</td></tr>
+    </table>
+    <p><strong>Modelos MoE</strong> (ver apartado de <code>moe_cpu_layers</code> arriba): en el benchmark de llamacpp, si un modelo es MoE se prueba con su configuracion actual y, ademas, forzando <code>--cpu-moe</code> (todos los expertos en CPU) si esa configuracion no lo tenia ya activado &mdash; asi se ve de un vistazo el coste/beneficio real de esa opcion en tu propio hardware.</p>
+    <div class="callout yellow">
+      <strong>A tener en cuenta:</strong> cada modelo de llama.cpp exige arrancar y parar su propio <code>llama-server.exe</code> (sin daemon compartido como Ollama), asi que el benchmark de llamacpp/all puede tardar bastante con catalogos grandes &mdash; usa un filtro para acotar la primera vez. Tambien interrumpe cualquier sesion <code>/llamacpp</code> que tuvieras activa (no se restaura sola al terminar). <code>/benchmark</code> (en cualquiera de sus variantes) <strong>solo esta disponible desde la app local</strong> &mdash; no se puede lanzar desde una sesion de chat remoto, porque ocupa la GPU/CPU de la maquina que aloja XDForCode.
+    </div>
+  </section>
+
   <!-- 7 - ACTIVAR -->
   <section id="activar">
     <h2><span class="sec-num">7</span> Activar y configurar un agente</h2>
@@ -971,11 +1049,12 @@ omniroute start</code></pre>
       <tr><td><code>/gemini</code></td><td>Modo Gemini CLI headless</td></tr>
       <tr><td><code>/pi</code></td><td>Modo Pi RPC (agente coding, JSONL stdin/stdout)</td></tr>
       <tr><td><code>/ollama</code></td><td>Modo Ollama (modelos locales)</td></tr>
-      <tr><td><code>/llamacpp [off]</code></td><td>Modo llama.cpp: lanza llama-server.exe con un modelo GGUF local; <code>off</code> detiene el servidor</td></tr>
+      <tr><td><code>/llamacpp [off|alias|info alias|moetune alias [N,...]]</code></td><td>Modo llama.cpp: lanza llama-server.exe con un modelo GGUF local; <code>off</code> detiene el servidor; <code>info &lt;alias&gt;</code> lee la cabecera del .gguf (capas, MoE) sin arrancar nada; <code>moetune &lt;alias&gt;</code> prueba varios <code>--n-cpu-moe</code> y recomienda el mas rapido</td></tr>
       <tr><td><code>/openai</code></td><td>Modo OpenAI compatible (REST directo)</td></tr>
       <tr><td><code>/inference</code></td><td>Modo Inference HTTP directo</td></tr>
       <tr><td><code>/puter</code></td><td>Modo Puter (549+ modelos, sin API key propia)</td></tr>
       <tr><td><code>/fallback</code></td><td>Editor visual de prioridad de fallback; <code>on</code> / <code>off</code> para activar/desactivar</td></tr>
+      <tr><td><code>/benchmark [filtro|stop|llamacpp [filtro]|all [filtro]]</code></td><td>Benchmark comparativo de modelos locales: tokens/s, RAM/VRAM. Por defecto Ollama; <code>llamacpp</code>=modelos GGUF; <code>all</code>=ambos motores en un informe. Solo app local</td></tr>
     </table>
 
     <h4>Modelo, proveedor y endpoint</h4>
