@@ -16,6 +16,7 @@
    - [Modo llama.cpp (servidor GGUF local)](#modo-llamacpp-servidor-gguf-local)
    - [Auto-fallback de provider](#auto-fallback-de-provider)
    - [Orquestador de modelos (/automodel)](#orquestador-de-modelos-automodel)
+   - [Modo ambiente multi-agente (/ambient)](#modo-ambiente-multi-agente-ambient)
    - [OmniRoute — proxy local con compresión RTK (/omniroute)](#omniRoute--proxy-local-con-compresión-rtk-omnirouter)
    - [Benchmark comparativo de modelos locales (/benchmark)](#benchmark-comparativo-de-modelos-locales-benchmark)
 7. [Activar y configurar un agente](#7-activar-y-configurar-un-agente)
@@ -72,7 +73,7 @@ Su característica principal es la **integración nativa con agentes de IA**: pu
 - Integración con WhatsApp Web
 - Compatible con herramientas MCP (Model Context Protocol)
 - **Entrada de voz** — dicta mensajes al chat con el micrófono y ejecuta comandos de voz configurables
-- Herramientas MCP para web: `web_read` (cualquier URL como Markdown) y `youtube_transcript` (subtítulos de YouTube sin API key)
+- Herramientas MCP para web: `web_search` (buscar en la web), `web_read` (cualquier URL como Markdown) y `youtube_transcript` (subtítulos de YouTube sin API key)
 
 ---
 
@@ -148,6 +149,38 @@ El triángulo **▲** en la barra de estado inferior recarga la configuración d
 - **Ficheros HTML** → puedes elegir abrirlos en el editor de código o en el panel de vista previa del sidebar izquierdo.
 
 Cada fichero abierto ocupa su propia **pestaña** en la zona de edición. Puedes tener varios ficheros abiertos a la vez y navegar entre ellos.
+
+### Modo sin editor (`no_editor`)
+
+Para usos donde no hace falta editar ficheros (solo chat, agentes y terminales), `XDForCodeUI.ini [UI] no_editor=.T.` impide que se abran **nuevas** pestañas de editor — la pestaña 1 (pantalla de bienvenida / Dashboard en modo Monaco) sigue apareciendo con normalidad, solo se bloquea el paso siguiente: convertirla en editor al abrir un fichero. Los menús **New** y **Open...** aparecen deshabilitados, y el explorador de ficheros del sidebar izquierdo se oculta y su botón de la Activity Bar queda deshabilitado (no tiene sentido navegar ficheros que no se van a poder abrir). Las tools MCP `ide_editor_*` tampoco se ofrecen a los agentes de IA en este modo.
+
+Requiere reiniciar la aplicación tras cambiar el valor (igual que `webview`, se decide una sola vez al arrancar). Por defecto está desactivado (`no_editor=.F.`).
+
+`no_editor` también se puede alternar **en caliente**, sin reiniciar, desde el checkbox **VIEW → No-Editor Mode** o con el comando de chat `/edit_no [on|off]` (sin argumento, muestra el estado actual).
+
+### Modo IA básica (`basic_ia`)
+
+Pensado para dejar la aplicación reducida a **solo el chat**, a pantalla completa — un paso más agresivo que `no_editor`. Al activarlo:
+
+- Se oculta el **menú** por completo, la **Activity Bar**, la **consola** inferior y la **barra de estado**.
+- El editor se cierra (fuerza `no_editor=.T.` mientras esté activo).
+- El panel de chat se ensancha para ocupar toda la ventana.
+
+Se activa desde el chat con `/basic_ia [on|off]` (local, no disponible en el chat remoto por navegador). Sin argumento, informa del estado actual. Al desactivarlo (`/basic_ia off`), `no_editor` **siempre vuelve a quedar en `.F.`** — si lo quieres activado de nuevo, hazlo explícitamente con `/edit_no on`.
+
+**Comandos relacionados, disponibles mientras `basic_ia` está activo** (sin menú ni botones para lanzarlos de otra forma):
+
+| Comando | Argumentos | Acción |
+|---|---|---|
+| `/exit` | — | Cierra la aplicación |
+| `/kanban` | — | Abre el tablero Kanban |
+| `/edit_no` | `[on\|off]` | Alternar `no_editor` (bloqueado mientras `basic_ia` esté activo) |
+
+El propio panel del chat muestra un botón **⏻ Exit** siempre que `basic_ia` está activo, y un botón **📋 Kanban** si además `module_app` está bloqueado (ver abajo).
+
+Si alguna acción del chat necesita mostrar el panel principal (por ejemplo el tablero Kanban, `/benchmark`, o el botón "Preview markdown"), aparece temporalmente por encima del chat con un botón flotante **✕ Close** para volver.
+
+**Candado permanente — `module_app`:** la entrada `[UI] module_app=.T.` en `XDForCodeUI.ini` fuerza `basic_ia=.T.` de forma **permanente**: el comando `/basic_ia` queda bloqueado (no se puede desactivar desde el chat) y solo se puede revertir editando el `.ini` a mano y reiniciando. Pensado para builds tipo "kiosco" donde el usuario final solo debe ver el chat. Por defecto `module_app=.F.`.
 
 ---
 
@@ -594,6 +627,22 @@ El estado aparece en la tabla de `/mode` en la fila `automodel`. Con `/savemode`
 
 ---
 
+### Modo ambiente multi-agente (/ambient)
+
+Con varios agentes abiertos a la vez (XD Agent, MIMO, OPENCODE...), activa `/ambient` para que, cuando todo esté en reposo, uno de ellos tome la palabra por su cuenta cada cierto tiempo: le hace una pregunta breve a un compañero (con la tool `ask_teammate`) o lanza una propuesta relacionada con su rol, sin que el usuario tenga que escribir nada.
+
+```
+/ambient          → muestra el estado actual (on/off)
+/ambient on       → activa el modo ambiente
+/ambient off      → desactiva
+```
+
+**Cómo funciona:** cada 1,5-4 minutos (intervalo aleatorio) se comprueba si hay 2 o más agentes abiertos, nadie está ocupado y no hay ningún `/plan` corriendo; si se cumple, se elige uno al azar y se le manda el turno espontáneo. Si en ese momento hay algo en marcha, simplemente se espera al siguiente intervalo — no se reintenta a los 5 segundos.
+
+**Limitaciones de esta primera versión:** solo pueden recibir el turno espontáneo XD Agent y los agentes de terminal (MIMO/OPENCODE) — el canal 2 (`XD Agent-2`) queda excluido por ahora. Para un agente de terminal, el turno se escribe directamente en su sesión en marcha (no hay forma de aislarlo). El estado (on/off) se guarda en `XDForCodeUI.ini` (`[AI] ambient_mode`) y persiste entre sesiones. Apagado por defecto.
+
+---
+
 ### Benchmark comparativo de modelos locales (/benchmark)
 
 Mide y compara la velocidad real de los modelos que tienes instalados localmente — útil para decidir cuál usar en cada tarea sin ir probando uno a uno a mano. Genera un informe (Markdown + HTML, en `docs/benchmarks/`) que se abre automáticamente al terminar.
@@ -784,6 +833,7 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | `/reloadmcp` | — | Recargar la lista de tools MCP sin reiniciar |
 | `/showmcpused` | `0\|1` | Mostrar u ocultar las tools MCP usadas en cada respuesta |
 | `/showtools` | `0\|1` | Mostrar u ocultar el nombre del tool ejecutado en el chat (`› nombre_tool`) |
+| `/autocontext` | `[on\|off]` | Alternar CodeGraph DB Search AutoContext (ver sección 21.8); local, no disponible en remoto |
 
 #### Bucle autónomo (`/loop`)
 
@@ -793,6 +843,9 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | `/loop stop` | — | Detener el bucle en curso |
 | `/loop max` | `<n>` | Establecer número máximo de iteraciones (por defecto: 20) |
 | `/loop status` | — | Mostrar estado del bucle actual |
+| `/macro` | `<nombre>` | Ejecutar un macro guardado (guion lineal de comandos/prompts/referencias a planes o macros); crea una plantilla si no existe |
+| `/macro list` | — | Listar macros guardados con su descripción — click para ejecutar, editar o borrar |
+| `/macro stop` | — | Detener el macro en curso tras el paso actual |
 
 #### Planes multi-agente
 
@@ -820,6 +873,8 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | `/refine` | — | Extraer memorias de la sesión: el agente analiza el historial y guarda hechos, decisiones, reglas y patrones en `xdmemory.db` mediante la tool `mem_save` (requiere soporte MCP de memoria activo) |
 | `/diffreview` | `on\|off` | Activar revisión de diff antes de que la IA aplique cambios (solo ACP) |
 | `/autoapprove` | `on\|off` | Auto-aprobar comandos del agente sin pedir confirmación |
+| `/maxhistory` | `[N]` | Máximo de mensajes reenviados como historial (0 = sin límite); sin argumento muestra el valor actual de este límite y de `/maxhistorychars` |
+| `/maxhistorychars` | `[N]` | Cap de caracteres por mensaje al reenviar historial (0 = sin límite); sin argumento muestra el valor actual |
 | `/clear` | — | Limpiar la pantalla (el agente **sigue recordando** el historial) |
 | `/reset` / `/new` | — | Nueva sesión: limpia pantalla e historial, olvida memoria ACP |
 | `/reload` | — | Recargar la página del chat |
@@ -892,6 +947,19 @@ El estado del botón se guarda en `XDForCodeUI.ini [AI] aitools` y se restaura a
 
 Mientras el agente responde aparece el botón **Cancelar**. Púlsalo para interrumpir.
 
+### Pausar la pantalla mientras el agente responde
+
+Junto al botón de cancelar aparece **⏸ Pause** mientras el agente está respondiendo. Al pulsarlo, la
+respuesta deja de pintarse en pantalla (el botón cambia a **▶ Resume**) — al reanudar, se muestra de
+golpe todo el texto generado mientras tanto, sin que se pierda nada.
+
+**Importante:** esto es una pausa de la **pantalla**, no del modelo. Ninguna de las APIs con las que
+habla XDForCode (OpenAI-compatible, Ollama, ACP) permite congelar la generación en el servidor y
+reanudarla después — ese verbo no existe en ninguna de ellas. Mientras el botón dice "Resume", el
+modelo sigue generando y consumiendo cómputo de fondo exactamente igual que si no hubieras pausado
+nada; solo se retiene la actualización visual. Si la respuesta termina mientras está en pausa, se
+muestra igualmente en cuanto termina, para que no quede contenido escondido sin verse.
+
 ### Copiar mensajes del sistema
 
 Los mensajes de información que genera el propio IDE (respuestas a comandos como `/mode`, `/model`, `/status`…) muestran un botón **⎘** en la esquina superior derecha del bloque. Al pulsarlo, el contenido del mensaje se copia al portapapeles. Los mensajes del agente ya disponían de este botón desde versiones anteriores; ahora también está disponible en los mensajes del sistema.
@@ -904,12 +972,23 @@ El panel de chat incluye un botón 🎤 para dictar mensajes por voz. Consulta l
 
 El historial de la conversación se mantiene durante la sesión. Cada mensaje nuevo se envía junto con el contexto de los mensajes anteriores.
 
-Para evitar que sesiones muy largas superen el límite de tokens del modelo, XDForCode aplica automáticamente un **límite de historial**: solo se envían los últimos N pares de mensajes (por defecto 30). Los mensajes más antiguos se descartan del contexto enviado al modelo, pero siguen visibles en pantalla y persisten en la base de datos.
+Para evitar que sesiones muy largas superen el límite de tokens del modelo, XDForCode aplica automáticamente un **límite de historial**: solo se envían los últimos N mensajes (por defecto 30). Los mensajes más antiguos se descartan del contexto enviado al modelo, pero siguen visibles en pantalla y persisten en la base de datos.
 
-El límite se configura en `XDForCodeUI.ini`:
-```
+Este límite cuenta **mensajes**, no su tamaño: un solo mensaje muy grande (un fichero completo pegado, la salida cruda de una tool, un volcado de terminal importado) pasa el filtro igual que uno pequeño y se reenvía entero en cada turno siguiente. Para eso existe un segundo límite complementario, por **caracteres por mensaje**:
+
+```ini
 [AI]
-maxhistory = 30    ; 0 = sin límite (envía todo el historial)
+maxhistory = 30         ; 0 = sin límite (mensajes reenviados como historial)
+maxhistorychars = 0     ; 0 = sin límite (por defecto); cap de caracteres por mensaje al reenviar historial
+```
+
+Cuando `maxhistorychars` está activo, cualquier mensaje del historial que supere ese tamaño se recorta **solo en lo que se reenvía al modelo** — en pantalla y en la base de datos de chat sigue completo, con una nota indicando cuántos caracteres se omitieron.
+
+Ambos valores se pueden consultar y cambiar sin editar el INI, con efecto inmediato (y persistencia automática):
+```
+/maxhistory              → muestra los valores actuales de los dos límites
+/maxhistory 30           → cambia el límite de mensajes
+/maxhistorychars 6000    → cambia el límite de caracteres por mensaje
 ```
 
 ### Preguntar sobre el código abierto en el editor
@@ -1109,6 +1188,7 @@ La diferencia clave entre tipos es **dónde llega el texto del skill al modelo**
 | `harbexpert` | system | Consulta el repositorio oficial de Harbour antes de responder |
 | `fivexpert` | system | Consulta la instalación de FiveWin (C:\fwh) antes de responder |
 | `XDForCode` | context | Carga el doc de referencia de XDForCode y el README como base de conocimiento |
+| `structured-judgment` | context | Para preguntas de **decisión/juicio acotado** (Elección, Puntuación o Sí/No): responde con el veredicto primero y la justificación después, en vez de prosa ambigua. No se aplica a generación de código, texto o explicaciones libres |
 
 ### Cómo usarlas
 
@@ -1459,6 +1539,59 @@ El fichero de estado se elimina automáticamente cuando el plan termina normalme
 - Repetir el mismo prompt en varias tareas para aplicar una instrucción a múltiples ficheros.
 - **Delegar la planificación al propio agente**: pídele que diseñe y encole el plan Kanban completo.
 
+### Macros (`/macro`) — guiones lineales de una sola sesión
+
+Un **macro** es distinto de un `/plan`: no es un grafo multi-agente con dependencias, sino un **guion lineal** que reproduce, paso a paso y en la sesión actual, una secuencia de comandos y preguntas — exactamente como si las escribieras tú a mano, una detrás de otra. Sirve para automatizar rutinas que mezclan cambios de configuración, preguntas sueltas, y la posibilidad de disparar un `/plan` ya guardado (o otro macro) en mitad del guion, esperando a que termine del todo antes de continuar.
+
+**Uso:**
+```
+/macro <nombre>
+```
+
+Si `<nombre>` no existe todavía, XDForCode crea automáticamente una plantilla en `tools/macros/<nombre>.txt` con instrucciones de ejemplo, en vez de dar un simple error — edítala y vuelve a ejecutar `/macro <nombre>`.
+
+**Formato del fichero** (texto plano, una instrucción por línea; las líneas que empiezan por `#` son comentarios):
+```
+/inference
+/provider deepseek
+/model DeepSeek-V4
+Que ip publica estoy utilizando para conectarme a internet
+/macro mimacro02
+/plan miplan100
+hazme un informe de los resultados obtenidos
+```
+
+Cada línea puede ser:
+- **Un comando de barra**, tal cual lo escribirías (`/inference`, `/provider <nombre>`, `/model <nombre>`, `/llamacpp <alias>`...).
+- **Texto libre**: se envía como una pregunta normal al agente activo en ese momento; el macro espera la respuesta completa antes de pasar a la siguiente línea.
+- **`/plan <nombre>`**: arranca un plan **ya guardado** en `tools/plans/` (no genera uno nuevo con IA, a diferencia de `/plan <descripción>` escrito directamente en el chat) y espera a que **todas** sus tareas terminen antes de continuar.
+- **`/macro <nombre>`**: ejecuta otro macro hasta el final antes de continuar (anidamiento máximo: 5 niveles, para evitar un macro que se llame a sí mismo en bucle).
+
+**Para detener un macro en marcha:**
+```
+/macro stop
+```
+Se detiene después del paso en curso, no a mitad de una respuesta.
+
+### Crear, listar, editar y borrar macros
+
+**Crear:** no hay un editor dedicado — un macro es simplemente un fichero de texto plano. La forma más rápida es ejecutar `/macro <nombre>` con un nombre que todavía no exista: XDForCode crea automáticamente una plantilla de ejemplo en `tools/macros/<nombre>.txt` en vez de dar un error. Edítala con el contenido que quieras (a mano, o con el botón ✏️ de `/macro list`) y vuelve a ejecutar `/macro <nombre>`.
+
+**Listar:**
+```
+/macro list
+```
+Muestra todos los macros guardados con su descripción — la descripción es, simplemente, la primera línea del fichero si es un comentario (empieza por `#`); por eso la plantilla y los ejemplos ya llevan uno como primera línea. Cada macro de la lista tiene tres acciones, sin necesidad de escribir nada más:
+- **Click en el nombre** → lo ejecuta (`/macro <nombre>`).
+- **✏️** → lo abre en el editor de código, como cualquier otro fichero de texto.
+- **🗑** → lo borra (pide confirmación).
+
+> **Por qué es un sistema separado del Kanban:** un plan razona en términos de agentes, dependencias y paralelismo; un macro no tiene ninguno de esos conceptos, es puramente secuencial y de una sola sesión (incluye cosas como cambiar de modo/proveedor, que no tienen sentido como "tarea" de un agente). Se complementan — un macro puede lanzar un plan como uno de sus pasos — pero mezclarlos en un solo sistema habría complicado el planificador de Kanban sin necesidad real.
+
+> **Limitación conocida:** algunos comandos que arrancan un proceso en segundo plano sin marcar la sesión como "ocupada" (por ejemplo `/llamacpp <alias>`, que tarda en arrancar el servidor) no hacen que el macro espere a que terminen — la siguiente línea se dispara enseguida. Para una secuencia que dependa de que un modelo local esté completamente cargado antes de preguntarle algo, ten esto en cuenta; los pasos de `/plan` sí esperan correctamente a que termine todo el plan.
+
+> Solo disponible desde la app local (XDAgent) — no desde una sesión de chat remota, igual que `/benchmark`.
+
 ---
 
 ## 12. Sistema de Build y Toolchains
@@ -1797,6 +1930,13 @@ Entre las opciones que encontrarás en el menú:
 - **Diagnóstico ACP** (`Log ACP`): toggle que activa el registro detallado del protocolo ACP en el fichero `xdacp.log` (en el directorio del exe). Útil para depurar problemas de comunicación con el agente.
 - **Agente externo (ACP) `[ ON / OFF ]`**: toggle que controla si el modo Inference requiere un agente externo (opencode, mimo) para ejecutar herramientas MCP. Con `[ OFF ]`, XDForCode ejecuta el bucle de tool calling internamente — cualquier provider inference (GROQ, NVIDIA, OLLAMA, OpenRouter...) puede usar herramientas MCP sin tener instalado ningún agente ACP. Con `[ ON ]` (valor por defecto), las herramientas en inference solo se activan si el modelo está marcado como `"tools": true` en `xdinference.json`.
 
+El menú **VIEW** agrupa sus opciones en cuatro submenús, para no salirse de la pantalla con una única lista larga:
+
+- **Panels**: mostrar/ocultar Explorer, AI Agent, Console y Editor; modo sin editor; HTML Preview.
+- **Panel Agents**: configurar las pestañas del panel de consola (`Console Folder Tabs...`) y ver los agentes disponibles (`Available Agents...`).
+- **CodeGraph**: `DB Search AutoContext`, `Memory AutoContext`, `Show MCP Tools`.
+- **AI Behavior**: `Auto-approve Commands`, `Debug Prompt Log` y **Reflexion** (ver sección 29B) — todos con casilla de estado.
+
 > Dedica unos minutos a explorar cada sección del menú: muchas funcionalidades de XDForCode solo son accesibles desde ahí.
 
 ---
@@ -2016,6 +2156,18 @@ Dispones de las siguientes opciones:
 4. **Blast Radius / Impact Analysis (Radio de Impacto en cadena)**
    - **Qué hace:** Es una versión "extrema" y recursiva de Callers. No solo te dice quién te llama a ti directamente, sino quién llama al que te llama, y quién llama al que llama al que te llama...
    - **Cuándo usarlo:** Úsalo exclusivamente cuando vayas a modificar una función "Core" o crítica (por ejemplo, una función de conexión a BD o de login). El radio de impacto te dirá absolutamente todas las partes del programa que podrían "romperse" en cadena por culpa de ese cambio, para que sepas qué pantallas tienes que testear antes de darlo por bueno.
+
+### 21.8 AutoContext — inyección automática en el prompt
+
+Además de las tools que el agente puede llamar bajo demanda (`project_search`, `harbour_search`...), CodeGraph puede **inyectar automáticamente** en cada prompt el resultado de una búsqueda FTS5 sobre el identificador más relevante de tu pregunta (por ejemplo, si preguntas "explícame cómo funciona `ApplyBasicIaMode()`", busca directamente esa función en la base de datos antes de que el modelo tenga que hacer nada).
+
+**Está desactivado por defecto.** Actívalo con cualquiera de estas tres vías equivalentes:
+
+- Checkbox **VIEW → DB Search AutoContext** en el menú.
+- Entrada `[CODEGRAPH] autocontext=.T.` en `XDForCodeUI.ini`.
+- Comando de chat `/autocontext on` (local, no disponible en remoto — ver tabla de comandos en la sección 8).
+
+> **Importante:** con `autocontext` desactivado, el agente localiza código con la tool `project_search` (búsqueda de texto por todo el proyecto), sin pasar por el índice de CodeGraph.
 
 ---
 
@@ -2355,7 +2507,25 @@ Puedes probar todos estos endpoints directamente desde dentro de XDForCode sin n
 
 ## 28. Herramientas MCP para Web
 
-XDForCode incluye dos herramientas MCP de propósito general para que los agentes puedan obtener contenido de internet directamente durante una conversación. No requieren API key ni configuración adicional.
+XDForCode incluye tres herramientas MCP de propósito general para que los agentes puedan obtener contenido de internet directamente durante una conversación. No requieren API key ni configuración adicional.
+
+### `web_search` — Buscar en la web
+
+Busca una consulta en internet y devuelve los resultados (título, URL y fragmento de cada uno) en Markdown. Útil para encontrar una URL relevante antes de leerla con `web_read`.
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `query` | string | Consulta de búsqueda |
+
+Internamente usa **Jina Search** (`s.jina.ai`), el mismo servicio (y el mismo criterio de "sin API key") que `web_read`.
+
+**Ejemplo de uso en el chat:**
+
+```
+Busca la documentación oficial de FiveWin sobre TXBrowse y léela
+```
+
+El agente encadenará `web_search` (para encontrar la URL) y `web_read` (para leerla) automáticamente.
 
 ### `web_read` — Leer cualquier URL como Markdown
 
@@ -2421,6 +2591,16 @@ El agente busca memorias relevantes con `mem_search` antes de responder, y al de
 ### Habilidad `tool-honest`
 
 Existe una skill de tipo `rule` llamada `tool-honest` que prohíbe a los modelos fabricar resultados de herramientas: el agente debe reportar exactamente lo que devuelve cada tool, sin añadir filas ni datos inventados. Actívala con `/skills` → `tool-honest` cuando uses modelos locales (Ollama) que tienden a alucinar resultados.
+
+### Reflexion — aprendizaje verbal de fallos (`/reflexion`)
+
+XDForCode puede escribir automáticamente una **reflexión** en `xdmemory.db` cada vez que algo falla, para que quede disponible (vía el auto-contexto de memoria) la próxima vez que se presente una situación parecida — sin necesidad de reentrenar ningún modelo. Tres disparadores automáticos:
+
+- **Auto-fix de build**: cuando un fix de compilación funciona (el siguiente build compila bien), o cuando se agotan los reintentos sin resolver el error.
+- **Kanban**: cuando una tarea expira (`KanbanWatchdog`) o se cancela manualmente, capturando la salida real del proceso (terminal PTY o canal de IA) hasta ese momento.
+- **Chat**: un botón **👎 No ayudó** aparece bajo cada respuesta del agente; al pulsarlo puedes indicar opcionalmente qué falló, y se guarda como reflexión.
+
+Activación: `/reflexion on|off|status` (por defecto **OFF**), o desde el menú **VIEW → AI Behavior → Reflexion**. Es un interruptor **global** (afecta a todas las sesiones, local y remotas), igual criterio que `/autocontext` o `/memory` — por eso el comando está bloqueado desde una sesión remota (`xdchat.html`). El botón **👎 No ayudó**, en cambio, sí funciona en remoto: guardar una reflexión puntual no cambia ningún ajuste compartido.
 
 ---
 
@@ -2509,7 +2689,11 @@ Edita `assets/xdvoice.json` y añade entradas con las palabras que quieras. Los 
 3. Dicta el mensaje.
 4. Di **"enviar"** (con una pausa antes para que sea una utterance sola) — el micrófono se detiene y el mensaje se envía.
 
-> **Requisito técnico:** el reconocimiento de voz usa la **Web Speech API** del motor Chromium integrado (WebView2). No requiere software adicional ni conexión a un servidor externo — funciona localmente con el motor de voz de Windows del idioma seleccionado. El micrófono debe estar permitido en la configuración de privacidad de Windows (Configuración → Privacidad → Micrófono).
+> **Requisito técnico:** el reconocimiento de voz usa la **Web Speech API** del motor Chromium integrado (WebView2). A diferencia de lo que su nombre sugiere, esta API **no funciona localmente**: envía el audio a un servicio de reconocimiento en la nube — requiere conexión a internet, y el micrófono debe estar permitido en la configuración de privacidad de Windows (Configuración → Privacidad → Micrófono).
+
+> **Nota técnica — bug conocido del WebView2 Runtime 153+ ("Ceto"):** a partir de la versión 153 del runtime, Microsoft introdujo un nuevo backend de voz ("Ceto", `api.msedgeservices.com`) que devuelve error 403 al conectar desde un origen local como el que usa XDForCode, lo que la Web Speech API reporta como `Error de voz: network`. Está corregido en XDForCode pasando el argumento `--disable-features=msSpeechRecognitionServiceUseCetoService` al crear el entorno de WebView2 (fuerza el uso del backend heredado de Bing, que sí acepta la conexión) — ver [WebView2Feedback en GitHub](https://github.com/MicrosoftEdge/WebView2Feedback) para el hilo original. Si tras actualizar sigues viendo este error de forma repetida (no solo al final de una frase, ver nota siguiente), puede que Microsoft haya cambiado de nuevo el comportamiento del runtime — repórtalo.
+>
+> Un `network` aislado justo **después** de decir "enviar" es inofensivo: parar una sesión de voz en la nube que seguía activa a veces el propio navegador lo reporta así, aunque fue una parada intencional — XDForCode ya lo filtra y no lo muestra.
 
 ---
 
@@ -2996,6 +3180,36 @@ Escribe `/plugins` en el chat para abrir el **Plugin Manager** visual, que permi
 - **Desinstalar** (borra la carpeta del plugin)
 
 Los comandos `/` que registra cada plugin aparecen automáticamente en el autocompletado del chat.
+
+---
+
+## 43. Catálogo de Aplicaciones (App Center)
+
+Desde el botón **APPLICATIONS** de la pantalla de inicio (`XDEdit.html`) se abre un catálogo de mini-aplicaciones web instaladas dentro del propio IDE — utilidades, ofimática, juegos o cualquier página HTML que quieras tener a mano sin salir de XDForCode. Cada app vive en su propia carpeta bajo `assets/apps/<id>/` y queda registrada en `XDApps.json`.
+
+La pantalla del catálogo incluye una barra superior con botón de inicio, buscador, chips de categoría (generados automáticamente a partir de las categorías de las apps instaladas) y el botón **Instalar app**. En ventanas estrechas, la barra pasa a ocupar dos líneas en vez de recortar el último botón.
+
+### Métodos de instalación
+
+Desde **Instalar app** hay 5 formas de añadir una aplicación al catálogo:
+
+| Método | Cuándo usarlo |
+|---|---|
+| **URL Remota** | Enlazar cualquier web o app externa accesible por URL (no copia ficheros) |
+| **Importar JSON** | Cargar un `app_config.json` con la configuración ya preparada |
+| **Paquete ZIP** | Instalar una app completa (HTML/CSS/JS) desde un `.zip` |
+| **Carpeta local** | Copiar todos los ficheros de una carpeta de tu disco que ya contiene la app |
+| **Fichero local** | Añadir un único fichero HTML/JS ya existente en tu disco (por ejemplo, algo generado por el chat de IA, como un juego en `tetris.html` en la raíz del proyecto) sin tener que meterlo antes en su propia carpeta |
+
+En **Carpeta local** y **Fichero local**, al confirmar aparece un diálogo de configuración (nombre, tagline, categoría) antes de instalar.
+
+**Categoría como combo editable:** el campo Categoría sugiere las categorías ya usadas por otras apps (más un set base: utilidades, productividad, creatividad, ofimática, desarrollo, sistema, juegos), pero sigue aceptando texto libre para crear una nueva. El valor se normaliza automáticamente a minúsculas al guardar, para que escribir "Juegos" o "juegos" no acabe creando dos categorías distintas en la barra de filtros.
+
+**Copiar o mover (solo en "Fichero local"):** un checkbox permite elegir entre **copiar** el fichero (por defecto — el original se queda donde está) o **mover** lo (borra el original tras confirmar que la copia se escribió correctamente). Requiere que el navegador integrado soporte el permiso de escritura sobre el fichero de origen; si no lo soporta, se avisa y se hace copia normal en vez de fallar.
+
+### Gestión de apps instaladas
+
+Cada tarjeta del catálogo tiene botones **Open** (lanzar la app), **Edit** (cambiar nombre, icono, fichero de entrada, tagline o categoría) y **Remove** (quitarla del catálogo — no borra los ficheros del disco; las apps marcadas como del sistema no se pueden quitar).
 
 ---
 
