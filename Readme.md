@@ -33,6 +33,9 @@
 16. [Explorador de archivos](#16-explorador-de-archivos)
 17. [Terminales y pestañas configurables](#17-terminales-y-pestanas-configurables)
 18. [Integración con WhatsApp](#18-integración-con-whatsapp)
+   - [Comandos `/wa` desde el chat](#comandos-wa-desde-el-chat)
+18b. [Comandos de agentes externos — `/oc`, `/ocp`](#18b-comandos-de-agentes-externos--oc-ocp)
+   - [Sistema `<ACTIONS>`](#sistema-actions--pipeline-post-resultado)
 19. [Menú de la aplicación](#19-menú-de-la-aplicación)
 20. [Preguntas frecuentes](#20-preguntas-frecuentes)
 21. [Indexación de Código y Documentos (CodeGraph)](#21-indexación-de-código-y-documentos-codegraph)
@@ -44,6 +47,7 @@
 27. [API REST Local Integrada](#27-api-rest-local-integrada)
 28. [Herramientas MCP para Web](#28-herramientas-mcp-para-web)
 29. [Entrada de voz en el chat](#29-entrada-de-voz-en-el-chat)
+44. [Scheduler — automatización autónoma con cron, vigilancia y webhooks](#44-scheduler--automatización-autónoma-con-cron-vigilancia-y-webhooks)
 
 ---
 
@@ -846,6 +850,11 @@ Escribe `/` en el cuadro de chat y aparecerá automáticamente la lista de todos
 | `/macro` | `<nombre>` | Ejecutar un macro guardado (guion lineal de comandos/prompts/referencias a planes o macros); crea una plantilla si no existe |
 | `/macro list` | — | Listar macros guardados con su descripción — click para ejecutar, editar o borrar |
 | `/macro stop` | — | Detener el macro en curso tras el paso actual |
+| `/schedule` | `<segundos> <prompt>` | Añadir un disparo periódico: ejecutar `<prompt>` automáticamente cada N segundos |
+| `/schedule list` | — | Listar todos los schedules activos |
+| `/schedule clear` | — | Eliminar todos los schedules |
+| `/watch` | `<ruta> [prompt]` | Vigilar un fichero: disparar el agente cuando cambia |
+| `/watchcmd` | `<cmd> [-- prompt]` | Vigilar el output de un comando: disparar cuando su MD5 cambia |
 
 #### Planes multi-agente
 
@@ -1885,6 +1894,93 @@ El agente IA puede enviar mensajes de WhatsApp mediante la tool MCP `mcp_whatsap
 - Alertar por WhatsApp si un build falla.
 - Enviar resúmenes de conversaciones del chat.
 
+### Comandos `/wa` desde el chat
+
+Puedes controlar WhatsApp directamente desde el chat de XDAgent sin salir del IDE:
+
+| Comando | Descripción |
+|---|---|
+| `/wa open` | Abre WhatsApp Web en el panel del editor (el panel de contactos se oculta automáticamente) |
+| `/wa send <teléfono> <mensaje>` | Envía un mensaje (teléfono con prefijo país, sin `+`) |
+| `/wa observe` | Activa el observador de mensajes entrantes (llegan aquí al chat) |
+| `/wa stop` | Detiene el observador |
+| `/wa hide` | Oculta el panel de contactos manualmente |
+| `/wa show` | Restaura el panel de contactos |
+
+---
+
+## 18b. Comandos de agentes externos — `/oc`, `/ocp`
+
+XDForCode permite enviar prompts a **agentes externos** (como OpenCode) directamente desde el chat y recibir las respuestas de vuelta, sin salir de la ventana principal.
+
+### `/oc` — OpenCode Web
+
+Controla la pestaña **OpenCode Web** desde el chat:
+
+| Comando | Descripción |
+|---|---|
+| `/oc <mensaje>` | Envía el mensaje a OpenCode Web y activa el observer de respuestas |
+| `/oc observe` | Activa el observer (las respuestas aparecen aquí) |
+| `/oc stop` | Detiene el observer |
+
+### `/ocp` — OpenCode PTY (terminal)
+
+Envía un mensaje directamente a la pestaña **OPENCODE PTY** (terminal xterm.js) y captura la respuesta de vuelta al chat:
+
+```
+/ocp dame una función en Harbour que calcule los números primos entre 1000 y 2000
+```
+
+- La pregunta se envía al terminal PTY de OPENCODE (segunda pestaña del panel AGENTS).
+- Cuando OPENCODE termina (detectado por el marcador `Build · model · Xs`), la respuesta aparece aquí formateada con bloques de código.
+- El código preserva la indentación original.
+
+### Sistema `<ACTIONS>` — pipeline post-resultado
+
+Cualquier comando que envía a un agente externo (`/oc`, `/ocp`, `/wa send`) admite un bloque `<ACTIONS>` que especifica qué debe hacer el chat **cuando llegue la respuesta**.
+
+**Sintaxis básica — acción única:**
+```
+/ocp dame una función de ordenación rápida en C++
+<ACTIONS>
+Traduce los comentarios al inglés y explícame la complejidad algorítmica
+</ACTIONS>
+```
+
+**Cómo funciona:**
+
+1. Antes de enviar, el chat extrae la sección `<ACTIONS>…</ACTIONS>` y la guarda internamente.
+2. El prompt que se envía al agente externo queda limpio (sin el bloque ACTIONS).
+3. Cuando llega la respuesta, el chat la muestra y automáticamente dispara cada línea del bloque ACTIONS.
+
+**Placeholder `{{result}}`:** si una línea incluye `{{result}}`, la respuesta se inserta ahí (con un salto de línea previo). Si no hay `{{result}}` en ninguna línea, la respuesta se adjunta al final de la última acción.
+
+```
+/ocp suma todos los números pares entre 1 y 10000
+<ACTIONS>
+Ahora hazme lo mismo pero en Python: {{result}}
+</ACTIONS>
+```
+
+**Sintaxis multi-línea — varias acciones en secuencia:**
+
+Cada línea no vacía del bloque es una acción independiente que se dispara en orden:
+
+- **Línea que empieza por `/`** → se ejecuta directamente como comando (sin pasar por la IA).
+- **Línea sin `/`** → se envía a la IA; si la IA está ocupada, entra en la cola automáticamente.
+
+```
+/ocp dame la función Fibonacci en Harbour
+<ACTIONS>
+/wa send 34612345678 Nueva función lista: {{result}}
+Explícame la complejidad algorítmica de {{result}}
+</ACTIONS>
+```
+
+En el ejemplo anterior, cuando OPENCODE responde:
+1. Se envía el código por WhatsApp al número indicado.
+2. La IA recibe el código y explica su complejidad algorítmica.
+
 ---
 
 ## 19. Visual Builder
@@ -2168,6 +2264,24 @@ Además de las tools que el agente puede llamar bajo demanda (`project_search`, 
 - Comando de chat `/autocontext on` (local, no disponible en remoto — ver tabla de comandos en la sección 8).
 
 > **Importante:** con `autocontext` desactivado, el agente localiza código con la tool `project_search` (búsqueda de texto por todo el proyecto), sin pasar por el índice de CodeGraph.
+
+### 21.9 Búsqueda semántica (sqlite-vec)
+
+Además de la búsqueda por texto (FTS5) que usa `project_search` y AutoContext, CodeGraph puede añadir una capa de **búsqueda semántica** basada en embeddings: en vez de buscar coincidencias literales de palabras, encuentra secciones de documentación cuyo *significado* es cercano a tu pregunta, aunque no compartan ninguna palabra clave.
+
+**Requisitos:**
+- Ollama corriendo en local con el modelo `nomic-embed-text` descargado (`ollama pull nomic-embed-text`).
+- `sqlite-vec32.dll` presente junto a `fevscode.exe`.
+- **AutoContext debe estar activado** (sección 21.8) — la búsqueda semántica es una capa adicional dentro de esa misma inyección de contexto, no una función independiente.
+
+**Está desactivada por defecto.** Actívala desde:
+
+- Checkbox **VIEW → CodeGraph → "Semantic Search (sqlite-vec)"**.
+- Entrada `[CODEGRAPH] vecsearch=.T.` en `XDForCodeUI.ini`.
+
+Si Ollama o el modelo de embeddings no están disponibles, la búsqueda semántica falla en silencio y AutoContext sigue funcionando solo con FTS5 — no hay ningún error visible ni pérdida de funcionalidad.
+
+> **Importante — contenido indexado antes de activarla:** al indexar o guardar un fichero con la búsqueda semántica ya activada, su embedding se genera automáticamente. Pero el contenido indexado **antes** de activar el toggle no tiene embedding todavía. Para generarlos retroactivamente, usa **TOOLS → CodeGraph Index → Backfill Embeddings (sqlite-vec)** (solo aparece habilitado con la búsqueda semántica activada).
 
 ---
 
@@ -2502,6 +2616,16 @@ Puedes probar todos estos endpoints directamente desde dentro de XDForCode sin n
 2. Selecciona **Test API REST local**.
 3. Se abrirá un diálogo con estilo visual integrado donde podrás seleccionar el endpoint desde un desplegable (se autorellena interrogando al servidor web), meter tu token, especificar un JSON en el Body y ver la respuesta.
 4. Internamente este diálogo utiliza la librería `libcurl` nativa de Harbour para realizar las llamadas (GET/POST automáticos) en lugar de depender de ejecutables externos de Windows.
+
+### Autotest del núcleo (Run Selftest)
+
+El menú **TESTS → Run Selftest...** ejecuta la suite de tests unitarios sin GUI directamente desde la aplicación y abre el informe `selftest.log` en el editor. Cubre las funciones puras del núcleo: orchestrator, fallback, encoding, pila de modo, perfil de tools, scheduler/webhooks y ficheros de configuración. También puedes lanzarlo desde línea de comandos:
+
+```
+fevscode.exe --selftest
+```
+
+El código de salida es igual al número de tests fallidos (0 = todo OK).
 
 ---
 
@@ -3210,6 +3334,119 @@ En **Carpeta local** y **Fichero local**, al confirmar aparece un diálogo de co
 ### Gestión de apps instaladas
 
 Cada tarjeta del catálogo tiene botones **Open** (lanzar la app), **Edit** (cambiar nombre, icono, fichero de entrada, tagline o categoría) y **Remove** (quitarla del catálogo — no borra los ficheros del disco; las apps marcadas como del sistema no se pueden quitar).
+
+---
+
+## 44. Scheduler — automatización autónoma con cron, vigilancia y webhooks
+
+El **Scheduler** permite disparar el agente de IA de forma automática, sin intervención del usuario: a hora fija, cada N segundos, cuando un fichero cambia o cuando el output de un comando cambia. Complementa al Kanban (que opera dentro de una sesión manual) con un motor de disparos permanente que corre en segundo plano mientras el IDE está abierto.
+
+### Cómo funciona
+
+Un timer interno comprueba cada 60 segundos si hay entradas de scheduling pendientes. Cuando una condición se cumple, envía el prompt al agente exactamente como si el usuario lo hubiera escrito — pasando por el pipeline completo de historial, tools, skills y streaming. Si el agente está ocupado en ese momento, el disparo se descarta con una nota en el chat y se reintenta en el siguiente ciclo.
+
+Los webhooks se procesan en cada tick del timer (sin esperar los 60 segundos), por lo que la latencia de respuesta a un evento externo es inferior a 1 segundo.
+
+Para `watch_cmd`, el comando se ejecuta en segundo plano sin bloquear la GUI ni el timer. Si el comando tarda más de 60 segundos en terminar, el scheduler lo detecta igualmente en el primer tick posterior a su finalización; no se lanza una segunda instancia mientras la anterior sigue corriendo (mecanismo de run-file guard).
+
+### Tipos de entrada
+
+| Tipo | Cuándo dispara | Campos obligatorios |
+|---|---|---|
+| `interval` | Cada N segundos (opcionalmente solo a una hora concreta) | `every_s` + `prompt` |
+| `watch` | Cuando cambia la fecha de modificación de un fichero | `path` + `prompt` |
+| `watch_cmd` | Cuando cambia el MD5 del output de un comando shell | `cmd` + `prompt` |
+
+En el prompt de los tipos `watch` y `watch_cmd` puedes usar las variables `{{path}}` y `{{output}}`, que se sustituyen por la ruta del fichero o por las primeras 500 caracteres del output del comando en el momento del disparo.
+
+### Comandos del chat
+
+Escribe directamente en el panel de chat sin necesidad de abrir ningún diálogo:
+
+```
+/schedule 300 revisa los TODOs del proyecto y resume los pendientes
+```
+→ Cada 5 minutos el agente recibirá ese prompt.
+
+```
+/schedule 86400@09:00 haz el daily standup del proyecto
+```
+→ Una vez al día, pero solo cuando el reloj marque entre las 09:00 y las 09:01. La sintaxis `@HH:MM` es opcional; sin ella el disparo ocurre en el primer tick tras cumplirse el intervalo.
+
+```
+/schedule list
+```
+→ Lista todos los schedules activos con ID, tipo y prompt.
+
+```
+/schedule clear
+```
+→ Elimina todos los schedules.
+
+```
+/watch E:\MiProyecto\main.prg
+```
+→ Cada vez que guardes `main.prg`, el agente recibirá: *"File main.prg has changed. Summarize recent changes."*
+
+```
+/watch E:\MiProyecto\main.prg Los cambios en {{path}} podrían afectar al build. ¿Hay algo que revisar?
+```
+→ Con prompt personalizado.
+
+```
+/watchcmd git -C E:\MiProyecto log --oneline -3 -- Nuevos commits: {{output}}. ¿Hay algo que documentar?
+```
+→ Cada 60 segundos se ejecuta el comando git; si el output cambia (hay nuevos commits), el agente recibe el prompt con los mensajes de commit incrustados.
+
+### Webhooks externos
+
+El IDE expone dos endpoints HTTP que permiten que cualquier herramienta o script dispare el agente directamente, sin sondeo:
+
+| Endpoint | Uso |
+|---|---|
+| `POST /xd/hooks/webhook` | Webhook genérico. Body: `{"prompt": "texto"}` |
+| `POST /xd/hooks/git` | Webhook de git. Body: formato GitHub/GitLab (`{"commits":[{"message":"..."}]}`) |
+
+Ejemplo desde un script de post-build:
+
+```bat
+curl -X POST http://localhost:8003/xd/hooks/webhook ^
+  -H "Content-Type: application/json" ^
+  -d "{\"prompt\": \"El build ha terminado. Revisa los warnings.\"}"
+```
+
+El servidor devuelve `{"ok":true,"queued":true}` de forma inmediata; el agente IA se activa en menos de 1 segundo.
+
+### Diálogo gráfico (menú Settings → Scheduler...)
+
+Además de los comandos de chat, puedes gestionar los schedules desde una interfaz visual: **Settings → Scheduler...** abre un diálogo CRUD con:
+
+- Lista de todas las entradas (ID, tipo, condición, prompt).
+- Botones **Add**, **Edit**, **Delete**.
+- Formulario de edición con campos dinámicos: al cambiar el tipo (interval / watch / watch_cmd) aparecen los campos relevantes y se ocultan los que no aplican.
+- El checkbox **Enabled** permite desactivar una entrada sin borrarla.
+- Al guardar, los cambios se aplican en caliente — no hace falta reiniciar el IDE.
+
+### Persistencia
+
+Los schedules se guardan en `xdschedule.json` junto al ejecutable. El estado de ejecución (última vez que se disparó, último hash conocido) se guarda en `xdschedule_state.json`. Ambos ficheros se crean automáticamente al usar `/schedule add` o el diálogo, y se releen al arrancar el IDE.
+
+### Ejemplos de uso habitual
+
+```
+/schedule 86400 /loop revisa si hay dependencias desactualizadas en el proyecto
+```
+Una vez al día, lanza un bucle autónomo de revisión de dependencias.
+
+```
+/watch E:\MiApp\config.json Los settings de la app han cambiado en {{path}}. Describe el impacto de los cambios.
+```
+Cada vez que un compañero modifica la configuración, el agente lo detecta.
+
+```
+/watchcmd git -C E:\MiProyecto status --short -- El estado de git ha cambiado. ¿Hay ficheros sin commit?
+```
+Avisa cuando aparecen ficheros modificados no commiteados.
 
 ---
 

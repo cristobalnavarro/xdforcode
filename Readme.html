@@ -358,7 +358,8 @@
   <a href="#usuarios">Gestion de usuarios</a>
   <a href="#explorador">Explorador</a>
   <a href="#terminales">Terminales</a>
-  <a href="#whatsapp">WhatsApp</a>
+  <a href="#whatsapp">WhatsApp &amp; /wa</a>
+  <a href="#oc-ocp">/oc · /ocp · ACTIONS</a>
   <a href="#visual-builder">Visual Builder</a>
   <a href="#menu">Menu y configuracion</a>
   <a href="#codegraph">CodeGraph (Indexacion)</a>
@@ -377,6 +378,7 @@
   <a href="#deepwiki">DeepWiki Skill</a>
   <a href="#plugins">Plugins / Extensiones</a>
   <a href="#appcenter">Catalogo de Aplicaciones</a>
+  <a href="#scheduler">Scheduler / Cron / Watch</a>
 
   <div class="nav-section">Ayuda</div>
   <a href="#faq">Preguntas frecuentes</a>
@@ -1147,6 +1149,11 @@ omniroute start</code></pre>
       <tr><td><code>/macro</code></td><td>&lt;nombre&gt;</td><td>Ejecutar un macro guardado (guion lineal de comandos/prompts/referencias a planes o macros); crea una plantilla si no existe</td></tr>
       <tr><td><code>/macro list</code></td><td>—</td><td>Listar macros guardados con su descripcion — click para ejecutar, editar o borrar</td></tr>
       <tr><td><code>/macro stop</code></td><td>—</td><td>Detener el macro en curso tras el paso actual</td></tr>
+      <tr><td><code>/schedule &lt;s&gt; &lt;prompt&gt;</code></td><td>—</td><td>Añadir disparo periódico: ejecutar prompt cada N segundos</td></tr>
+      <tr><td><code>/schedule list</code></td><td>—</td><td>Listar todos los schedules activos</td></tr>
+      <tr><td><code>/schedule clear</code></td><td>—</td><td>Eliminar todos los schedules</td></tr>
+      <tr><td><code>/watch &lt;ruta&gt; [prompt]</code></td><td>—</td><td>Vigilar fichero: disparar el agente cuando cambia</td></tr>
+      <tr><td><code>/watchcmd &lt;cmd&gt; [-- prompt]</code></td><td>—</td><td>Vigilar output de comando: disparar cuando su MD5 cambia</td></tr>
     </table>
 
     <h4>Planes multi-agente</h4>
@@ -1979,6 +1986,71 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
       <li>Alertar por WhatsApp si un build falla.</li>
       <li>Enviar resumenes de conversaciones del chat.</li>
     </ul>
+
+    <h3>Comandos <code>/wa</code> desde el chat</h3>
+    <p>Controla WhatsApp directamente desde el chat de XDAgent:</p>
+    <table class="cmd-table">
+      <tr><th>Comando</th><th>Descripcion</th></tr>
+      <tr><td><code>/wa open</code></td><td>Abre WhatsApp Web en el panel del editor (el panel de contactos se oculta automaticamente)</td></tr>
+      <tr><td><code>/wa send &lt;telefono&gt; &lt;mensaje&gt;</code></td><td>Envia un mensaje (telefono con prefijo pais, sin <code>+</code>)</td></tr>
+      <tr><td><code>/wa observe</code></td><td>Activa el observador — los mensajes entrantes aparecen en el chat</td></tr>
+      <tr><td><code>/wa stop</code></td><td>Detiene el observador</td></tr>
+      <tr><td><code>/wa hide</code> / <code>/wa show</code></td><td>Oculta o restaura el panel de contactos manualmente</td></tr>
+    </table>
+  </section>
+
+  <!-- 18b - /oc /ocp ACTIONS -->
+  <section id="oc-ocp">
+    <h2><span class="sec-num">18b</span> Comandos de agentes externos — <code>/oc</code>, <code>/ocp</code></h2>
+    <p>XDForCode permite enviar prompts a agentes externos (como OpenCode) directamente desde el chat y recibir las respuestas de vuelta, sin salir de la ventana principal.</p>
+
+    <h3><code>/oc</code> — OpenCode Web</h3>
+    <table class="cmd-table">
+      <tr><th>Comando</th><th>Descripcion</th></tr>
+      <tr><td><code>/oc &lt;mensaje&gt;</code></td><td>Envia el mensaje a la pestana OpenCode Web y activa el observer de respuestas</td></tr>
+      <tr><td><code>/oc observe</code></td><td>Activa el observer (las respuestas aparecen aqui)</td></tr>
+      <tr><td><code>/oc stop</code></td><td>Detiene el observer</td></tr>
+    </table>
+
+    <h3><code>/ocp</code> — OpenCode PTY (terminal)</h3>
+    <p>Envia un mensaje directamente a la pestana <strong>OPENCODE PTY</strong> (terminal xterm.js) y captura la respuesta de vuelta al chat:</p>
+    <pre><code>/ocp dame una funcion en Harbour que calcule los numeros primos entre 1000 y 2000</code></pre>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>La pregunta se envia al terminal PTY de OPENCODE (segunda pestana del panel AGENTS).</li>
+      <li>Cuando OPENCODE termina, la respuesta aparece en el chat formateada con bloques de codigo.</li>
+      <li>Los mensajes y respuestas se guardan en el historial del chat.</li>
+    </ul>
+
+    <h3>Sistema <code>&lt;ACTIONS&gt;</code> — pipeline post-resultado</h3>
+    <p>Cualquier comando que envia a un agente externo (<code>/oc</code>, <code>/ocp</code>, <code>/wa send</code>) admite un bloque <code>&lt;ACTIONS&gt;</code> que especifica que debe hacer el chat cuando llegue la respuesta.</p>
+    <p><strong>Accion unica:</strong></p>
+    <pre><code>/ocp dame una funcion de ordenacion rapida en C++
+&lt;ACTIONS&gt;
+Traduce los comentarios al ingles y explicame la complejidad algorítmica
+&lt;/ACTIONS&gt;</code></pre>
+    <p><strong>Como funciona:</strong></p>
+    <ol class="steps">
+      <li><span>El chat extrae el bloque <code>&lt;ACTIONS&gt;…&lt;/ACTIONS&gt;</code> y lo guarda internamente.</span></li>
+      <li><span>El prompt que se envia al agente externo queda limpio (sin el bloque ACTIONS).</span></li>
+      <li><span>Cuando llega la respuesta, el chat la muestra y dispara cada linea del bloque ACTIONS en orden.</span></li>
+    </ol>
+    <p>Si una linea incluye <code>&#123;&#123;result&#125;&#125;</code>, la respuesta se inserta ahi (con un salto de linea previo). Si no hay placeholder, la respuesta se adjunta al final de la ultima accion.</p>
+    <pre><code>/ocp suma todos los pares entre 1 y 10000
+&lt;ACTIONS&gt;
+Ahora hazme lo mismo pero en Python: {{result}}
+&lt;/ACTIONS&gt;</code></pre>
+    <p><strong>Acciones multi-linea — varias acciones en secuencia:</strong></p>
+    <p>Cada linea no vacia es una accion independiente:</p>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li><strong>Linea que empieza por <code>/</code></strong> → se ejecuta directamente como comando (sin pasar por la IA).</li>
+      <li><strong>Linea sin <code>/</code></strong> → se envia a la IA; si esta ocupada, entra en la cola automaticamente.</li>
+    </ul>
+    <pre><code>/ocp dame la funcion Fibonacci en Harbour
+&lt;ACTIONS&gt;
+/wa send 34612345678 Nueva funcion lista: {{result}}
+Explicame la complejidad algorítmica de {{result}}
+&lt;/ACTIONS&gt;</code></pre>
+    <p class="note">El sistema <code>&lt;ACTIONS&gt;</code> es generico: cualquier integracion futura (SSH, pi, etc.) hereda el soporte completo anadiendo una sola llamada a <code>_fireActionIfPending()</code> en su handler de respuesta.</p>
   </section>
 
   <!-- 19 - VISUAL BUILDER -->
@@ -2292,6 +2364,24 @@ Donde esta definida AdjustLayout?
     </ul>
     <div class="callout">
       Con <code>autocontext</code> desactivado, el agente localiza código con la tool <code>project_search</code> (búsqueda de texto por todo el proyecto), sin pasar por el índice de CodeGraph.
+    </div>
+
+    <h3>Búsqueda semántica (sqlite-vec)</h3>
+    <p>Además de la búsqueda por texto (FTS5) que usa <code>project_search</code> y AutoContext, CodeGraph puede añadir una capa de <strong>búsqueda semántica</strong> basada en embeddings: en vez de buscar coincidencias literales de palabras, encuentra secciones de documentación cuyo <em>significado</em> es cercano a tu pregunta, aunque no compartan ninguna palabra clave.</p>
+    <p><strong>Requisitos:</strong></p>
+    <ul>
+      <li>Ollama corriendo en local con el modelo <code>nomic-embed-text</code> descargado (<code>ollama pull nomic-embed-text</code>).</li>
+      <li><code>sqlite-vec32.dll</code> presente junto a <code>fevscode.exe</code>.</li>
+      <li><strong>AutoContext debe estar activado</strong> — la búsqueda semántica es una capa adicional dentro de esa misma inyección de contexto, no una función independiente.</li>
+    </ul>
+    <p><strong>Está desactivada por defecto.</strong> Actívala desde:</p>
+    <ul>
+      <li>Checkbox <strong>VIEW &rarr; CodeGraph &rarr; "Semantic Search (sqlite-vec)"</strong>.</li>
+      <li>Entrada <code>[CODEGRAPH] vecsearch=.T.</code> en <code>XDForCodeUI.ini</code>.</li>
+    </ul>
+    <p>Si Ollama o el modelo de embeddings no están disponibles, la búsqueda semántica falla en silencio y AutoContext sigue funcionando solo con FTS5 — no hay ningún error visible ni pérdida de funcionalidad.</p>
+    <div class="callout">
+      <strong>Contenido indexado antes de activarla:</strong> al indexar o guardar un fichero con la búsqueda semántica ya activada, su embedding se genera automáticamente. Pero el contenido indexado <strong>antes</strong> de activar el toggle no tiene embedding todavía. Para generarlos retroactivamente, usa <strong>TOOLS &rarr; CodeGraph Index &rarr; Backfill Embeddings (sqlite-vec)</strong> (solo aparece habilitado con la búsqueda semántica activada).
     </div>
   </section>
 
@@ -3128,6 +3218,70 @@ Function PluginCommand( cCmd, cArgs )
 
     <h3>Gestión de apps instaladas</h3>
     <p>Cada tarjeta del catálogo tiene botones <strong>Open</strong> (lanzar la app), <strong>Edit</strong> (cambiar nombre, icono, fichero de entrada, tagline o categoría) y <strong>Remove</strong> (quitarla del catálogo — no borra los ficheros del disco; las apps marcadas como del sistema no se pueden quitar).</p>
+  </section>
+
+  <!-- 44 - SCHEDULER -->
+  <section id="scheduler">
+    <h2>44. Scheduler — automatización autónoma con cron, vigilancia y webhooks</h2>
+    <p>El <strong>Scheduler</strong> permite disparar el agente de IA de forma automática, sin intervención del usuario: a hora fija, cada N segundos, cuando un fichero cambia o cuando el output de un comando cambia. Complementa al Kanban (que opera dentro de una sesión manual) con un motor de disparos permanente que corre en segundo plano mientras el IDE está abierto.</p>
+
+    <h3>Cómo funciona</h3>
+    <p>Un timer interno comprueba cada 60 segundos si hay entradas de scheduling pendientes. Cuando una condición se cumple, envía el prompt al agente exactamente como si el usuario lo hubiera escrito — pasando por el pipeline completo de historial, tools, skills y streaming. Si el agente está ocupado en ese momento, el disparo se descarta con una nota en el chat y se reintenta en el siguiente ciclo.</p>
+    <p>Los webhooks se procesan en cada tick del timer (sin esperar los 60 segundos), por lo que la latencia de respuesta a un evento externo es inferior a 1 segundo.</p>
+    <p>Para <code>watch_cmd</code>, el comando se ejecuta en segundo plano sin bloquear la GUI. Si tarda más de 60 segundos, el scheduler lo detecta igualmente en el primer tick tras su finalización; un mecanismo de run-file guard evita que se lancen instancias paralelas del mismo comando.</p>
+
+    <h3>Tipos de entrada</h3>
+    <table>
+      <thead><tr><th>Tipo</th><th>Cuándo dispara</th><th>Campos obligatorios</th></tr></thead>
+      <tbody>
+        <tr><td><code>interval</code></td><td>Cada N segundos (opcionalmente solo a una hora concreta)</td><td><code>every_s</code> + <code>prompt</code></td></tr>
+        <tr><td><code>watch</code></td><td>Cuando cambia la fecha de modificación de un fichero</td><td><code>path</code> + <code>prompt</code></td></tr>
+        <tr><td><code>watch_cmd</code></td><td>Cuando cambia el MD5 del output de un comando shell</td><td><code>cmd</code> + <code>prompt</code></td></tr>
+      </tbody>
+    </table>
+    <p>En el prompt de <code>watch</code> y <code>watch_cmd</code> puedes usar <code>{{path}}</code> y <code>{{output}}</code>, que se sustituyen por la ruta o por las primeras 500 caracteres del output en el momento del disparo.</p>
+
+    <h3>Comandos del chat</h3>
+    <table>
+      <thead><tr><th>Comando</th><th>Efecto</th></tr></thead>
+      <tbody>
+        <tr><td><code>/schedule 300 revisa los TODOs del proyecto</code></td><td>Cada 5 minutos el agente recibirá ese prompt</td></tr>
+        <tr><td><code>/schedule 86400@09:00 haz el daily standup</code></td><td>Una vez al día solo entre las 09:00 y las 09:01 (sintaxis <code>@HH:MM</code> opcional)</td></tr>
+        <tr><td><code>/schedule list</code></td><td>Lista todos los schedules activos con ID, tipo y prompt</td></tr>
+        <tr><td><code>/schedule clear</code></td><td>Elimina todos los schedules</td></tr>
+        <tr><td><code>/watch E:\MiApp\main.prg</code></td><td>Avisa cuando el fichero cambia (prompt por defecto)</td></tr>
+        <tr><td><code>/watch E:\MiApp\main.prg Los cambios en {{path}} merecen revisión</code></td><td>Con prompt personalizado</td></tr>
+        <tr><td><code>/watchcmd git log --oneline -3 -- Nuevos commits: {{output}}</code></td><td>Vigila nuevos commits; incrusta los mensajes en el prompt</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Diálogo gráfico</h3>
+    <p><strong>Settings → Scheduler…</strong> abre un diálogo CRUD con lista de entradas, botones Add / Edit / Delete y un formulario con campos dinámicos según el tipo (interval muestra <em>every_s</em> y <em>at</em>; watch muestra <em>path</em>; watch_cmd muestra <em>cmd</em>). El checkbox <strong>Enabled</strong> permite desactivar una entrada sin borrarla. Los cambios se aplican en caliente sin reiniciar.</p>
+
+    <h3>Webhooks externos</h3>
+    <p>El IDE expone dos endpoints HTTP que permiten que cualquier herramienta o script dispare el agente directamente, sin sondeo:</p>
+    <table>
+      <thead><tr><th>Endpoint</th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST /xd/hooks/webhook</code></td><td>Webhook genérico. Body: <code>{"prompt": "texto"}</code></td></tr>
+        <tr><td><code>POST /xd/hooks/git</code></td><td>Webhook de git. Body: formato GitHub/GitLab (<code>{"commits":[{"message":"..."}]}</code>)</td></tr>
+      </tbody>
+    </table>
+    <pre><code>curl -X POST http://localhost:8003/xd/hooks/webhook \
+  -H "Content-Type: application/json" \
+  -d "{\"prompt\": \"El build ha terminado. Revisa los warnings.\"}"</code></pre>
+    <p>El servidor devuelve <code>{"ok":true,"queued":true}</code> de forma inmediata; el agente IA se activa en menos de 1 segundo.</p>
+
+    <h3>Persistencia</h3>
+    <p>Los schedules se guardan en <code>xdschedule.json</code> junto al ejecutable. El estado de ejecución (última vez disparado, último hash conocido) se guarda en <code>xdschedule_state.json</code>. Ambos ficheros se crean automáticamente al usar los comandos o el diálogo.</p>
+
+    <h3>Ejemplos prácticos</h3>
+    <pre><code>/schedule 86400@09:00 /loop revisa si hay dependencias desactualizadas en el proyecto</code></pre>
+    <p>Una vez al día a las 9:00, lanza un bucle autónomo de revisión de dependencias.</p>
+    <pre><code>/watch E:\MiApp\config.json Los settings han cambiado en {{path}}. Describe el impacto.</code></pre>
+    <p>Cada vez que se modifique la configuración, el agente lo detecta y analiza.</p>
+    <pre><code>/watchcmd git -C E:\MiApp status --short -- Estado git cambiado. ¿Hay ficheros sin commit?</code></pre>
+    <p>Avisa cuando aparecen ficheros modificados no commiteados.</p>
   </section>
 
 </div><!-- /content -->
