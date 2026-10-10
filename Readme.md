@@ -35,7 +35,10 @@
 18. [Integración con WhatsApp](#18-integración-con-whatsapp)
    - [Comandos `/wa` desde el chat](#comandos-wa-desde-el-chat)
 18b. [Comandos de agentes externos — `/oc`, `/ocp`](#18b-comandos-de-agentes-externos--oc-ocp)
+18d. [Bot de Telegram integrado — `/tg`](#18d-bot-de-telegram-integrado--tg)
    - [Sistema `<ACTIONS>`](#sistema-actions--pipeline-post-resultado)
+18e. [Bot de WhatsApp vía Evolution API — `/ev`](#18e-bot-de-whatsapp-vía-evolution-api--ev)
+18c. [Chats web externos — `/qw`, `/ki`, `/ds`, `/ge`, `/piw`](#18c-chats-web-externos--qw-ki-ds-ge-piw)
 19. [Menú de la aplicación](#19-menú-de-la-aplicación)
 20. [Preguntas frecuentes](#20-preguntas-frecuentes)
 21. [Indexación de Código y Documentos (CodeGraph)](#21-indexación-de-código-y-documentos-codegraph)
@@ -46,6 +49,7 @@
 26. [Dashboard — Panel de Estado en Tiempo Real](#26-dashboard--panel-de-estado-en-tiempo-real)
 27. [API REST Local Integrada](#27-api-rest-local-integrada)
 28. [Herramientas MCP para Web](#28-herramientas-mcp-para-web)
+29B. [Herramientas MCP de sistema y utilidades](#29b-herramientas-mcp-de-sistema-y-utilidades)
 29. [Entrada de voz en el chat](#29-entrada-de-voz-en-el-chat)
 44. [Scheduler — automatización autónoma con cron, vigilancia y webhooks](#44-scheduler--automatización-autónoma-con-cron-vigilancia-y-webhooks)
 
@@ -74,7 +78,7 @@ Su característica principal es la **integración nativa con agentes de IA**: pu
 - Skills reutilizables con múltiples tipos (acciones, contexto, plantillas, reglas) y **Continuous Harness** — skills que aprenden y se refinan con la sesión
 - Preview HTML en vivo en el sidebar izquierdo
 - CodeGraph indexa código, documentos, PDF, ficheros Office e imágenes via OCR
-- Integración con WhatsApp Web
+- Integración con WhatsApp Web y **bot de WhatsApp vía Evolution API** (`/ev`), **bot de Telegram** (`/tg`) y **bot de Discord** (`/dc`) — observer y bot mode simultáneos
 - Compatible con herramientas MCP (Model Context Protocol)
 - **Entrada de voz** — dicta mensajes al chat con el micrófono y ejecuta comandos de voz configurables
 - Herramientas MCP para web: `web_search` (buscar en la web), `web_read` (cualquier URL como Markdown) y `youtube_transcript` (subtítulos de YouTube sin API key)
@@ -1909,6 +1913,88 @@ Puedes controlar WhatsApp directamente desde el chat de XDAgent sin salir del ID
 
 ---
 
+## 18d. Bot de Telegram integrado — `/tg`
+
+XDForCode puede actuar como bot de Telegram: recibe mensajes en el chat del IDE (modo observer) o los reenvía al agente IA para responder automáticamente (modo bot). La configuración se guarda en `xdtelegram.json` junto al ejecutable.
+
+### Configuración inicial
+
+1. Crea un bot en Telegram con [@BotFather](https://t.me/botfather) y copia el token.
+2. En el chat del IDE: `/tg token <TOKEN>` — guarda el token en `xdtelegram.json`.
+3. Añade contactos con nombre para no tener que recordar IDs:
+   `/tg contact add xdforcode 123456789`
+
+### Comandos `/tg` desde el chat
+
+| Comando | Descripción |
+|---|---|
+| `/tg <contacto\|chat_id> <mensaje>` | Envía un mensaje al contacto o chat_id directo |
+| `/tg observe` | Activa el observador — mensajes entrantes aparecen aquí |
+| `/tg observe stop` | Detiene el observador |
+| `/tg bot start` | Activa bot mode — el agente IA responde automáticamente a cada mensaje |
+| `/tg bot stop` | Detiene el bot |
+| `/tg token <TOKEN>` | Guarda el token del bot |
+| `/tg contact add <nombre> <chat_id>` | Añade o actualiza un contacto |
+| `/tg contact del <nombre>` | Elimina un contacto |
+| `/tg contact list` | Muestra todos los contactos guardados |
+| `/tg status` | Estado actual (token, observer, bot, contactos) |
+
+### Cómo funciona internamente
+
+- Un hilo de fondo (`TgPollThread`) hace `getUpdates` con short-polling via hbcurl (sin procesos externos, sin ventanas). Los mensajes recibidos se encolan con mutex y los procesa `TgTimerTick()` en el hilo principal.
+- En bot mode, cada mensaje entrante llama a `AITriggerScheduled()` con el texto y el remitente, que dispara el pipeline completo del agente IA. Si el agente está ocupado, el prompt se encola en `cTgPendingPrompt` y se reintenta en el siguiente tick del timer.
+- Cuando el agente termina, `AgentDone()` enruta la respuesta según qué canal disparó el AI (`cLastBotTrigger`): TG bot, WA bot y todos los observers (WA, OC, QW…) pueden estar activos simultáneamente sin mezclar respuestas.
+
+---
+
+## 18e. Bot de WhatsApp vía Evolution API — `/ev`
+
+XDForCode puede actuar como bot de WhatsApp usando [Evolution API](https://github.com/EvolutionAPI/evolution-api), un servidor REST local (Docker) que se conecta a WhatsApp sin browser. Los mensajes llegan por webhook al servidor CivetWeb embebido de XDForCode y el agente IA responde automáticamente. La configuración se guarda en `xdevolution.json` junto al ejecutable.
+
+> **Ventaja frente al método anterior (WebView2 scraping)**: no necesita tener la pestaña de WhatsApp Web visible, es estable frente a cambios de UI de WhatsApp, y admite enviar imágenes y documentos sin coste adicional.
+
+### Instalación de Evolution API
+
+```
+docker run -d --name evolution --restart always -p 8080:8080 ^
+  -e AUTHENTICATION_API_KEY=miclave123 ^
+  atendai/evolution-api:latest
+```
+
+1. Abrir `http://localhost:8080/manager` — usuario: `admin`, contraseña: la `AUTHENTICATION_API_KEY`.
+2. Crear instancia → "Connect" → escanear QR con WhatsApp (Ajustes → Dispositivos vinculados).
+3. Configurar el webhook: `POST /webhook/set/default` con `{ "url": "http://localhost:8003/xd/hooks/evolution", "events": ["MESSAGES_UPSERT"] }`.
+
+### Configuración inicial desde el chat
+
+```
+/ev config url http://localhost:8080
+/ev config key miclave123
+/ev bot start
+```
+
+### Comandos `/ev` desde el chat
+
+| Comando | Descripción |
+|---|---|
+| `/ev <teléfono\|nombre> <mensaje>` | Envía un mensaje al número o contacto |
+| `/ev bot start` | Activa bot mode — el agente IA responde automáticamente a cada mensaje entrante |
+| `/ev bot stop` | Detiene el bot |
+| `/ev contact add <nombre> <teléfono>` | Añade o actualiza un contacto (ej. `346XXXXXXXX`) |
+| `/ev contact del <nombre>` | Elimina un contacto |
+| `/ev contact list` | Muestra todos los contactos guardados |
+| `/ev config url\|key\|instance <valor>` | Configura la URL base, API key o instancia de Evolution |
+| `/ev status` | Estado actual (URL, API key, instancia, bot mode, contactos) |
+
+### Cómo funciona internamente
+
+- Evolution API recibe los mensajes de WhatsApp vía Baileys (protocolo WA sin browser) y hace `POST /xd/hooks/evolution` al CivetWeb de XDForCode.
+- El handler en `api_router.prg` llama a `EvWebhookIncoming()` que filtra el evento `messages.upsert`, extrae el remitente y el texto, y los empuja a `aEvQueue` con protección de mutex (hilo CivetWeb → hilo principal).
+- `EvTimerTick()` (800 ms) drena la cola en el hilo principal: si `lEvBotMode = .T.` guarda el número en `cEvPendingPhone` y el prompt en `cEvPendingPrompt`, y llama a `AITriggerScheduled()` cuando el agente está libre.
+- `AgentDone()` detecta `cLastBotTrigger == "ev"` y llama a `EvBotReplyIfPending()`, que envía la respuesta al número original vía `POST /message/sendText/{instance}` con header `apikey: <KEY>`.
+
+---
+
 ## 18b. Comandos de agentes externos — `/oc`, `/ocp`
 
 XDForCode permite enviar prompts a **agentes externos** (como OpenCode) directamente desde el chat y recibir las respuestas de vuelta, sin salir de la ventana principal.
@@ -1980,6 +2066,64 @@ Explícame la complejidad algorítmica de {{result}}
 En el ejemplo anterior, cuando OPENCODE responde:
 1. Se envía el código por WhatsApp al número indicado.
 2. La IA recibe el código y explica su complejidad algorítmica.
+
+---
+
+## 18c. Chats web externos — `/qw`, `/ki`, `/ds`, `/ge`, `/piw`
+
+XDForCode puede actuar como **puente** entre el chat de XDAgent y cualquier interfaz web de IA abierta en el panel inferior: inyecta el texto en el input del chat externo, envía el mensaje y captura la respuesta de vuelta. Las imágenes generadas por el chat externo (p. ej. infografías de Gemini) también se capturan y se muestran en XDAgent.
+
+Las respuestas y sus imágenes se guardan en el historial de chat (SQLite) y se restauran al reiniciar la aplicación.
+
+### Chats disponibles
+
+| Comando | Chat externo | Imagen |
+|---|---|---|
+| `/qw <mensaje>` | Qwen Web (qwen.ai / tongyi.aliyun.com) | — |
+| `/ki <mensaje>` | Kimi Web (kimi.ai / moonshot) | — |
+| `/ds <mensaje>` | DeepSeek Web (chat.deepseek.com) | — |
+| `/ge <mensaje>` | Gemini (gemini.google.com) | ✓ captura imágenes generadas |
+| `/piw <mensaje>` | Pi (pi.ai) | — |
+
+### Uso
+
+```
+/qw dame una función en Harbour para ordenar un array
+/ki explícame la arquitectura Transformer en 3 párrafos
+/ds qué diferencia hay entre MoE y modelos densos?
+/ge hazme un diagrama descriptivo de por qué el cielo es azul
+/piw cuáles son las ventajas de los modelos conversacionales?
+```
+
+La respuesta aparece en el chat de XDAgent una vez que el agente externo termina de escribir (se detecta por estabilidad del texto, no por un marcador fijo).
+
+### Cómo funciona
+
+1. Al enviar `/ge <texto>`, XDForCode inyecta el texto en el campo de entrada del chat externo usando la API del DOM (`execCommand('insertText')` para editores Quill, `textarea` para otros).
+2. Hace clic en el botón de envío programáticamente.
+3. Un observer de JS monitoriza el elemento de respuesta (`aria-busy`, estabilidad del texto durante 1,5 s).
+4. Cuando la respuesta está lista, extrae el texto con formato Markdown y busca imágenes generadas en el contenedor `attachment-container.generated-images`.
+5. Las imágenes se convierten a `data:image/...;base64,...` mediante `fetch()` con las cookies de sesión del WebView.
+6. El resultado (texto + imágenes) se envía a XDAgent mediante el bridge JS→Harbour→JS.
+
+Al navegar a una página diferente en el panel inferior, todos los observers activos se cancelan automáticamente y sus statics se limpian — el bridge correcto se re-inyecta solo si se vuelve al mismo sitio.
+
+### Observers y control manual
+
+Cada chat tiene sus propios comandos de control:
+
+| Comando | Efecto |
+|---|---|
+| `/ge observe` | Activa manualmente el observer (si no se activó al enviar) |
+| `/ge stop` | Detiene el observer |
+| `/qw observe` / `/qw stop` | Ídem para Qwen |
+| `/ki observe` / `/ki stop` | Ídem para Kimi |
+| `/ds observe` / `/ds stop` | Ídem para DeepSeek |
+| `/piw observe` / `/piw stop` | Ídem para Pi |
+
+### Imágenes en el historial
+
+Las imágenes capturadas de Gemini se guardan en la base de datos de historial de chat (`xdchat.db`, columna `images` de la tabla `chat_messages`). Al restaurar el historial al arrancar la aplicación, las imágenes vuelven a mostrarse. El transporte usa base64 fragmentado para evitar el límite de tamaño de `Eval()` de WebView2.
 
 ---
 
@@ -2617,6 +2761,34 @@ Puedes probar todos estos endpoints directamente desde dentro de XDForCode sin n
 3. Se abrirá un diálogo con estilo visual integrado donde podrás seleccionar el endpoint desde un desplegable (se autorellena interrogando al servidor web), meter tu token, especificar un JSON en el Body y ver la respuesta.
 4. Internamente este diálogo utiliza la librería `libcurl` nativa de Harbour para realizar las llamadas (GET/POST automáticos) en lugar de depender de ejecutables externos de Windows.
 
+### XDForCode como proveedor OpenAI-compatible
+
+Cualquier cliente que hable el protocolo OpenAI (opencode, Continue, LM Studio UI, curl…) puede usar XDForCode como proveedor local añadiendo esta configuración:
+
+```json
+"providers": {
+  "xdforcode": {
+    "baseURL": "http://localhost:8003/v1",
+    "apiKey":  "<tu-token-de-API>"
+  }
+}
+```
+
+**Endpoints disponibles:**
+
+| Endpoint | Método | Descripción |
+|---|---|---|
+| `/v1/models` | GET | Lista el modelo activo (`id: "xdforcode"` o el modelo configurado) |
+| `/v1/chat/completions` | POST | Envía mensajes y obtiene respuesta del agente |
+
+**SSE streaming:** si envías `"stream": true` en el cuerpo, la respuesta llega en formato SSE (Server-Sent Events) con chunks `chat.completion.chunk` y termina con `data: [DONE]`. Esto es lo que opencode, Continue y la mayoría de clientes usan por defecto.
+
+**Títulos de sesión:** opencode envía automáticamente un mensaje de sistema con la palabra `"title"` para que el proveedor sugiera un nombre para la sesión. XDForCode lo detecta y responde localmente con las primeras palabras del mensaje — sin invocar al agente real, lo que evita bloquear el pipeline.
+
+**Autenticación:** cabecera `Authorization: Bearer <token>`. El token es el mismo que usas en la API `/xd/v12/`.
+
+**Limitación actual (modo B):** XDForCode corre su pipeline completo (LLM activo + MCPs) y devuelve la respuesta final. Los `tool_calls` intermedios no se exponen al cliente externo — el agente los resuelve internamente. Para exponer las tool calls al cliente (modo C), configura un provider con `tools OFF`.
+
 ### Autotest del núcleo (Run Selftest)
 
 El menú **TESTS → Run Selftest...** ejecuta la suite de tests unitarios sin GUI directamente desde la aplicación y abre el informe `selftest.log` en el editor. Cubre las funciones puras del núcleo: orchestrator, fallback, encoding, pila de modo, perfil de tools, scheduler/webhooks y ficheros de configuración. También puedes lanzarlo desde línea de comandos:
@@ -2725,6 +2897,32 @@ XDForCode puede escribir automáticamente una **reflexión** en `xdmemory.db` ca
 - **Chat**: un botón **👎 No ayudó** aparece bajo cada respuesta del agente; al pulsarlo puedes indicar opcionalmente qué falló, y se guarda como reflexión.
 
 Activación: `/reflexion on|off|status` (por defecto **OFF**), o desde el menú **VIEW → AI Behavior → Reflexion**. Es un interruptor **global** (afecta a todas las sesiones, local y remotas), igual criterio que `/autocontext` o `/memory` — por eso el comando está bloqueado desde una sesión remota (`xdchat.html`). El botón **👎 No ayudó**, en cambio, sí funciona en remoto: guardar una reflexión puntual no cambia ningún ajuste compartido.
+
+---
+
+## 29B. Herramientas MCP de sistema y utilidades
+
+XDForCode incluye un conjunto de herramientas MCP de sistema preinstaladas que no requieren configuración adicional. Están disponibles en todos los modos (Inference, ACP, Ollama) cuando **Tools** está activado.
+
+| Herramienta | Descripción |
+|---|---|
+| `get_time` | Hora actual del sistema |
+| `get_date` | Fecha actual |
+| `get_clock_report` | Fecha, hora y día de la semana en un único mensaje |
+| `get_public_ip` | IP pública del equipo (vía ipify.org) |
+| `get_temperature` | Temperatura y condiciones meteorológicas de cualquier ciudad |
+| `get_system_info` | CPU, memoria, sistema operativo y disco |
+| `get_harbour_version` | Versión de Harbour instalada |
+
+Estas tools se recompilan automáticamente desde su `.prg` cuando su código cambia — sin necesidad de recompilar `fevscode.exe`.
+
+### Soporte de ciudades con acentos en `get_temperature`
+
+La herramienta `get_temperature` acepta nombres de ciudades con cualquier carácter Unicode: **Córdoba, Málaga, A Coruña, München, Zürich, São Paulo**, etc. La codificación URL se realiza correctamente en UTF-8 byte a byte.
+
+### Respuesta instantánea (`response_mode: "direct"`)
+
+Las herramientas que solo devuelven un dato único (hora, fecha, IP, temperatura) están configuradas con `"response_mode": "direct"`. En este modo el resultado se muestra al usuario directamente, sin una segunda llamada al modelo para reformatearlo. La respuesta es instantánea y el historial de conversación se guarda igual que en cualquier otro turno. La etiqueta **`[direct]`** aparece en el footer de tiempo de la respuesta.
 
 ---
 
@@ -3343,7 +3541,9 @@ El **Scheduler** permite disparar el agente de IA de forma automática, sin inte
 
 ### Cómo funciona
 
-Un timer interno comprueba cada 60 segundos si hay entradas de scheduling pendientes. Cuando una condición se cumple, envía el prompt al agente exactamente como si el usuario lo hubiera escrito — pasando por el pipeline completo de historial, tools, skills y streaming. Si el agente está ocupado en ese momento, el disparo se descarta con una nota en el chat y se reintenta en el siguiente ciclo.
+Un timer interno comprueba cada 60 segundos si hay entradas de scheduling pendientes. Cuando una condición se cumple, envía el prompt al agente exactamente como si el usuario lo hubiera escrito — pasando por el pipeline completo de historial, tools, skills y streaming. Los prompts automáticos llevan el prefijo `[auto]` en el chat para distinguirlos de los mensajes del usuario.
+
+Si el agente está ocupado en ese momento, el disparo se descarta y se acumula en un contador interno. Cuando el agente se libera, aparece una nota con el número de disparos perdidos: *"N scheduled triggers were skipped while the agent was busy"*. El siguiente disparo programado se envía a continuación.
 
 Los webhooks se procesan en cada tick del timer (sin esperar los 60 segundos), por lo que la latencia de respuesta a un evento externo es inferior a 1 segundo.
 
@@ -3376,12 +3576,17 @@ Escribe directamente en el panel de chat sin necesidad de abrir ningún diálogo
 ```
 /schedule list
 ```
-→ Lista todos los schedules activos con ID, tipo y prompt.
+→ Lista los schedules activos con ID, tipo y prompt (solo schedules, no watches).
 
 ```
 /schedule clear
 ```
-→ Elimina todos los schedules.
+→ Elimina todos los schedules (los watches quedan intactos).
+
+```
+/schedule clear s1
+```
+→ Elimina solo el schedule con ID `s1`. El ID aparece en la salida de `/schedule list`.
 
 ```
 /watch E:\MiProyecto\main.prg
@@ -3392,6 +3597,21 @@ Escribe directamente en el panel de chat sin necesidad de abrir ningún diálogo
 /watch E:\MiProyecto\main.prg Los cambios en {{path}} podrían afectar al build. ¿Hay algo que revisar?
 ```
 → Con prompt personalizado.
+
+```
+/watch list
+```
+→ Lista los watches activos con ID, ruta y prompt (solo watches, no schedules).
+
+```
+/watch clear
+```
+→ Elimina todos los watches (los schedules quedan intactos).
+
+```
+/watch clear w1
+```
+→ Elimina solo el watch con ID `w1`. El ID aparece en la salida de `/watch list`.
 
 ```
 /watchcmd git -C E:\MiProyecto log --oneline -3 -- Nuevos commits: {{output}}. ¿Hay algo que documentar?

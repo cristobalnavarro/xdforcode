@@ -359,6 +359,8 @@
   <a href="#explorador">Explorador</a>
   <a href="#terminales">Terminales</a>
   <a href="#whatsapp">WhatsApp &amp; /wa</a>
+  <a href="#telegram">Telegram Bot /tg</a>
+  <a href="#evolution">WhatsApp Evolution /ev</a>
   <a href="#oc-ocp">/oc · /ocp · ACTIONS</a>
   <a href="#visual-builder">Visual Builder</a>
   <a href="#menu">Menu y configuracion</a>
@@ -369,6 +371,7 @@
   <a href="#dashboard">Dashboard</a>
   <a href="#api-rest">API REST Local</a>
   <a href="#mcp-web">MCP para Web</a>
+  <a href="#mcp-sistema">MCP sistema / utilidades</a>
   <a href="#voz">Entrada de voz</a>
   <a href="#cdp-screenshot">Vision del IDE (CDP)</a>
   <a href="#ia-extensible">Bots PTY / run_exe / save_script</a>
@@ -508,7 +511,7 @@
       <tr><td><strong>Barra lateral de iconos</strong></td><td>Acceso a explorador, servidor web, Kanban, preview HTML y configuracion</td></tr>
       <tr><td><strong>Explorador de archivos</strong></td><td>Arbol de directorios; clic en un fichero lo abre en el editor</td></tr>
       <tr><td><strong>Editor de codigo</strong></td><td>Edicion con Monaco o Scintilla segun el tipo de fichero</td></tr>
-      <tr><td><strong>Consolas inferiores</strong></td><td>Pestanas Results, GIT, SSH, Sistema, Terminal IA, WhatsApp</td></tr>
+      <tr><td><strong>Consolas inferiores</strong></td><td>Pesta&ntilde;as Results, GIT, SSH, Sistema, Terminal IA, WhatsApp; bots de Telegram (<code>/tg</code>), Discord (<code>/dc</code>) y WhatsApp Evolution (<code>/ev</code>)</td></tr>
       <tr><td><strong>Panel derecho</strong></td><td>Chat con el agente IA activo</td></tr>
     </table>
   </section>
@@ -1150,9 +1153,11 @@ omniroute start</code></pre>
       <tr><td><code>/macro list</code></td><td>—</td><td>Listar macros guardados con su descripcion — click para ejecutar, editar o borrar</td></tr>
       <tr><td><code>/macro stop</code></td><td>—</td><td>Detener el macro en curso tras el paso actual</td></tr>
       <tr><td><code>/schedule &lt;s&gt; &lt;prompt&gt;</code></td><td>—</td><td>Añadir disparo periódico: ejecutar prompt cada N segundos</td></tr>
-      <tr><td><code>/schedule list</code></td><td>—</td><td>Listar todos los schedules activos</td></tr>
-      <tr><td><code>/schedule clear</code></td><td>—</td><td>Eliminar todos los schedules</td></tr>
+      <tr><td><code>/schedule list</code></td><td>—</td><td>Listar schedules activos (no watches)</td></tr>
+      <tr><td><code>/schedule clear [id]</code></td><td>—</td><td>Eliminar todos los schedules o uno por ID; watches no se tocan</td></tr>
       <tr><td><code>/watch &lt;ruta&gt; [prompt]</code></td><td>—</td><td>Vigilar fichero: disparar el agente cuando cambia</td></tr>
+      <tr><td><code>/watch list</code></td><td>—</td><td>Listar watches activos (no schedules)</td></tr>
+      <tr><td><code>/watch clear [id]</code></td><td>—</td><td>Eliminar todos los watches o uno por ID; schedules no se tocan</td></tr>
       <tr><td><code>/watchcmd &lt;cmd&gt; [-- prompt]</code></td><td>—</td><td>Vigilar output de comando: disparar cuando su MD5 cambia</td></tr>
     </table>
 
@@ -1999,6 +2004,84 @@ Ollama     = cmd.exe /k ollama run qwen3.5:9b, 1</pre>
     </table>
   </section>
 
+  <!-- 18d - TELEGRAM BOT -->
+  <section id="telegram">
+    <h2><span class="sec-num">18d</span> Bot de Telegram integrado &mdash; <code>/tg</code></h2>
+    <p>XDForCode puede actuar como bot de Telegram: recibe mensajes en el chat del IDE (modo observer) o los reenv&iacute;a al agente IA para responder autom&aacute;ticamente (modo bot). La configuraci&oacute;n se guarda en <code>xdtelegram.json</code> junto al ejecutable.</p>
+
+    <h3>Configuraci&oacute;n inicial</h3>
+    <ol class="steps">
+      <li><span>Crea un bot en Telegram con <a href="https://t.me/botfather" target="_blank">@BotFather</a> y copia el token.</span></li>
+      <li><span>En el chat del IDE: <code>/tg token &lt;TOKEN&gt;</code> &mdash; guarda el token en <code>xdtelegram.json</code>.</span></li>
+      <li><span>A&ntilde;ade contactos con nombre: <code>/tg contact add xdforcode 123456789</code></span></li>
+    </ol>
+
+    <h3>Comandos <code>/tg</code> desde el chat</h3>
+    <table class="cmd-table">
+      <tr><th>Comando</th><th>Descripci&oacute;n</th></tr>
+      <tr><td><code>/tg &lt;contacto|chat_id&gt; &lt;msg&gt;</code></td><td>Env&iacute;a un mensaje al contacto (por nombre) o chat_id directo</td></tr>
+      <tr><td><code>/tg observe</code></td><td>Activa el observador &mdash; mensajes entrantes aparecen aqu&iacute;</td></tr>
+      <tr><td><code>/tg observe stop</code></td><td>Detiene el observador</td></tr>
+      <tr><td><code>/tg bot start</code></td><td>Activa bot mode &mdash; el agente IA responde autom&aacute;ticamente</td></tr>
+      <tr><td><code>/tg bot stop</code></td><td>Detiene el bot</td></tr>
+      <tr><td><code>/tg token &lt;TOKEN&gt;</code></td><td>Guarda el token del bot</td></tr>
+      <tr><td><code>/tg contact add &lt;nombre&gt; &lt;chat_id&gt;</code></td><td>A&ntilde;ade o actualiza un contacto</td></tr>
+      <tr><td><code>/tg contact del &lt;nombre&gt;</code></td><td>Elimina un contacto</td></tr>
+      <tr><td><code>/tg contact list</code></td><td>Muestra todos los contactos guardados</td></tr>
+      <tr><td><code>/tg status</code></td><td>Estado actual (token, observer, bot, contactos)</td></tr>
+    </table>
+
+    <h3>C&oacute;mo funciona internamente</h3>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Un hilo de fondo (<code>TgPollThread</code>) hace <code>getUpdates</code> con short-polling via hbcurl (sin procesos externos, sin ventanas). Los mensajes recibidos se encolan con mutex y los procesa <code>TgTimerTick()</code> en el hilo principal.</li>
+      <li>En bot mode, cada mensaje entrante llama a <code>AITriggerScheduled()</code>. Si el agente est&aacute; ocupado, el prompt se encola en <code>cTgPendingPrompt</code> y se reintenta en el siguiente tick del timer.</li>
+      <li>Cuando el agente termina, <code>AgentDone()</code> enr&uacute;ta la respuesta seg&uacute;n qu&eacute; canal dispar&oacute; el AI (<code>cLastBotTrigger</code>): TG bot, WA bot y todos los observers pueden estar activos simult&aacute;neamente sin mezclar respuestas.</li>
+    </ul>
+  </section>
+
+  <!-- 18e - EVOLUTION API WHATSAPP BOT -->
+  <section id="evolution">
+    <h2><span class="sec-num">18e</span> Bot de WhatsApp v&iacute;a Evolution API &mdash; <code>/ev</code></h2>
+    <p>XDForCode puede actuar como bot de WhatsApp usando <strong>Evolution API</strong> (Docker self-hosted), un servidor REST local que se conecta a WhatsApp sin browser. Los mensajes llegan por webhook al servidor CivetWeb embebido de XDForCode y el agente IA responde autom&aacute;ticamente. La configuraci&oacute;n se guarda en <code>xdevolution.json</code> junto al ejecutable.</p>
+    <p><strong>Ventaja frente al m&eacute;todo anterior (WebView2 scraping)</strong>: no necesita tener la pesta&ntilde;a de WhatsApp Web visible, es estable frente a cambios de UI de WhatsApp, y admite enviar im&aacute;genes y documentos sin coste adicional. Con un simple cambio de configuraci&oacute;n en Evolution, puede usar la <strong>Meta Business API oficial</strong> como backend &mdash; sin tocar c&oacute;digo en XDForCode.</p>
+
+    <h3>Instalaci&oacute;n de Evolution API</h3>
+    <pre><code>docker run -d --name evolution --restart always -p 8080:8080 ^
+  -e AUTHENTICATION_API_KEY=miclave123 ^
+  atendai/evolution-api:latest</code></pre>
+    <ol class="steps">
+      <li><span>Abrir <code>http://localhost:8080/manager</code> &mdash; usuario: <code>admin</code>, contrase&ntilde;a: tu <code>AUTHENTICATION_API_KEY</code>.</span></li>
+      <li><span>Crear instancia &rarr; "Connect" &rarr; escanear QR con WhatsApp (Ajustes &rarr; Dispositivos vinculados).</span></li>
+      <li><span>Configurar webhook: <code>POST /webhook/set/default</code> con <code>{ "url": "http://&lt;host&gt;:8003/xd/hooks/evolution", "events": ["MESSAGES_UPSERT"] }</code>.</span></li>
+    </ol>
+
+    <h3>Configuraci&oacute;n inicial desde el chat</h3>
+    <pre><code>/ev config url http://localhost:8080
+/ev config key miclave123
+/ev bot start</code></pre>
+
+    <h3>Comandos <code>/ev</code> desde el chat</h3>
+    <table class="cmd-table">
+      <tr><th>Comando</th><th>Descripci&oacute;n</th></tr>
+      <tr><td><code>/ev &lt;tel&eacute;fono|nombre&gt; &lt;msg&gt;</code></td><td>Env&iacute;a un mensaje al n&uacute;mero o contacto</td></tr>
+      <tr><td><code>/ev bot start</code></td><td>Activa bot mode &mdash; el agente IA responde autom&aacute;ticamente a cada mensaje entrante</td></tr>
+      <tr><td><code>/ev bot stop</code></td><td>Detiene el bot</td></tr>
+      <tr><td><code>/ev contact add &lt;nombre&gt; &lt;tel&eacute;fono&gt;</code></td><td>A&ntilde;ade o actualiza un contacto (ej. <code>346XXXXXXXX</code>)</td></tr>
+      <tr><td><code>/ev contact del &lt;nombre&gt;</code></td><td>Elimina un contacto</td></tr>
+      <tr><td><code>/ev contact list</code></td><td>Muestra todos los contactos guardados</td></tr>
+      <tr><td><code>/ev config url|key|instance &lt;valor&gt;</code></td><td>Configura la URL base, API key o instancia de Evolution</td></tr>
+      <tr><td><code>/ev status</code></td><td>Estado actual (URL, API key, instancia, bot mode, contactos)</td></tr>
+    </table>
+
+    <h3>C&oacute;mo funciona internamente</h3>
+    <ul style="list-style:disc; padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Evolution API recibe los mensajes de WhatsApp v&iacute;a Baileys (protocolo WA sin browser) y hace <code>POST /xd/hooks/evolution</code> al CivetWeb de XDForCode.</li>
+      <li>El handler en <code>api_router.prg</code> llama a <code>EvWebhookIncoming()</code> que filtra el evento <code>messages.upsert</code>, extrae el remitente y el texto, y los empuja a <code>aEvQueue</code> con protecci&oacute;n de mutex (hilo CivetWeb &rarr; hilo principal).</li>
+      <li><code>EvTimerTick()</code> (800 ms) drena la cola en el hilo principal: si <code>lEvBotMode = .T.</code> guarda el n&uacute;mero en <code>cEvPendingPhone</code> y el prompt en <code>cEvPendingPrompt</code>, y llama a <code>AITriggerScheduled()</code> cuando el agente est&aacute; libre.</li>
+      <li><code>AgentDone()</code> detecta <code>cLastBotTrigger == "ev"</code> y llama a <code>EvBotReplyIfPending()</code>, que env&iacute;a la respuesta al n&uacute;mero original v&iacute;a <code>POST /message/sendText/{instance}</code> con header <code>apikey: &lt;KEY&gt;</code>.</li>
+    </ul>
+  </section>
+
   <!-- 18b - /oc /ocp ACTIONS -->
   <section id="oc-ocp">
     <h2><span class="sec-num">18b</span> Comandos de agentes externos — <code>/oc</code>, <code>/ocp</code></h2>
@@ -2051,6 +2134,60 @@ Ahora hazme lo mismo pero en Python: {{result}}
 Explicame la complejidad algorítmica de {{result}}
 &lt;/ACTIONS&gt;</code></pre>
     <p class="note">El sistema <code>&lt;ACTIONS&gt;</code> es generico: cualquier integracion futura (SSH, pi, etc.) hereda el soporte completo anadiendo una sola llamada a <code>_fireActionIfPending()</code> en su handler de respuesta.</p>
+  </section>
+
+  <!-- 18c - CHATS WEB EXTERNOS -->
+  <section id="18c-chats-web-externos--qw-ki-ds-ge-piw">
+    <h2><span class="sec-num">18c</span> Chats web externos &mdash; <code>/qw</code>, <code>/ki</code>, <code>/ds</code>, <code>/ge</code>, <code>/piw</code></h2>
+    <p>XDForCode puede actuar como <strong>puente</strong> entre el chat de XDAgent y cualquier interfaz web de IA abierta en el panel inferior: inyecta el texto en el input del chat externo, envia el mensaje y captura la respuesta de vuelta. Las imagenes generadas por el chat externo (p. ej. infografias de Gemini) tambien se capturan y se muestran en XDAgent.</p>
+    <p>Las respuestas y sus imagenes se guardan en el historial de chat (SQLite) y se restauran al reiniciar la aplicacion.</p>
+
+    <h3>Chats disponibles</h3>
+    <table>
+      <thead><tr><th>Comando</th><th>Chat externo</th><th>Imagen</th></tr></thead>
+      <tbody>
+        <tr><td><code>/qw &lt;mensaje&gt;</code></td><td>Qwen Web (qwen.ai / tongyi.aliyun.com)</td><td>&mdash;</td></tr>
+        <tr><td><code>/ki &lt;mensaje&gt;</code></td><td>Kimi Web (kimi.ai / moonshot)</td><td>&mdash;</td></tr>
+        <tr><td><code>/ds &lt;mensaje&gt;</code></td><td>DeepSeek Web (chat.deepseek.com)</td><td>&mdash;</td></tr>
+        <tr><td><code>/ge &lt;mensaje&gt;</code></td><td>Gemini (gemini.google.com)</td><td>&#10003; captura imagenes generadas</td></tr>
+        <tr><td><code>/piw &lt;mensaje&gt;</code></td><td>Pi (pi.ai)</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Uso</h3>
+    <pre><code>/qw dame una funcion en Harbour para ordenar un array
+/ki explicame la arquitectura Transformer en 3 parrafos
+/ds que diferencia hay entre MoE y modelos densos?
+/ge hazme un diagrama descriptivo de por que el cielo es azul
+/piw cuales son las ventajas de los modelos conversacionales?</code></pre>
+    <p>La respuesta aparece en el chat de XDAgent una vez que el agente externo termina de escribir (se detecta por estabilidad del texto, no por un marcador fijo).</p>
+
+    <h3>Como funciona</h3>
+    <ol style="padding-left:24px; color:var(--text2); font-size:0.92rem; line-height:2;">
+      <li>Al enviar <code>/ge &lt;texto&gt;</code>, XDForCode inyecta el texto en el campo de entrada del chat externo usando la API del DOM (<code>execCommand('insertText')</code> para editores Quill, <code>textarea</code> React-controlled via <code>HTMLTextAreaElement.prototype.value</code> setter para Pi, etc.).</li>
+      <li>Hace clic en el boton de envio programaticamente.</li>
+      <li>Un observer de JS monitoriza el elemento de respuesta (<code>aria-busy</code>, estabilidad del texto durante 1,5 s).</li>
+      <li>Cuando la respuesta esta lista, extrae el texto con formato Markdown y busca imagenes generadas en el contenedor <code>attachment-container.generated-images</code>.</li>
+      <li>Las imagenes se convierten a <code>data:image/...;base64,...</code> mediante <code>fetch()</code> con las cookies de sesion del WebView.</li>
+      <li>El resultado (texto + imagenes) se envia a XDAgent mediante el bridge JS&rarr;Harbour&rarr;JS.</li>
+    </ol>
+    <p>Al navegar a una pagina diferente en el panel inferior, todos los observers activos se cancelan automaticamente y sus statics se limpian &mdash; el bridge correcto se re-inyecta solo si se vuelve al mismo sitio.</p>
+
+    <h3>Observers y control manual</h3>
+    <table>
+      <thead><tr><th>Comando</th><th>Efecto</th></tr></thead>
+      <tbody>
+        <tr><td><code>/ge observe</code></td><td>Activa manualmente el observer</td></tr>
+        <tr><td><code>/ge stop</code></td><td>Detiene el observer</td></tr>
+        <tr><td><code>/qw observe</code> / <code>/qw stop</code></td><td>Idem para Qwen</td></tr>
+        <tr><td><code>/ki observe</code> / <code>/ki stop</code></td><td>Idem para Kimi</td></tr>
+        <tr><td><code>/ds observe</code> / <code>/ds stop</code></td><td>Idem para DeepSeek</td></tr>
+        <tr><td><code>/piw observe</code> / <code>/piw stop</code></td><td>Idem para Pi</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Imagenes en el historial</h3>
+    <p>Las imagenes capturadas de Gemini se guardan en la base de datos de historial de chat (<code>xdchat.db</code>, columna <code>images</code> de la tabla <code>chat_messages</code>). Al restaurar el historial al arrancar la aplicacion, las imagenes vuelven a mostrarse. El transporte usa base64 fragmentado para evitar el limite de tamano de <code>Eval()</code> de WebView2.</p>
   </section>
 
   <!-- 19 - VISUAL BUILDER -->
@@ -2674,6 +2811,23 @@ al procedimiento almacenado</pre>
       <li><span>Se abrira un dialogo con estilo visual integrado donde podras seleccionar el endpoint desde un desplegable (se autorellena interrogando al servidor web), meter tu token, especificar un JSON en el Body y ver la respuesta.</span></li>
       <li><span>Internamente este dialogo utiliza la libreria <code>libcurl</code> nativa de Harbour para realizar las llamadas (GET/POST automaticos) en lugar de depender de ejecutables externos de Windows.</span></li>
     </ol>
+
+    <h3>XDForCode como proveedor OpenAI-compatible</h3>
+    <p>Cualquier cliente que hable el protocolo OpenAI (opencode, Continue, LM Studio UI, curl…) puede usar XDForCode como proveedor local. Configuracion en opencode:</p>
+    <pre>"providers": {
+  "xdforcode": {
+    "baseURL": "http://localhost:8003/v1",
+    "apiKey":  "&lt;tu-token-de-API&gt;"
+  }
+}</pre>
+    <table>
+      <tr><th>Endpoint</th><th>Metodo</th><th>Descripcion</th></tr>
+      <tr><td><code>/v1/models</code></td><td>GET</td><td>Lista el modelo activo</td></tr>
+      <tr><td><code>/v1/chat/completions</code></td><td>POST</td><td>Envia mensajes y obtiene respuesta del agente</td></tr>
+    </table>
+    <p><strong>SSE streaming:</strong> si envias <code>"stream": true</code> en el cuerpo, la respuesta llega en formato SSE con chunks <code>chat.completion.chunk</code> y termina con <code>data: [DONE]</code>. Es el modo que opencode y Continue usan por defecto.</p>
+    <p><strong>Titulos de sesion:</strong> opencode envia automaticamente un mensaje de sistema con la palabra <code>"title"</code> para sugerir un nombre de sesion. XDForCode lo detecta y responde localmente con las primeras palabras del mensaje — sin invocar al agente real.</p>
+    <p><strong>Autenticacion:</strong> cabecera <code>Authorization: Bearer &lt;token&gt;</code>. El token es el mismo que usas en la API <code>/xd/v12/</code>.</p>
   </section>
 
 
@@ -2716,6 +2870,27 @@ y dime como funciona el evento SCN_MODIFIED</pre>
     <pre>Resume el contenido del video https://www.youtube.com/watch?v=dQw4w9WgXcQ</pre>
     <p>El agente invocara <code>youtube_transcript</code>, obtendra el texto y podra resumirlo, traducirlo o analizarlo. La respuesta incluye el idioma encontrado, el identificador del video y la longitud del transcript.</p>
     <div class="callout">Solo funciona con videos que tengan subtitulos habilitados. Los videos sin subtitulos devuelven un error informativo con el ID del video.</div>
+  </section>
+
+  <!-- Herramientas MCP de sistema -->
+  <section id="mcp-sistema">
+    <h2><span class="sec-num">29B</span> Herramientas MCP de sistema y utilidades</h2>
+    <p>XDForCode incluye un conjunto de herramientas MCP de sistema preinstaladas que no requieren configuracion adicional. Estan disponibles en todos los modos (Inference, ACP, Ollama) cuando <strong>Tools</strong> esta activado.</p>
+    <table>
+      <tr><th>Herramienta</th><th>Descripcion</th></tr>
+      <tr><td><code>get_time</code></td><td>Hora actual del sistema</td></tr>
+      <tr><td><code>get_date</code></td><td>Fecha actual</td></tr>
+      <tr><td><code>get_clock_report</code></td><td>Fecha, hora y dia de la semana en un unico mensaje</td></tr>
+      <tr><td><code>get_public_ip</code></td><td>IP publica del equipo (via ipify.org)</td></tr>
+      <tr><td><code>get_temperature</code></td><td>Temperatura y condiciones meteorologicas de cualquier ciudad</td></tr>
+      <tr><td><code>get_system_info</code></td><td>CPU, memoria, sistema operativo y disco</td></tr>
+      <tr><td><code>get_harbour_version</code></td><td>Version de Harbour instalada</td></tr>
+    </table>
+    <p>Estas tools se recompilan automaticamente desde su <code>.prg</code> cuando su codigo cambia — sin necesidad de recompilar <code>fevscode.exe</code>.</p>
+    <h3>Soporte de ciudades con acentos en <code>get_temperature</code></h3>
+    <p>La herramienta <code>get_temperature</code> acepta nombres de ciudades con cualquier caracter Unicode: <strong>Cordoba, Malaga, A Coruna, Munchen, Zurich, Sao Paulo</strong>, etc. La codificacion URL se realiza correctamente en UTF-8 byte a byte.</p>
+    <h3>Respuesta instantanea (<code>response_mode: "direct"</code>)</h3>
+    <p>Las herramientas que solo devuelven un dato unico (hora, fecha, IP, temperatura) estan configuradas con <code>"response_mode": "direct"</code>. En este modo el resultado se muestra al usuario directamente, sin una segunda llamada al modelo para reformatearlo. La respuesta es instantanea y el historial de conversacion se guarda igual que en cualquier otro turno. La etiqueta <strong><code>[direct]</code></strong> aparece en el footer de tiempo de la respuesta.</p>
   </section>
 
   <!-- Entrada de voz -->
@@ -3226,7 +3401,8 @@ Function PluginCommand( cCmd, cArgs )
     <p>El <strong>Scheduler</strong> permite disparar el agente de IA de forma automática, sin intervención del usuario: a hora fija, cada N segundos, cuando un fichero cambia o cuando el output de un comando cambia. Complementa al Kanban (que opera dentro de una sesión manual) con un motor de disparos permanente que corre en segundo plano mientras el IDE está abierto.</p>
 
     <h3>Cómo funciona</h3>
-    <p>Un timer interno comprueba cada 60 segundos si hay entradas de scheduling pendientes. Cuando una condición se cumple, envía el prompt al agente exactamente como si el usuario lo hubiera escrito — pasando por el pipeline completo de historial, tools, skills y streaming. Si el agente está ocupado en ese momento, el disparo se descarta con una nota en el chat y se reintenta en el siguiente ciclo.</p>
+    <p>Un timer interno comprueba cada 60 segundos si hay entradas de scheduling pendientes. Cuando una condición se cumple, envía el prompt al agente exactamente como si el usuario lo hubiera escrito — pasando por el pipeline completo de historial, tools, skills y streaming. Los prompts automáticos llevan el prefijo <code>[auto]</code> en el chat para distinguirlos de los mensajes del usuario.</p>
+    <p>Si el agente está ocupado en ese momento, el disparo se descarta y se acumula en un contador interno. Cuando el agente se libera aparece una nota con el número de disparos perdidos: <em>"N scheduled triggers were skipped while the agent was busy"</em>. El siguiente disparo programado se envía a continuación.</p>
     <p>Los webhooks se procesan en cada tick del timer (sin esperar los 60 segundos), por lo que la latencia de respuesta a un evento externo es inferior a 1 segundo.</p>
     <p>Para <code>watch_cmd</code>, el comando se ejecuta en segundo plano sin bloquear la GUI. Si tarda más de 60 segundos, el scheduler lo detecta igualmente en el primer tick tras su finalización; un mecanismo de run-file guard evita que se lancen instancias paralelas del mismo comando.</p>
 
@@ -3247,10 +3423,14 @@ Function PluginCommand( cCmd, cArgs )
       <tbody>
         <tr><td><code>/schedule 300 revisa los TODOs del proyecto</code></td><td>Cada 5 minutos el agente recibirá ese prompt</td></tr>
         <tr><td><code>/schedule 86400@09:00 haz el daily standup</code></td><td>Una vez al día solo entre las 09:00 y las 09:01 (sintaxis <code>@HH:MM</code> opcional)</td></tr>
-        <tr><td><code>/schedule list</code></td><td>Lista todos los schedules activos con ID, tipo y prompt</td></tr>
-        <tr><td><code>/schedule clear</code></td><td>Elimina todos los schedules</td></tr>
+        <tr><td><code>/schedule list</code></td><td>Lista los schedules activos con ID (solo schedules, no watches)</td></tr>
+        <tr><td><code>/schedule clear</code></td><td>Elimina todos los schedules; los watches quedan intactos</td></tr>
+        <tr><td><code>/schedule clear s1</code></td><td>Elimina solo el schedule con ID <code>s1</code> (el ID aparece en <code>/schedule list</code>)</td></tr>
         <tr><td><code>/watch E:\MiApp\main.prg</code></td><td>Avisa cuando el fichero cambia (prompt por defecto)</td></tr>
         <tr><td><code>/watch E:\MiApp\main.prg Los cambios en {{path}} merecen revisión</code></td><td>Con prompt personalizado</td></tr>
+        <tr><td><code>/watch list</code></td><td>Lista los watches activos con ID (solo watches, no schedules)</td></tr>
+        <tr><td><code>/watch clear</code></td><td>Elimina todos los watches; los schedules quedan intactos</td></tr>
+        <tr><td><code>/watch clear w1</code></td><td>Elimina solo el watch con ID <code>w1</code> (el ID aparece en <code>/watch list</code>)</td></tr>
         <tr><td><code>/watchcmd git log --oneline -3 -- Nuevos commits: {{output}}</code></td><td>Vigila nuevos commits; incrusta los mensajes en el prompt</td></tr>
       </tbody>
     </table>
